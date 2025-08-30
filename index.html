@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Your App — Modern Landing</title>
+  <meta name="description" content="A clean, modern, responsive landing page you can deploy on Vercel." />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body class="no-js">
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#">
+        <div class="brand-mark" aria-hidden="true">★</div>
+        <span class="brand-name">YourApp</span>
+      </a>
+      <nav class="nav" aria-label="Main">
+        <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu">
+          <span class="sr-only">Toggle menu</span>
+          ☰
+        </button>
+        <ul id="nav-menu" class="nav-menu">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#faq">FAQ</a></li>
+        </ul>
+      </nav>
+      <div class="actions">
+        <button id="themeBtn" class="button subtle" title="Toggle theme">🌓</button>
+        <a class="button primary" href="#cta">Get Started</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <span class="pill">New • Lightning Fast</span>
+          <h1>Design-first web apps in minutes.</h1>
+          <p class="lead">
+            A minimal, production-ready template with a beautiful UI/UX. Bring your idea to life and deploy to Vercel from GitHub—zero build tools required.
+          </p>
+          <div class="cta-row" id="cta">
+            <a class="button primary" href="https://vercel.com" target="_blank" rel="noopener">Deploy to Vercel</a>
+            <a class="button ghost" href="https://github.com" target="_blank" rel="noopener">View on GitHub</a>
+          </div>
+          <ul class="hero-points">
+            <li>Responsive grid & components</li>
+            <li>Dark mode with one click</li>
+            <li>Accessible & keyboard friendly</li>
+          </ul>
+        </div>
+        <div class="hero-media">
+          <div class="card shadow-xl glass">
+            <div class="window-chrome">
+              <span></span><span></span><span></span>
+            </div>
+            <div class="mock">
+              <svg viewBox="0 0 800 450" role="img" aria-label="App screenshot placeholder">
+                <defs>
+                  <linearGradient id="grad" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="var(--primary-500)" />
+                    <stop offset="100%" stop-color="var(--primary-700)" />
+                  </linearGradient>
+                </defs>
+                <rect x="0" y="0" width="800" height="450" fill="url(#grad)"></rect>
+                <g fill="var(--surface)">
+                  <rect x="48" y="64" rx="12" width="704" height="64" opacity=".85"/>
+                  <rect x="48" y="152" rx="12" width="432" height="32" opacity=".9"/>
+                  <rect x="48" y="208" rx="12" width="560" height="32" opacity=".8"/>
+                  <rect x="48" y="264" rx="12" width="480" height="32" opacity=".75"/>
+                  <rect x="48" y="320" rx="12" width="624" height="32" opacity=".7"/>
+                </g>
+              </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="features" class="section">
+      <div class="container">
+        <header class="section-head">
+          <h2>Thoughtful features. Better UX.</h2>
+          <p class="muted">Built-in components you can keep or swap for React/Vite later.</p>
+        </header>
+        <div class="grid cards-3">
+          <div class="card shadow">
+            <div class="icon">⚡</div>
+            <h3>Fast & Lightweight</h3>
+            <p>No bundlers needed. Pure HTML/CSS/JS that deploys instantly on Vercel.</p>
+          </div>
+          <div class="card shadow">
+            <div class="icon">🎨</div>
+            <h3>Modern Aesthetic</h3>
+            <p>Glassmorphism, soft shadows, smooth hover states, and fluid spacing scale.</p>
+          </div>
+          <div class="card shadow">
+            <div class="icon">🛡️</div>
+            <h3>Accessible</h3>
+            <p>Semantic HTML, focus outlines, and high-contrast modes out of the box.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="pricing" class="section alt">
+      <div class="container">
+        <header class="section-head">
+          <h2>Simple, fair pricing</h2>
+          <p class="muted">Start free. Upgrade when you grow.</p>
+        </header>
+        <div class="grid cards-3">
+          <div class="card price">
+            <div class="price-tier">Starter</div>
+            <div class="price-amount">₹0</div>
+            <ul class="price-points">
+              <li>All core UI</li>
+              <li>Email support</li>
+              <li>Community access</li>
+            </ul>
+            <a class="button primary block" href="#">Choose Starter</a>
+          </div>
+          <div class="card price featured shadow-xl">
+            <div class="badge">Popular</div>
+            <div class="price-tier">Pro</div>
+            <div class="price-amount">₹499/mo</div>
+            <ul class="price-points">
+              <li>Everything in Starter</li>
+              <li>Advanced components</li>
+              <li>Priority support</li>
+            </ul>
+            <a class="button primary block" href="#">Choose Pro</a>
+          </div>
+          <div class="card price">
+            <div class="price-tier">Teams</div>
+            <div class="price-amount">₹1,999/mo</div>
+            <ul class="price-points">
+              <li>Everything in Pro</li>
+              <li>Unlimited sites</li>
+              <li>Team workspace</li>
+            </ul>
+            <a class="button primary block" href="#">Choose Teams</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq" class="section">
+      <div class="container">
+        <header class="section-head">
+          <h2>FAQ</h2>
+          <p class="muted">Short and crisp answers.</p>
+        </header>
+        <details class="faq">
+          <summary>Can I use this with React later?</summary>
+          <p>Yes. Start static, then migrate sections into React/Vite when needed. The HTML structure maps directly to JSX.</p>
+        </details>
+        <details class="faq">
+          <summary>Is there a build step?</summary>
+          <p>No. This is a zero-build template—perfect for quick shipping on Vercel.</p>
+        </details>
+        <details class="faq">
+          <summary>How do I customize the colors?</summary>
+          <p>Open <code>styles.css</code> and tweak the <code>:root</code> CSS variables for instant theme updates.</p>
+        </details>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <div class="brand-row">
+        <div class="brand-mark">★</div>
+        <strong>YourApp</strong>
+      </div>
+      <nav aria-label="Footer">
+        <a href="#features">Features</a>
+        <a href="#pricing">Pricing</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <p class="muted small">© <span id="year"></span> YourApp. All rights reserved.</p>
+    </div>
+  </footer>
+
+  <script src="./script.js" defer></script>
+</body>
+</html>
