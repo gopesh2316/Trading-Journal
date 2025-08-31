@@ -402,6 +402,150 @@ function initModals(){
   $("#ruleCancel").onclick = ()=>$("#ruleDialog").close();
 }
 
+/* ---------- Custom Calendar ---------- */
+function initCustomCalendar() {
+  const dateInput = $("#date");
+  const calendar = $("#customCalendar");
+  const monthYear = $("#monthYear");
+  const calendarGrid = $("#calendarGrid");
+  const prevMonth = $("#prevMonth");
+  const nextMonth = $("#nextMonth");
+  const clearDate = $("#clearDate");
+  const todayDate = $("#todayDate");
+  
+  let currentDate = new Date();
+  let selectedDate = null;
+  
+  const months = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const dayHeaders = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  
+  function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  function formatDisplayDate(date) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  }
+  
+  function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    monthYear.textContent = `${months[month]} ${year}`;
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    calendarGrid.innerHTML = '';
+    
+    // Add day headers
+    dayHeaders.forEach(day => {
+      const header = document.createElement('div');
+      header.className = 'calendar-day-header';
+      header.textContent = day;
+      calendarGrid.appendChild(header);
+    });
+    
+    // Add previous month's trailing days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = document.createElement('div');
+      day.className = 'calendar-day other-month';
+      day.textContent = daysInPrevMonth - i;
+      calendarGrid.appendChild(day);
+    }
+    
+    // Add current month's days
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayElement = document.createElement('div');
+      dayElement.className = 'calendar-day';
+      dayElement.textContent = day;
+      
+      const dayDate = new Date(year, month, day);
+      
+      // Check if it's today
+      if (dayDate.toDateString() === today.toDateString()) {
+        dayElement.classList.add('today');
+      }
+      
+      // Check if it's selected
+      if (selectedDate && dayDate.toDateString() === selectedDate.toDateString()) {
+        dayElement.classList.add('selected');
+      }
+      
+      dayElement.onclick = () => {
+        selectedDate = dayDate;
+        dateInput.value = formatDisplayDate(dayDate);
+        calendar.style.display = 'none';
+        renderCalendar();
+      };
+      
+      calendarGrid.appendChild(dayElement);
+    }
+    
+    // Add next month's leading days
+    const totalCells = calendarGrid.children.length - 7; // Subtract headers
+    const remainingCells = 42 - totalCells - 7; // 6 rows * 7 days - current cells - headers
+    for (let day = 1; day <= remainingCells && totalCells < 35; day++) {
+      const dayElement = document.createElement('div');
+      dayElement.className = 'calendar-day other-month';
+      dayElement.textContent = day;
+      calendarGrid.appendChild(dayElement);
+    }
+  }
+  
+  // Event listeners
+  dateInput.onclick = () => {
+    calendar.style.display = calendar.style.display === 'block' ? 'none' : 'block';
+    renderCalendar();
+  };
+  
+  prevMonth.onclick = () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  };
+  
+  nextMonth.onclick = () => {
+    currentDate.setMonth(currentDate.getMonth() + 1);
+    renderCalendar();
+  };
+  
+  clearDate.onclick = () => {
+    selectedDate = null;
+    dateInput.value = '';
+    calendar.style.display = 'none';
+    renderCalendar();
+  };
+  
+  todayDate.onclick = () => {
+    const today = new Date();
+    selectedDate = today;
+    currentDate = new Date(today);
+    dateInput.value = formatDisplayDate(today);
+    calendar.style.display = 'none';
+    renderCalendar();
+  };
+  
+  // Close calendar when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.date-picker-container')) {
+      calendar.style.display = 'none';
+    }
+  });
+  
+  // Set today's date by default
+  const today = new Date();
+  selectedDate = today;
+  dateInput.value = formatDisplayDate(today);
+}
+
 /* ---------- Boot ---------- */
 loadAll();
 initAuth();
@@ -409,5 +553,6 @@ initHeader();
 initSidebar();
 initFilters();
 initModals();
+initCustomCalendar();
 
 if(state.user){ showApp(); } else { showAuth(); }
