@@ -166,7 +166,13 @@ function statsFrom(rows){
   const totalPnl = rows.reduce((s,e)=>s+(e.pnl||0),0);
   const avgPnl = n ? totalPnl/n : 0;
   const winRate = n ? (wins/n)*100 : 0;
-  return { n, wins, losses, totalPnl, avgPnl, winRate };
+  
+  // Calculate profit factor
+  const grossProfit = rows.filter(e=>(e.pnl||0)>0).reduce((s,e)=>s+(e.pnl||0),0);
+  const grossLoss = Math.abs(rows.filter(e=>(e.pnl||0)<=0).reduce((s,e)=>s+(e.pnl||0),0));
+  const profitFactor = grossLoss > 0 ? grossProfit / grossLoss : (grossProfit > 0 ? 999 : 1);
+  
+  return { n, wins, losses, totalPnl, avgPnl, winRate, profitFactor, grossProfit, grossLoss };
 }
 function byDateData(){
   const m = new Map();
@@ -189,19 +195,68 @@ function renderHeader(){
 function renderStats(){
   const rows = filteredEntries();
   const s = statsFrom(rows);
+  
+  // Calculate win rate angle for circular progress (0-360 degrees)
+  const winAngle = Math.round(s.winRate * 3.6); // Convert percentage to degrees
+  
+  // Calculate profit factor percentage for horizontal progress
+  const totalAmount = s.grossProfit + s.grossLoss;
+  const profitPercentage = totalAmount > 0 ? Math.round((s.grossProfit / totalAmount) * 100) : 50;
+  
   const items = [
     {label:"Trades", value:s.n},
-    {label:"Win rate", value:`${Math.round(s.winRate)}%`, sub:`W ${s.wins} · L ${s.losses}`},
-    {label:"Net P&L", value:formatCurrency(s.totalPnl)},
-    {label:"Avg P&L", value:formatCurrency(s.avgPnl)},
+    {
+      label:"Win rate", 
+      value:`${Math.round(s.winRate)}%`, 
+      sub:`W ${s.wins} · L ${s.losses}`,
+      isWinRate: true,
+      winAngle: winAngle
+    },
+    {label:"Net P&L", value:formatCurrency(s.totalPnl), color: s.totalPnl >= 0 ? '#065f46' : '#9f1239'},
+    {
+      label:"Profit Factor",
+      value:s.profitFactor.toFixed(2),
+      isProfitFactor: true,
+      profitPercentage: profitPercentage
+    },
+    {label:"Avg P&L", value:formatCurrency(s.avgPnl), color: s.avgPnl >= 0 ? '#065f46' : '#9f1239'},
     {label:"Wins", value:s.wins},
   ];
-  $("#statsRow").innerHTML = items.map(it=>`
-    <div class="stat">
-      <div class="label">${it.label}${it.sub ? ` <span class="tiny">(${it.sub})</span>` : ""}</div>
-      <div class="value">${it.value}</div>
-    </div>
-  `).join("");
+  
+  $("#statsRow").innerHTML = items.map(it=>{
+    if(it.isWinRate) {
+      return `
+        <div class="stat">
+          <div class="label">${it.label}${it.sub ? ` <span class="tiny">(${it.sub})</span>` : ""}</div>
+          <div class="win-rate-container">
+            <div class="win-rate-text">
+              <div class="value">${it.value}</div>
+            </div>
+            <div class="circular-progress" style="--win-angle: ${it.winAngle}deg"></div>
+          </div>
+        </div>
+      `;
+    }
+    if(it.isProfitFactor) {
+      return `
+        <div class="stat">
+          <div class="label">${it.label}</div>
+          <div class="profit-factor-container">
+            <div class="profit-factor-text">
+              <div class="value">${it.value}</div>
+            </div>
+            <div class="horizontal-progress" style="--profit-percentage: ${it.profitPercentage}%"></div>
+          </div>
+        </div>
+      `;
+    }
+    return `
+      <div class="stat">
+        <div class="label">${it.label}${it.sub ? ` <span class="tiny">(${it.sub})</span>` : ""}</div>
+        <div class="value"${it.color ? ` style="color:${it.color}"` : ''}>${it.value}</div>
+      </div>
+    `;
+  }).join("");
 }
 function renderTable(){
   const rows = filteredEntries();

@@ -10,7 +10,7 @@
   --green:#10b981;
   --red:#ef4444;
   --radius:14px;
-  --shadow: 0 6px 18px rgba(0,0,0,.08);
+  --shadow: 0px 1.5px 2px 0px rgba(225,229,237,.4);
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
@@ -51,17 +51,12 @@ body{background:var(--bg);color:var(--text);}
 
 /* Sidebar Sections */
 .sidebar-section{margin-bottom:20px}
-.sidebar-header{display:flex;align-items:center;justify-content:space-between;padding:8px 4px;margin-bottom:8px;cursor:pointer;border-radius:6px;transition:background-color 0.2s ease}
-.sidebar-header:hover{background:#f5f6f9}
-.sidebar-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px}
-.sidebar-icon{font-size:12px;color:var(--muted);transition:transform 0.2s ease}
-.sidebar-icon i{font-size:12px}
-.sidebar-header:hover .sidebar-icon{transform:rotate(180deg)}
+.sidebar-title{font-size:12px;font-weight:600;color:var(--muted);text-transform:capitalize;letter-spacing:0.5px;padding:8px 4px;margin-bottom:8px}
 
 /* Sidebar Items */
-.side-item{display:flex;align-items:center;width:100%;text-align:left;border:1px solid transparent;background:#fff;padding:8px 12px;border-radius:8px;margin:2px 0;cursor:pointer;transition:all 0.2s ease;position:relative}
-.side-item:hover{background:#f5f6f9;border-color:var(--border)}
-.side-item.active{background:#eef2ff;border-color:#c7d2fe}
+.side-item{display:flex;align-items:center;width:100%;text-align:left;border:1px solid transparent;background:#fff;padding:10px 12px;border-radius:6px;margin:4px 0;cursor:pointer;transition:all 0.0s ease;position:relative}
+.side-item:hover{background:#f5f6f9;}
+.side-item.active{background:#efefef;}
 .side-icon{margin-right:10px;font-size:16px;width:20px;text-align:center;color:var(--muted)}
 .side-icon i{font-size:16px}
 .side-text{flex:1;font-size:14px;font-weight:500}
@@ -86,6 +81,66 @@ body{background:var(--bg);color:var(--text);}
 .stat{border:1px solid var(--border);border-radius:12px;background:#fff;padding:1rem;box-shadow:var(--shadow)}
 .stat .label{color:var(--muted);font-size:.85rem}
 .stat .value{font-weight:700;font-size:1.4rem}
+
+/* Win Rate Circle Progress */
+.win-rate-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.win-rate-text {
+  flex: 1;
+}
+
+.circular-progress {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: conic-gradient(#10b981 0deg, #10b981 var(--win-angle, 0deg), #ef4444 var(--win-angle, 0deg), #ef4444 360deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: -19px
+}
+
+.circular-progress::before {
+  content: '';
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: white;
+}
+
+/* Profit Factor Horizontal Progress */
+.profit-factor-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profit-factor-text {
+  flex: 1;
+}
+
+.profit-factor-text .value {
+  color: #111827 !important;
+}
+
+.horizontal-progress {
+  position: relative;
+  width: 80px;
+  height: 7.2px;
+  border-radius: 4px;
+  background: linear-gradient(to right, #10b981 0%, #10b981 var(--profit-percentage, 50%), #ef4444 var(--profit-percentage, 50%), #ef4444 100%);
+  margin-top: -19px;
+}
+
+
 
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px}
@@ -309,7 +364,7 @@ body{background:var(--bg);color:var(--text);}
 
 #ruleDialog .dialog-card .form-row {
   margin-bottom: 24px;
-  padding: 0 2rem;
+  padding: 0 20px;
   margin-top: 20px;
 }
 
@@ -339,7 +394,7 @@ body{background:var(--bg);color:var(--text);}
   margin-top: 13px;
   display: block;
 }
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0px 17px;padding:20px 28px 0 20px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0px 17px;padding:20px 20px 0 20px}
 .gridspan2{grid-column:span 2}
 
 .auth{display:grid;place-items:center;min-height:100vh;padding:24px;background:#fff;}
