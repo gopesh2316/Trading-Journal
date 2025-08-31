@@ -154,6 +154,216 @@ body{background:var(--bg);color:var(--text);}
 .stat .label{color:var(--muted);font-size:.85rem}
 .stat .value{font-weight:700;font-size:1.4rem}
 
+/* Calendar Container */
+.calendar-container{
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  box-shadow:var(--shadow);
+  margin-bottom:20px;
+  overflow:hidden;
+  Margin-top: 14px
+}
+
+.calendar-header-section{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:16px 20px;
+  border-bottom:1px solid var(--border);
+  background:#fafafa;
+}
+
+.calendar-nav-controls{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.calendar-nav-btn{
+  background:none;
+  border:none;
+  padding:6px;
+  border-radius:4px;
+  cursor:pointer;
+  color:var(--muted);
+  transition:all 0.2s ease;
+}
+
+.calendar-nav-btn:hover{
+  background:#e5e7eb;
+  color:var(--text);
+}
+
+.calendar-current-month{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:16px;
+  font-weight:600;
+  color:var(--text);
+}
+
+.current-month-badge{
+  background:#e5e7eb;
+  padding:4px 8px;
+  border-radius:4px;
+  font-size:12px;
+  font-weight:500;
+  color:var(--text);
+}
+
+.current-month-badge.hidden{
+  display:none;
+}
+
+.calendar-monthly-stats{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:14px;
+}
+
+.monthly-label{
+  color:var(--muted);
+  font-weight:600;
+}
+
+.monthly-value{
+  color:#10b981;
+  font-weight:700;
+}
+
+.monthly-days{
+  color:var(--muted);
+  font-weight:600;
+}
+
+.calendar-grid-container{
+  display:flex;
+  padding:20px;
+}
+
+.calendar-main-grid{
+  display:grid;
+  grid-template-columns:repeat(7,1fr) auto;
+  gap:3px;
+  flex:1;
+  margin-right:20px;
+}
+
+.calendar-column{
+  display:flex;
+  flex-direction:column;
+  gap:3px;
+}
+
+.weekday-header{
+  padding:8px;
+  text-align:center;
+  font-size:12px;
+  font-weight:600;
+  color:var(--muted);
+  background:#f9fafb;
+  border-radius:4px 4px 0 0;
+}
+
+.calendar-day{
+  aspect-ratio:1;
+  border:1px solid #f0f0f0;
+  background:#fff;
+  display:flex;
+  flex-direction:column;
+  padding:8px;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+
+.calendar-day:hover{
+  background:#f5f6f9;
+}
+
+.calendar-day.has-trades{
+  background:#ecfdf5;
+  border-color:#10b981;
+}
+
+.calendar-day.selected{
+  background:#3b82f6;
+  color:#fff;
+  border-color:#3b82f6;
+}
+
+.day-number{
+  font-size:16px;
+  font-weight:500;
+  margin-bottom:4px;
+}
+
+.day-amount{
+  font-size:12px;
+  font-weight:600;
+  color:#10b981;
+}
+
+.day-trades{
+  font-size:10px;
+  color:var(--muted);
+}
+
+.day-percentage{
+  font-size:10px;
+  color:var(--muted);
+}
+
+.calendar-sidebar-stats{
+  width:120px;
+  display:none;
+  flex-direction:column;
+  gap:3px;
+}
+
+.week-stat{
+  aspect-ratio:1;
+  padding:8px;
+  background:#f9fafb;
+  border-radius:8px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.week-stat-inline{
+  aspect-ratio:1;
+  padding:8px;
+  background:#f9fafb;
+  border-radius:8px;
+  text-align:center;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  min-width:120px;
+}
+
+.week-label{
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:4px;
+}
+
+.week-value{
+  font-size:16px;
+  font-weight:600;
+  color:var(--text);
+  margin-bottom:2px;
+}
+
+.week-days{
+  font-size:11px;
+  color:var(--muted);
+}
+
 /* Win Rate Circle Progress */
 .win-rate-container {
   display: flex;
@@ -175,7 +385,8 @@ body{background:var(--bg);color:var(--text);}
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-top: -19px
+  flex-shrink: 0;
+  margin-top: -17px;
 }
 
 .circular-progress::before {

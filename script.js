@@ -639,6 +639,184 @@ function initCustomCalendar() {
   dateInput.value = formatDisplayDate(today);
 }
 
+/* ---------- Trading Calendar ---------- */
+function initTradingCalendar() {
+  let currentCalendarDate = new Date();
+  const today = new Date();
+  
+  function renderTradingCalendar() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const monthNames = ["January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"];
+    
+    // Update month display
+    $("#currentMonth").textContent = `${monthNames[month]} ${year}`;
+    
+    // Show/hide "This month" badge only for current month
+    const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+    const badge = $("#currentMonthBadge");
+    if (isCurrentMonth) {
+      badge.classList.remove("hidden");
+    } else {
+      badge.classList.add("hidden");
+    }
+    
+    renderCalendarGrid();
+    renderWeeklyStats();
+  }
+  
+  function renderCalendarGrid() {
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    
+    const calendarGrid = $("#calendarMainGrid");
+    calendarGrid.innerHTML = '';
+    
+    const weekdays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    
+    // First, add weekday headers
+    weekdays.forEach(day => {
+      const header = document.createElement('div');
+      header.className = 'weekday-header';
+      header.textContent = day;
+      calendarGrid.appendChild(header);
+    });
+    
+    // Add header for week stats column
+    const weekHeader = document.createElement('div');
+    weekHeader.className = 'weekday-header';
+    weekHeader.textContent = 'Week';
+    calendarGrid.appendChild(weekHeader);
+    
+    // Calculate how many weeks we need to show all days of the month
+    const weeksNeeded = Math.ceil((firstDay + daysInMonth) / 7);
+    
+    // Sample weekly data (replace with real data calculation)
+    const weeklyData = [
+      { value: '$1K', days: 2 },
+      { value: '$0', days: 0 },
+      { value: '$0', days: 0 },
+      { value: '$0', days: 0 },
+      { value: '$0', days: 0 }
+    ];
+    
+    // Fill the calendar grid week by week
+    for (let week = 0; week < weeksNeeded; week++) {
+      // Add 7 days for this week
+      for (let dayInWeek = 0; dayInWeek < 7; dayInWeek++) {
+        const cellIndex = week * 7 + dayInWeek;
+        const dayNumber = cellIndex - firstDay + 1;
+        
+        if (dayNumber > 0 && dayNumber <= daysInMonth) {
+          // This is a valid day of the current month
+          const dayElement = createCalendarDay(dayNumber, false, true);
+          calendarGrid.appendChild(dayElement);
+        } else {
+          // This is an empty cell (before first day or after last day)
+          const emptyCell = document.createElement('div');
+          emptyCell.className = 'calendar-day empty';
+          emptyCell.style.visibility = 'hidden';
+          calendarGrid.appendChild(emptyCell);
+        }
+      }
+      
+      // Add week stat box at the end of each week row
+      const weekStat = document.createElement('div');
+      weekStat.className = 'week-stat-inline';
+      
+      const data = weeklyData[week] || { value: '$0', days: 0 };
+      
+      weekStat.innerHTML = `
+        <div class="week-label">Week ${week + 1}</div>
+        <div class="week-value">${data.value}</div>
+        <div class="week-days">${data.days} days</div>
+      `;
+      
+      calendarGrid.appendChild(weekStat);
+    }
+  }
+  
+  function createCalendarDay(dayNumber, isOtherMonth, isCurrentMonth) {
+    const dayElement = document.createElement('div');
+    dayElement.className = 'calendar-day';
+    
+    if (isOtherMonth) {
+      dayElement.style.opacity = '0.3';
+    }
+    
+    // Check if this day has trades (sample data)
+    const hasTradeData = isCurrentMonth && (dayNumber === 2 || dayNumber === 3);
+    if (hasTradeData) {
+      dayElement.classList.add('has-trades');
+    }
+    
+    // Today highlighting
+    const today = new Date();
+    if (isCurrentMonth && dayNumber === today.getDate() && 
+        currentCalendarDate.getMonth() === today.getMonth() &&
+        currentCalendarDate.getFullYear() === today.getFullYear()) {
+      dayElement.classList.add('selected');
+    }
+    
+    dayElement.innerHTML = `
+      <div class="day-number">${dayNumber}</div>
+      ${hasTradeData ? `
+        <div class="day-amount">$${dayNumber === 2 ? '817' : '183'}</div>
+        <div class="day-trades">${dayNumber === 2 ? '1' : '3'} trade${dayNumber === 3 ? 's' : ''}</div>
+        <div class="day-percentage">${dayNumber === 2 ? '100.0%' : '23.33%'}</div>
+      ` : ''}
+    `;
+    
+    return dayElement;
+  }
+  
+  function renderWeeklyStats() {
+    const weeklyStatsContainer = $("#weeklyStats");
+    weeklyStatsContainer.innerHTML = '';
+    
+    // Sample weekly data (replace with real data calculation)
+    const weeklyData = [
+      { value: '$1K', days: 2 },
+      { value: '$0', days: 0 },
+      { value: '$0', days: 0 },
+      { value: '$0', days: 0 }
+    ];
+    
+    // Always show exactly 4 weeks
+    for (let week = 1; week <= 4; week++) {
+      const weekStat = document.createElement('div');
+      weekStat.className = 'week-stat';
+      
+      const data = weeklyData[week - 1] || { value: '$0', days: 0 };
+      
+      weekStat.innerHTML = `
+        <div class="week-label">Week ${week}</div>
+        <div class="week-value">${data.value}</div>
+        <div class="week-days">${data.days} days</div>
+      `;
+      
+      weeklyStatsContainer.appendChild(weekStat);
+    }
+  }
+  
+  // Navigation event listeners
+  $("#prevMonthBtn").onclick = () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+    renderTradingCalendar();
+  };
+  
+  $("#nextMonthBtn").onclick = () => {
+    currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+    renderTradingCalendar();
+  };
+  
+  // Initial render
+  renderTradingCalendar();
+}
+
 /* ---------- Boot ---------- */
 loadAll();
 initAuth();
@@ -647,5 +825,6 @@ initSidebar();
 initFilters();
 initModals();
 initCustomCalendar();
+initTradingCalendar();
 
 if(state.user){ showApp(); } else { showAuth(); }
