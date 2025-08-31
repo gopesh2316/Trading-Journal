@@ -32,7 +32,7 @@ body{background:var(--bg);color:var(--text);}
 .gap{gap:.6rem}
 .wfull{width:100%}
 
-.primary, .outline, .danger{border-radius:12px;padding:12px 20px;font-weight:600;border:1px solid transparent;cursor:pointer;font-size:15px;transition:all 0.2s ease;}
+.primary, .outline, .danger{border-radius:6px;padding:12px 20px;font-weight:600;border:1px solid transparent;cursor:pointer;font-size:15px;transition:all 0.2s ease;}
 .primary{background:#111827;color:#fff;box-shadow:0 1px 2px 0 rgba(0,0,0,0.05);}
 .primary:hover{background:#1f2937;transform:translateY(-1px);}
 .primary:active{transform:translateY(0);}
@@ -90,12 +90,12 @@ body{background:var(--bg);color:var(--text);}
 .form-row input,.form-row select,.form-row textarea{
   width:100%;
   padding:14px 16px;
-  border:1.5px solid #e5e7eb;
-  border-radius:12px;
+  border:1.5px solid #dbdbdb;
+  border-radius:6px;
   font-size:15px;
   font-family:inherit;
   transition:all 0.2s ease;
-  background-color:#f9fafb;
+  background-color:#ffffff;
   color:#111827;
 }
 .form-row input::placeholder{
