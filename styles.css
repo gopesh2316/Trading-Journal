@@ -121,8 +121,8 @@ body{font-family:'Manrope',system-ui,-apple-system,BlinkMacSystemFont,'Segoe UI'
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px 0}
 .gridspan2{grid-column:span 2}
 
-.auth{display:grid;place-items:center;min-height:100vh;padding:24px;background:linear-gradient(135deg, #f5f7fa 0%, #e4e8f0 100%);}
-.auth-card{width:min(420px,90vw);background:#fff;border:1px solid var(--border);border-radius:20px;padding:40px;box-shadow:0 10px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04);text-align:center}
+.auth{display:grid;place-items:center;min-height:100vh;padding:24px;background:#fff;}
+.auth-card{width:min(420px,90vw);background:#fff;border:0;border-radius:0;padding:40px;box-shadow:none;text-align:center}
 .auth-card h1{margin:0 0 8px;font-size:28px;font-weight:700;color:#111827;}
 .auth-card .muted{color:#6b7280;font-size:15px;margin:-2px 0 24px;display:block;}
 .segbuttons{display:grid;grid-template-columns:1fr 1fr;gap:8px;background:#f3f4f6;border-radius:12px;padding:6px;margin:0 0 24px}
