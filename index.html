@@ -14,8 +14,8 @@
   <!-- Auth Screen -->
   <div id="auth" class="auth hidden">
     <div class="auth-card">
-      <h1>Trading Journal</h1>
-      <p class="muted">Minimal, local-first. Sign in to continue.</p>
+      <h1>EdgeBook</h1>
+      <p class="muted">Track every trade. Master every move.</p>
 
       <div class="segbuttons">
         <button id="btnLogin" class="seg active">Login</button>
@@ -46,8 +46,8 @@
     <header class="app-header">
       <div class="container header-inner">
         <div>
-          <h1>Trading Journal Ledger</h1>
-          <p class="muted tiny">Minimal, local-first journal to log and review your trades.</p>
+          <h1>EdgeBook</h1>
+          <p class="muted tiny">Track every trade. Master every move.</p>
         </div>
         <div class="row gap">
           <button id="btnNewEntry" class="primary">+ New Entry</button>
@@ -58,40 +58,46 @@
 
     <div class="app-body">
       <aside class="sidebar">
-        <!-- Navigation Section -->
-        <div class="sidebar-section">
-          <div class="sidebar-title">Navigation</div>
-          <button class="side-item active" data-view="dashboard">
-            <span class="side-icon"><i class="fas fa-chart-line"></i></span>
-            <span class="side-text">Dashboard</span>
-          </button>
-          <button class="side-item" data-view="trade-log">
-            <span class="side-icon"><i class="fas fa-list-alt"></i></span>
-            <span class="side-text">Trade Log</span>
-          </button>
-          <button class="side-item" data-view="pre-trade">
-            <span class="side-icon"><i class="fas fa-crosshairs"></i></span>
-            <span class="side-text">Pre-Trade</span>
-          </button>
-        </div>
+        <button class="side-item active" data-view="dashboard">
+          <span class="side-icon"><i class="fas fa-chart-line"></i></span>
+          <span class="side-text">Dashboard</span>
+        </button>
+        <button class="side-item" data-view="trade-log">
+          <span class="side-icon"><i class="fas fa-list-alt"></i></span>
+          <span class="side-text">Trade Log</span>
+        </button>
+        <button class="side-item" data-view="pre-trade">
+          <span class="side-icon"><i class="fas fa-crosshairs"></i></span>
+          <span class="side-text">Pre-Trade</span>
+        </button>
 
         <!-- User Profile Section at Bottom -->
         <div class="sidebar-user">
-          <div class="user-avatar" id="btnAvatar">?</div>
+          <div class="user-avatar" id="userAvatar">?</div>
           <div class="user-info">
             <div class="user-name" id="ddName">User Name</div>
             <div class="user-email" id="ddEmail">user@example.com</div>
           </div>
           <div class="user-menu" id="accountMenu">
-            <button class="user-menu-btn"><i class="fas fa-ellipsis-v"></i></button>
-            <div id="accountDropdown" class="dropdown hidden">
-              <button id="btnLogout" class="dropdown-item">Logout</button>
+            <button class="user-menu-btn" id="userMenuBtn"><i class="fas fa-ellipsis-v"></i></button>
+            <div id="accountDropdown" class="user-dropdown hidden">
+              <button class="user-dropdown-item" id="btnSettings">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+              </button>
+              <button class="user-dropdown-item" id="btnLogout">
+                <i class="fas fa-sign-out-alt"></i>
+                <span>Logout</span>
+              </button>
             </div>
           </div>
         </div>
       </aside>
 
       <main class="content">
+        <!-- Greeting -->
+        <div class="greeting" id="greetingMessage"></div>
+        
         <!-- Stats -->
         <section class="stats" id="statsRow"></section>
 

@@ -88,8 +88,26 @@ function initAuth(){
 function initHeader(){
   $("#btnNewEntry").onclick = openNewEntry;
   $("#btnNewRule").onclick = openNewRule;
-  $("#btnAvatar").onclick = ()=>$("#accountDropdown").classList.toggle("hidden");
-  $("#btnLogout").onclick = ()=>{ state.user=null; saveUser(); showAuth(); };
+  
+  // User menu functionality
+  $("#userMenuBtn").onclick = ()=>$("#accountDropdown").classList.toggle("hidden");
+  $("#btnLogout").onclick = ()=>{ 
+    state.user=null; 
+    saveUser(); 
+    $("#accountDropdown").classList.add("hidden");
+    showAuth(); 
+  };
+  $("#btnSettings").onclick = ()=>{ 
+    alert("Settings functionality coming soon!"); 
+    $("#accountDropdown").classList.add("hidden");
+  };
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('#accountMenu')) {
+      $("#accountDropdown").classList.add("hidden");
+    }
+  });
 }
 
 /* ---------- Sidebar ---------- */
@@ -188,9 +206,28 @@ function byDateData(){
 function renderHeader(){
   const name = state.user?.name || "";
   const email = state.user?.email || "";
-  $("#btnAvatar").textContent = initials(name || email);
+  $("#userAvatar").textContent = initials(name || email);
   $("#ddName").textContent = name || email;
   $("#ddEmail").textContent = name ? email : "";
+}
+
+function renderGreeting(){
+  const name = state.user?.name || "";
+  const currentHour = new Date().getHours();
+  
+  let greeting = "";
+  if (currentHour >= 5 && currentHour < 12) {
+    greeting = "Good Morning";
+  } else if (currentHour >= 12 && currentHour < 17) {
+    greeting = "Good Afternoon";
+  } else if (currentHour >= 17 && currentHour < 22) {
+    greeting = "Good Evening";
+  } else {
+    greeting = "Good Night";
+  }
+  
+  const displayName = name || state.user?.email?.split('@')[0] || "User";
+  $("#greetingMessage").textContent = `${greeting}, ${displayName}`;
 }
 function renderStats(){
   const rows = filteredEntries();
@@ -440,6 +477,7 @@ function submitRule(e){
 /* ---------- Mount ---------- */
 function renderAll(){
   renderHeader();
+  renderGreeting();
   bindFilters();
   renderStats();
   renderTable();
