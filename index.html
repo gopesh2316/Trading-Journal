@@ -1,191 +1,243 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Your App — Modern Landing</title>
-  <meta name="description" content="A clean, modern, responsive landing page you can deploy on Vercel." />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Trading Journal</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./styles.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
 </head>
-<body class="no-js">
-  <header class="site-header">
-    <div class="container header-inner">
-      <a class="brand" href="#">
-        <div class="brand-mark" aria-hidden="true">★</div>
-        <span class="brand-name">YourApp</span>
-      </a>
-      <nav class="nav" aria-label="Main">
-        <button class="nav-toggle" aria-expanded="false" aria-controls="nav-menu">
-          <span class="sr-only">Toggle menu</span>
-          ☰
-        </button>
-        <ul id="nav-menu" class="nav-menu">
-          <li><a href="#features">Features</a></li>
-          <li><a href="#pricing">Pricing</a></li>
-          <li><a href="#faq">FAQ</a></li>
-        </ul>
-      </nav>
-      <div class="actions">
-        <button id="themeBtn" class="button subtle" title="Toggle theme">🌓</button>
-        <a class="button primary" href="#cta">Get Started</a>
-      </div>
-    </div>
-  </header>
+<body>
+  <!-- Auth Screen -->
+  <div id="auth" class="auth hidden">
+    <div class="auth-card">
+      <h1>Trading Journal</h1>
+      <p class="muted">Minimal, local-first. Sign in to continue.</p>
 
-  <main>
-    <section class="hero">
-      <div class="container hero-grid">
-        <div class="hero-copy">
-          <span class="pill">New • Lightning Fast</span>
-          <h1>Design-first web apps in minutes.</h1>
-          <p class="lead">
-            A minimal, production-ready template with a beautiful UI/UX. Bring your idea to life and deploy to Vercel from GitHub—zero build tools required.
-          </p>
-          <div class="cta-row" id="cta">
-            <a class="button primary" href="https://vercel.com" target="_blank" rel="noopener">Deploy to Vercel</a>
-            <a class="button ghost" href="https://github.com" target="_blank" rel="noopener">View on GitHub</a>
-          </div>
-          <ul class="hero-points">
-            <li>Responsive grid & components</li>
-            <li>Dark mode with one click</li>
-            <li>Accessible & keyboard friendly</li>
-          </ul>
+      <div class="segbuttons">
+        <button id="btnLogin" class="seg active">Login</button>
+        <button id="btnSignup" class="seg">Sign up</button>
+      </div>
+
+      <form id="authForm">
+        <div id="nameRow" class="form-row hidden">
+          <label>Name</label>
+          <input id="name" placeholder="Your name">
         </div>
-        <div class="hero-media">
-          <div class="card shadow-xl glass">
-            <div class="window-chrome">
-              <span></span><span></span><span></span>
-            </div>
-            <div class="mock">
-              <svg viewBox="0 0 800 450" role="img" aria-label="App screenshot placeholder">
-                <defs>
-                  <linearGradient id="grad" x1="0" x2="1" y1="0" y2="1">
-                    <stop offset="0%" stop-color="var(--primary-500)" />
-                    <stop offset="100%" stop-color="var(--primary-700)" />
-                  </linearGradient>
-                </defs>
-                <rect x="0" y="0" width="800" height="450" fill="url(#grad)"></rect>
-                <g fill="var(--surface)">
-                  <rect x="48" y="64" rx="12" width="704" height="64" opacity=".85"/>
-                  <rect x="48" y="152" rx="12" width="432" height="32" opacity=".9"/>
-                  <rect x="48" y="208" rx="12" width="560" height="32" opacity=".8"/>
-                  <rect x="48" y="264" rx="12" width="480" height="32" opacity=".75"/>
-                  <rect x="48" y="320" rx="12" width="624" height="32" opacity=".7"/>
-                </g>
-              </svg>
+        <div class="form-row">
+          <label>Email</label>
+          <input id="email" type="email" placeholder="you@example.com" required>
+        </div>
+        <div class="form-row">
+          <label>Password</label>
+          <input id="password" type="password" placeholder="••••••••" required>
+        </div>
+        <div id="authError" class="error hidden"></div>
+        <button class="primary wfull" type="submit">Continue</button>
+        <p class="tiny muted">Demo only — no server. Credentials are stored locally in your browser.</p>
+      </form>
+    </div>
+  </div>
+
+  <!-- App -->
+  <div id="app" class="app hidden">
+    <header class="app-header">
+      <div class="container header-inner">
+        <div>
+          <h1>Trading Journal Ledger</h1>
+          <p class="muted tiny">Minimal, local-first journal to log and review your trades.</p>
+        </div>
+        <div class="row gap">
+          <button id="btnNewEntry" class="primary">+ New Entry</button>
+          <button id="btnNewRule" class="outline">New rule</button>
+          <div class="account" id="accountMenu">
+            <button id="btnAvatar" class="avatar">?</button>
+            <div id="accountDropdown" class="dropdown hidden">
+              <div class="dropdown-head">
+                <div id="ddName" class="strong"></div>
+                <div id="ddEmail" class="muted tiny"></div>
+              </div>
+              <button id="btnLogout" class="dropdown-item">Logout</button>
             </div>
           </div>
         </div>
       </div>
-    </section>
+    </header>
 
-    <section id="features" class="section">
-      <div class="container">
-        <header class="section-head">
-          <h2>Thoughtful features. Better UX.</h2>
-          <p class="muted">Built-in components you can keep or swap for React/Vite later.</p>
-        </header>
-        <div class="grid cards-3">
-          <div class="card shadow">
-            <div class="icon">⚡</div>
-            <h3>Fast & Lightweight</h3>
-            <p>No bundlers needed. Pure HTML/CSS/JS that deploys instantly on Vercel.</p>
-          </div>
-          <div class="card shadow">
-            <div class="icon">🎨</div>
-            <h3>Modern Aesthetic</h3>
-            <p>Glassmorphism, soft shadows, smooth hover states, and fluid spacing scale.</p>
-          </div>
-          <div class="card shadow">
-            <div class="icon">🛡️</div>
-            <h3>Accessible</h3>
-            <p>Semantic HTML, focus outlines, and high-contrast modes out of the box.</p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div class="app-body">
+      <aside class="sidebar">
+        <div class="label tiny strong muted">Navigate</div>
+        <button class="side-item active" data-view="dashboard">🏠 Dashboard</button>
+        <button class="side-item" data-view="trade-log">📄 Trade log</button>
+        <button class="side-item" data-view="pre-trade">🧭 Pre-Trade</button>
+      </aside>
 
-    <section id="pricing" class="section alt">
-      <div class="container">
-        <header class="section-head">
-          <h2>Simple, fair pricing</h2>
-          <p class="muted">Start free. Upgrade when you grow.</p>
-        </header>
-        <div class="grid cards-3">
-          <div class="card price">
-            <div class="price-tier">Starter</div>
-            <div class="price-amount">₹0</div>
-            <ul class="price-points">
-              <li>All core UI</li>
-              <li>Email support</li>
-              <li>Community access</li>
+      <main class="content">
+        <!-- Stats -->
+        <section class="stats" id="statsRow"></section>
+
+        <!-- Dashboard -->
+        <section id="view-dashboard" class="view">
+          <div class="grid3">
+            <div class="card">
+              <div class="row between tiny"><span>Zella Score</span><span class="muted tiny">Win %</span></div>
+              <svg id="radar" viewBox="0 0 320 180" class="chart"></svg>
+              <div class="tiny">Your Score: <span id="zellaScore" class="strong"></span></div>
+              <div class="tiny muted">Avg win/loss & Profit factor</div>
+            </div>
+            <div class="card">
+              <div class="row between tiny"><span>Daily Net Cumulative P&L</span><span class="muted tiny">₹</span></div>
+              <svg id="cum" viewBox="0 0 320 180" class="chart"></svg>
+            </div>
+            <div class="card">
+              <div class="row between tiny"><span>Net Daily P&L</span><span class="muted tiny">₹</span></div>
+              <svg id="bars" viewBox="0 0 320 180" class="chart"></svg>
+            </div>
+          </div>
+        </section>
+
+        <!-- Trade log -->
+        <section id="view-trade-log" class="view hidden">
+          <!-- Controls -->
+          <div class="gridControls">
+            <div>
+              <label class="tiny">Search</label>
+              <input id="search" placeholder="Symbol, tag, note…">
+            </div>
+            <div>
+              <label class="tiny">Side</label>
+              <select id="sideFilter">
+                <option>ALL</option><option>Buy</option><option>Sell</option>
+              </select>
+            </div>
+            <div>
+              <label class="tiny">Account</label>
+              <select id="accountFilter"><option>ALL</option></select>
+            </div>
+            <div>
+              <label class="tiny">From</label>
+              <input id="startDate" type="date">
+            </div>
+            <div>
+              <label class="tiny">To</label>
+              <input id="endDate" type="date">
+            </div>
+            <div>
+              <label class="tiny">Sort</label>
+              <select id="sortBy">
+                <option value="date_desc">Date ↓</option>
+                <option value="date_asc">Date ↑</option>
+                <option value="pnl_desc">P&L ↓</option>
+                <option value="pnl_asc">P&L ↑</option>
+                <option value="symbol_asc">Symbol A→Z</option>
+                <option value="symbol_desc">Symbol Z→A</option>
+              </select>
+            </div>
+            <div class="row gap">
+              <button id="btnReset" class="outline">Reset filters</button>
+              <button id="btnClearAll" class="danger">Clear all data</button>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="tableWrap card">
+            <table class="table" id="tbl">
+              <thead>
+                <tr>
+                  <th>Date</th><th>Symbol</th><th>Side</th>
+                  <th class="right">Qty</th><th class="right">Price</th><th class="right">P&L</th>
+                  <th>Account</th><th>Rule</th><th>Notes</th><th class="center">Actions</th>
+                </tr>
+              </thead>
+              <tbody id="tbody">
+                <tr><td colspan="10" class="center muted">Loading…</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Pre-trade -->
+        <section id="view-pre-trade" class="view hidden">
+          <div class="card">
+            <h3>Pre-Trade Checklist</h3>
+            <ul class="list">
+              <li>Trend alignment confirmed</li>
+              <li>Risk defined (position size, SL)</li>
+              <li>Entry criteria met (trigger, confluence)</li>
+              <li>News/volatility checked</li>
+              <li>Plan documented (targets, management)</li>
             </ul>
-            <a class="button primary block" href="#">Choose Starter</a>
+            <p class="tiny muted">(You can customize this section later.)</p>
           </div>
-          <div class="card price featured shadow-xl">
-            <div class="badge">Popular</div>
-            <div class="price-tier">Pro</div>
-            <div class="price-amount">₹499/mo</div>
-            <ul class="price-points">
-              <li>Everything in Starter</li>
-              <li>Advanced components</li>
-              <li>Priority support</li>
-            </ul>
-            <a class="button primary block" href="#">Choose Pro</a>
-          </div>
-          <div class="card price">
-            <div class="price-tier">Teams</div>
-            <div class="price-amount">₹1,999/mo</div>
-            <ul class="price-points">
-              <li>Everything in Pro</li>
-              <li>Unlimited sites</li>
-              <li>Team workspace</li>
-            </ul>
-            <a class="button primary block" href="#">Choose Teams</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="faq" class="section">
-      <div class="container">
-        <header class="section-head">
-          <h2>FAQ</h2>
-          <p class="muted">Short and crisp answers.</p>
-        </header>
-        <details class="faq">
-          <summary>Can I use this with React later?</summary>
-          <p>Yes. Start static, then migrate sections into React/Vite when needed. The HTML structure maps directly to JSX.</p>
-        </details>
-        <details class="faq">
-          <summary>Is there a build step?</summary>
-          <p>No. This is a zero-build template—perfect for quick shipping on Vercel.</p>
-        </details>
-        <details class="faq">
-          <summary>How do I customize the colors?</summary>
-          <p>Open <code>styles.css</code> and tweak the <code>:root</code> CSS variables for instant theme updates.</p>
-        </details>
-      </div>
-    </section>
-  </main>
-
-  <footer class="site-footer">
-    <div class="container footer-inner">
-      <div class="brand-row">
-        <div class="brand-mark">★</div>
-        <strong>YourApp</strong>
-      </div>
-      <nav aria-label="Footer">
-        <a href="#features">Features</a>
-        <a href="#pricing">Pricing</a>
-        <a href="#faq">FAQ</a>
-      </nav>
-      <p class="muted small">© <span id="year"></span> YourApp. All rights reserved.</p>
+        </section>
+      </main>
     </div>
-  </footer>
+  </div>
+
+  <!-- Entry Modal -->
+  <dialog id="entryDialog" class="dialog">
+    <form id="entryForm" method="dialog" class="dialog-card">
+      <div class="row between borderb">
+        <h3 id="entryTitle">New Entry</h3>
+        <button type="button" id="entryClose" class="icon">✕</button>
+      </div>
+      <input type="hidden" id="id">
+      <div class="grid2">
+        <div class="form-row"><label>Date</label><input id="date" type="date" required></div>
+        <div class="form-row"><label>Symbol</label><input id="symbol" placeholder="e.g., EURUSD" required></div>
+        <div class="form-row"><label>Side</label>
+          <select id="side"><option>Buy</option><option>Sell</option></select>
+        </div>
+        <div class="form-row"><label>Quantity</label><input id="quantity" type="number" step="any"></div>
+        <div class="form-row"><label>Price</label><input id="price" type="number" step="any"></div>
+        <div class="form-row"><label>Realized P&L</label><input id="pnl" type="number" step="any"></div>
+        <div class="form-row"><label>Stop Loss</label><input id="stopLossMsg" placeholder="e.g., SL below swing low"></div>
+        <div class="form-row"><label>Target Point</label><input id="targetPointMsg" placeholder="e.g., TP at PDH / 2R"></div>
+        <div class="form-row"><label>Rule</label>
+          <select id="ruleId"><option value="">None</option></select>
+        </div>
+        <div class="form-row gridspan2"><label>Notes</label><textarea id="notes" rows="4"></textarea></div>
+      </div>
+      <div class="row end bordert gap">
+        <button type="button" id="entryCancel" class="outline">Cancel</button>
+        <button type="submit" class="primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Delete Modal -->
+  <dialog id="deleteDialog" class="dialog">
+    <div class="dialog-card">
+      <div class="row between borderb">
+        <h3>Delete entry?</h3>
+        <button type="button" id="deleteClose" class="icon">✕</button>
+      </div>
+      <p>Are you sure you want to delete it?</p>
+      <div class="row end bordert gap">
+        <button id="btnCancelDelete" class="outline">Cancel</button>
+        <button id="btnConfirmDelete" class="danger">Delete</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Rule Modal -->
+  <dialog id="ruleDialog" class="dialog">
+    <form id="ruleForm" method="dialog" class="dialog-card">
+      <div class="row between borderb">
+        <h3>New rule</h3>
+        <button type="button" id="ruleClose" class="icon">✕</button>
+      </div>
+      <div class="form-row"><label>Rule Title</label><input id="ruleTitle" placeholder="e.g., Only trade with trend"></div>
+      <div class="form-row"><label>Description</label><textarea id="ruleDesc" rows="4" placeholder="Describe the rule and rationale"></textarea></div>
+      <div class="form-row"><label>Tags (comma separated)</label><input id="ruleTags" placeholder="discipline, risk"></div>
+      <div class="row end bordert gap">
+        <button type="button" id="ruleCancel" class="outline">Cancel</button>
+        <button type="submit" class="primary">Save rule</button>
+      </div>
+    </form>
+  </dialog>
 
   <script src="./script.js" defer></script>
 </body>
