@@ -162,7 +162,8 @@ function bindFilters(){
 /* ---------- Derived ---------- */
 function filteredEntries(){
   const q = state.filters.search.trim().toLowerCase();
-  let rows = state.entries.filter(e=>{
+  // Use time range filtered entries as base
+  let rows = getFilteredEntriesByTimeRange().filter(e=>{
     if(state.filters.side !== "ALL" && e.side !== state.filters.side) return false;
     if(state.filters.account !== "ALL" && e.account !== state.filters.account) return false;
     if(state.filters.start && e.date < state.filters.start) return false;
@@ -265,7 +266,7 @@ function renderStats(){
   const profitPercentage = totalAmount > 0 ? Math.round((s.grossProfit / totalAmount) * 100) : 50;
   
   const items = [
-    {label:"Trades", value:s.n},
+    {label:"Net P&L", value:formatCurrency(s.totalPnl), color: s.totalPnl >= 0 ? '#065f46' : '#9f1239'},
     {
       label:"Win rate", 
       value:`${Math.round(s.winRate)}%`, 
@@ -273,7 +274,7 @@ function renderStats(){
       isWinRate: true,
       winAngle: winAngle
     },
-    {label:"Net P&L", value:formatCurrency(s.totalPnl), color: s.totalPnl >= 0 ? '#065f46' : '#9f1239'},
+    {label:"Trades", value:s.n},
     {
       label:"Profit Factor",
       value:s.profitFactor.toFixed(2),
@@ -566,6 +567,92 @@ function submitRule(e){
   renderAll();
 }
 
+/* ---------- Time Range Filter ---------- */
+let currentTimeRange = '30d';
+
+function initTimeRangeFilter() {
+  const timeRangeBtn = $("#timeRangeBtn");
+  const timeRangeDropdown = $("#timeRangeDropdown");
+  const selectedTimeRangeSpan = $("#selectedTimeRange");
+  
+  // Toggle dropdown
+  timeRangeBtn.onclick = (e) => {
+    e.stopPropagation();
+    timeRangeDropdown.classList.toggle('hidden');
+    timeRangeBtn.classList.toggle('active');
+  };
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    timeRangeDropdown.classList.add('hidden');
+    timeRangeBtn.classList.remove('active');
+  });
+  
+  // Handle time range selection
+  const timeRangeOptions = document.querySelectorAll('.time-range-option');
+  timeRangeOptions.forEach(option => {
+    const checkbox = option.querySelector('input[type="checkbox"]');
+    const label = option.querySelector('label');
+    
+    option.onclick = (e) => {
+      e.stopPropagation();
+      
+      // Uncheck all other checkboxes
+      timeRangeOptions.forEach(opt => {
+        const cb = opt.querySelector('input[type="checkbox"]');
+        if (cb !== checkbox) {
+          cb.checked = false;
+        }
+      });
+      
+      // Check this checkbox
+      checkbox.checked = true;
+      
+      // Update current time range
+      currentTimeRange = option.dataset.range;
+      selectedTimeRangeSpan.textContent = label.textContent;
+      
+      // Close dropdown
+      timeRangeDropdown.classList.add('hidden');
+      timeRangeBtn.classList.remove('active');
+      
+      // Update data
+      renderAll();
+    };
+  });
+}
+
+function getFilteredEntriesByTimeRange() {
+  const now = new Date();
+  let startDate = new Date();
+  
+  switch(currentTimeRange) {
+    case '24h':
+      startDate.setDate(now.getDate() - 1);
+      break;
+    case '7d':
+      startDate.setDate(now.getDate() - 7);
+      break;
+    case '30d':
+      startDate.setDate(now.getDate() - 30);
+      break;
+    case '365d':
+      startDate.setDate(now.getDate() - 365);
+      break;
+    case 'custom':
+      // For now, default to 30 days. Can be extended for custom date picker
+      startDate.setDate(now.getDate() - 30);
+      break;
+    default:
+      startDate.setDate(now.getDate() - 30);
+  }
+  
+  return state.entries.filter(entry => {
+    const entryDate = new Date(entry.date);
+    return entryDate >= startDate && entryDate <= now;
+  });
+}
+
 /* ---------- Mount ---------- */
 function renderAll(){
   renderHeader();
@@ -849,13 +936,13 @@ function initTradingCalendar() {
     
     if (isOtherMonth) {
       dayElement.style.opacity = '0.3';
+      dayElement.classList.add('no-trading');
+      dayElement.innerHTML = `<div class="day-number">${dayNumber}</div>`;
+      return dayElement;
     }
     
-    // Check if this day has trades (sample data)
-    const hasTradeData = isCurrentMonth && (dayNumber === 2 || dayNumber === 3);
-    if (hasTradeData) {
-      dayElement.classList.add('has-trades');
-    }
+    // Sample trade data - replace with real data from your trading system
+    const tradeData = getTradeDataForDay(dayNumber);
     
     // Today highlighting
     const today = new Date();
@@ -865,16 +952,59 @@ function initTradingCalendar() {
       dayElement.classList.add('selected');
     }
     
-    dayElement.innerHTML = `
-      <div class="day-number">${dayNumber}</div>
-      ${hasTradeData ? `
-        <div class="day-amount">$${dayNumber === 2 ? '817' : '183'}</div>
-        <div class="day-trades">${dayNumber === 2 ? '1' : '3'} trade${dayNumber === 3 ? 's' : ''}</div>
-        <div class="day-percentage">${dayNumber === 2 ? '100.0%' : '23.33%'}</div>
-      ` : ''}
-    `;
+    if (!tradeData) {
+      // No trading day
+      dayElement.classList.add('no-trading');
+      dayElement.innerHTML = `<div class="day-number">${dayNumber}</div>`;
+    } else if (tradeData.isWinning) {
+      // Winning trade day
+      dayElement.classList.add('winning-trade');
+      dayElement.innerHTML = `
+        <div class="day-number">${dayNumber}</div>
+        <div class="trade-amount">+₹${tradeData.amount.toLocaleString()}</div>
+        <div class="trade-stats">Total Trades: ${tradeData.totalTrades}</div>
+        <div class="trade-stats">Accuracy: ${tradeData.accuracy}%</div>
+        <div class="trade-stats">Change: ${tradeData.change}%</div>
+        <button class="view-button" onclick="viewTradeDetails(${dayNumber})">View</button>
+      `;
+    } else {
+      // Losing trade day
+      dayElement.classList.add('losing-trade');
+      dayElement.innerHTML = `
+        <div class="day-number">${dayNumber}</div>
+        <div class="trade-amount">-₹${tradeData.amount.toLocaleString()}</div>
+        <div class="trade-stats">Total Trades: ${tradeData.totalTrades}</div>
+        <div class="trade-stats">Accuracy: ${tradeData.accuracy}%</div>
+        <div class="trade-stats">Change: ${tradeData.change}%</div>
+        <button class="view-button" onclick="viewTradeDetails(${dayNumber})">View</button>
+      `;
+    }
     
     return dayElement;
+  }
+  
+  // Helper function to get trade data for a specific day
+  function getTradeDataForDay(dayNumber) {
+    // Sample data - replace with real data from your trading system
+    const sampleTradeData = {
+      2: null, // No trading
+      3: { // Winning trade
+        isWinning: true,
+        amount: 5600,
+        totalTrades: 2,
+        accuracy: 100,
+        change: 5
+      },
+      4: { // Losing trade
+        isWinning: false,
+        amount: 5600,
+        totalTrades: 2,
+        accuracy: 100,
+        change: 5
+      }
+    };
+    
+    return sampleTradeData[dayNumber] || null;
   }
   
   function renderWeeklyStats() {
@@ -921,6 +1051,14 @@ function initTradingCalendar() {
   renderTradingCalendar();
 }
 
+// Function to handle view button clicks
+function viewTradeDetails(dayNumber) {
+  console.log(`Viewing trade details for day ${dayNumber}`);
+  // You can implement navigation to detailed trade view here
+  // For example: show a modal with detailed trade information
+  // or navigate to the trade log filtered by that day
+}
+
 /* ---------- Boot ---------- */
 loadAll();
 initAuth();
@@ -930,6 +1068,7 @@ initFilters();
 initModals();
 initCustomCalendar();
 initTradingCalendar();
+initTimeRangeFilter();
 
 // Bypass auth for testing
 state.user = { name: "Test User", email: "test@example.com" };

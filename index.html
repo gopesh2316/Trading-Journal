@@ -91,8 +91,40 @@
 
     <div class="app-body">
       <main class="content">
-        <!-- Greeting -->
-        <div class="greeting" id="greetingMessage"></div>
+        <!-- Time Range Filter -->
+        <div class="time-range-section">
+          <!-- Greeting -->
+          <div class="greeting" id="greetingMessage"></div>
+          
+          <div class="time-range-filter">
+            <button class="time-range-btn" id="timeRangeBtn">
+              <span id="selectedTimeRange">Last 30 days</span>
+              <span class="material-icons">expand_more</span>
+            </button>
+            <div class="time-range-dropdown hidden" id="timeRangeDropdown">
+              <div class="time-range-option" data-range="24h">
+                <input type="checkbox" id="range24h">
+                <label for="range24h">Last 24h</label>
+              </div>
+              <div class="time-range-option" data-range="7d">
+                <input type="checkbox" id="range7d">
+                <label for="range7d">Last 7 days</label>
+              </div>
+              <div class="time-range-option" data-range="30d">
+                <input type="checkbox" id="range30d" checked>
+                <label for="range30d">Last 30 days</label>
+              </div>
+              <div class="time-range-option" data-range="365d">
+                <input type="checkbox" id="range365d">
+                <label for="range365d">Last 365 days</label>
+              </div>
+              <div class="time-range-option" data-range="custom">
+                <input type="checkbox" id="rangeCustom">
+                <label for="rangeCustom">Custom range</label>
+              </div>
+            </div>
+          </div>
+        </div>
         
         <!-- Stats -->
         <section class="stats" id="statsRow"></section>
@@ -132,9 +164,10 @@
                 </button>
               </div>
               <div class="calendar-monthly-stats">
+                <span class="monthly-days">2 days</span>
+                <span class="separator">⋅</span>
                 <span class="monthly-label">Monthly stats:</span>
                 <span class="monthly-value">$1K</span>
-                <span class="monthly-days">2 days</span>
               </div>
             </div>
             

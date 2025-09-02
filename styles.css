@@ -162,15 +162,102 @@ body{background:var(--bg);color:var(--text);}
 .greeting{
   font-size:15px;
   font-weight:700;
-  color:#6a6a6a;
-  margin-bottom:20px;
+  color:#404040;
+  margin-bottom:0;
   text-align:left;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
-  width:100%;
-  max-width:1320px;
+  flex:1;
   padding: 10px 3px 5px 3px
+}
+
+/* Time Range Filter */
+.time-range-section{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.time-range-filter{
+  position:relative;
+}
+
+.time-range-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:8px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:500;
+  color:var(--text);
+  transition:all 0.2s ease;
+  box-shadow:var(--shadow);
+}
+
+.time-range-btn:hover{
+  border-color:#d1d5db;
+  background:#f9fafb;
+}
+
+.time-range-btn .material-icons{
+  font-size:18px;
+  color:var(--muted);
+  transition:transform 0.2s ease;
+}
+
+.time-range-btn.active .material-icons{
+  transform:rotate(180deg);
+}
+
+.time-range-dropdown{
+  position:absolute;
+  top:calc(100% + 4px);
+  right:0;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 4px 12px rgba(0,0,0,0.1);
+  z-index:1000;
+  min-width:180px;
+  padding:8px 0;
+}
+
+.time-range-dropdown.hidden{
+  display:none;
+}
+
+.time-range-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 16px;
+  cursor:pointer;
+  transition:background 0.2s ease;
+}
+
+.time-range-option:hover{
+  background:#f3f4f6;
+}
+
+.time-range-option input[type="checkbox"]{
+  margin:0;
+  width:16px;
+  height:16px;
+  accent-color:var(--primary);
+}
+
+.time-range-option label{
+  font-size:14px;
+  color:var(--text);
+  cursor:pointer;
+  flex:1;
+  margin:0;
 }
 
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;margin-bottom:12px}
@@ -193,7 +280,7 @@ body{background:var(--bg);color:var(--text);}
   display:flex;
   align-items:center;
   justify-content:space-between;
-  padding:16px 20px;
+  padding:10px 20px;
   border-bottom:1px solid var(--border);
   background:#fafafa;
 }
@@ -246,6 +333,7 @@ body{background:var(--bg);color:var(--text);}
   align-items:center;
   gap:8px;
   font-size:14px;
+  padding-right: 9px;
 }
 
 .monthly-label{
@@ -263,17 +351,24 @@ body{background:var(--bg);color:var(--text);}
   font-weight:600;
 }
 
+.separator{
+  color:var(--muted);
+  font-weight:600;
+}
+
 .calendar-grid-container{
   display:flex;
   padding:20px;
+  align-items:start;
 }
 
 .calendar-main-grid{
   display:grid;
-  grid-template-columns:repeat(7,1fr) auto;
-  gap:3px;
+  grid-template-columns:repeat(7,1fr) 120px;
+  gap:8px;
   flex:1;
-  margin-right:20px;
+  margin-right:0px;
+  align-items:start;
 }
 
 .calendar-column{
@@ -298,18 +393,136 @@ body{background:var(--bg);color:var(--text);}
   background:#fff;
   display:flex;
   flex-direction:column;
-  padding:8px;
+  padding:12px;
   cursor:pointer;
   transition:all 0.2s ease;
+  border-radius:8px;
+  position:relative;
+  min-height:120px;
 }
 
 .calendar-day:hover{
   background:#f5f6f9;
+  border-color:#d1d5db;
 }
 
-.calendar-day.has-trades{
+/* No Trading Day State */
+.calendar-day.no-trading{
+  background:#fff;
+  border:1px solid #e5e7eb;
+  position:relative;
+}
+
+.calendar-day.no-trading .day-number{
+  position:absolute;
+  top:8px;
+  right:8px;
+  font-size:16px;
+  font-weight:600;
+  color:#374151;
+  margin:0;
+}
+
+/* Winning Trade Day State */
+.calendar-day.winning-trade{
   background:#ecfdf5;
-  border-color:#10b981;
+  border:1px solid #00b97c9e;
+  padding:12px;
+  text-align:left;
+}
+
+.calendar-day.winning-trade .day-number{
+  position:absolute;
+  top:8px;
+  right:8px;
+  font-size:16px;
+  font-weight:600;
+  color:#065f46;
+}
+
+.calendar-day.winning-trade .trade-amount{
+  font-size:18px;
+  font-weight:700;
+  color:#059669;
+  margin-bottom:8px;
+  text-align:left;
+}
+
+.calendar-day.winning-trade .trade-stats{
+  font-size:12px;
+  color:#065f46;
+  margin-bottom:2px;
+  text-align:left;
+}
+
+.calendar-day.winning-trade .view-button{
+  position:absolute;
+  bottom:8px;
+  right:8px;
+  background:#cbffe2;
+  color:#00a35f;
+  border:none;
+  padding:4px 8px;
+  border-radius:40px;
+  font-size:11px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+
+.calendar-day.winning-trade .view-button:hover{
+  background:#b9ffd2;
+}
+
+/* Losing Trade Day State */
+.calendar-day.losing-trade{
+  background:#fff2f2;
+  border:1px solid #ef444478;
+  padding:12px;
+  text-align:left;
+}
+
+.calendar-day.losing-trade .day-number{
+  position:absolute;
+  top:8px;
+  right:8px;
+  font-size:16px;
+  font-weight:600;
+  color:#7f1d1d;
+}
+
+.calendar-day.losing-trade .trade-amount{
+  font-size:18px;
+  font-weight:700;
+  color:#dc2626;
+  margin-bottom:8px;
+  text-align:left;
+}
+
+.calendar-day.losing-trade .trade-stats{
+  font-size:12px;
+  color:#7f1d1d;
+  margin-bottom:2px;
+  text-align:left;
+}
+
+.calendar-day.losing-trade .view-button{
+  position:absolute;
+  bottom:8px;
+  right:8px;
+  background:#ffe1e1;
+  color:#df0000;
+  border:none;
+  padding:4px 8px;
+  border-radius:40px;
+  font-size:11px;
+  font-weight:500;
+  cursor:pointer;
+  transition:all 0.2s ease;
+}
+
+.calendar-day.losing-trade .view-button:hover{
+  background:#ffd3d3;
 }
 
 .calendar-day.selected{
@@ -340,6 +553,12 @@ body{background:var(--bg);color:var(--text);}
   color:var(--muted);
 }
 
+/* Legacy classes for backward compatibility */
+.calendar-day.has-trades{
+  background:#ecfdf5;
+  border-color:#10b981;
+}
+
 .calendar-sidebar-stats{
   width:120px;
   display:none;
@@ -367,7 +586,8 @@ body{background:var(--bg);color:var(--text);}
   display:flex;
   flex-direction:column;
   justify-content:center;
-  min-width:120px;
+  width:120px;
+  align-self:stretch;
 }
 
 .week-label{
@@ -421,6 +641,8 @@ body{background:var(--bg);color:var(--text);}
   border-radius: 50%;
   background: white;
 }
+
+
 
 /* Profit Factor Horizontal Progress */
 .profit-factor-container {
@@ -614,7 +836,7 @@ body{background:var(--bg);color:var(--text);}
 }
 
 .calendar-day.selected {
-  background: #3b82f6;
+  background:#f0f7ff;
   color: white;
 }
 
