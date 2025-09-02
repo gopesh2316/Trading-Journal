@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -49,51 +49,47 @@
           <h1>EdgeBook</h1>
           <p class="muted tiny">Track every trade. Master every move.</p>
         </div>
+        <div class="header-nav">
+          <button class="nav-item active" data-view="dashboard">
+            <span class="nav-icon"><span class="material-icons">dashboard</span></span>
+            <span class="nav-text">Dashboard</span>
+          </button>
+          <button class="nav-item" data-view="trade-log">
+            <span class="nav-icon"><span class="material-icons">table_rows</span></span>
+            <span class="nav-text">Trade Log</span>
+          </button>
+          <button class="nav-item" data-view="pre-trade">
+            <span class="nav-icon"><span class="material-icons">gps_fixed</span></span>
+            <span class="nav-text">Pre-Trade</span>
+          </button>
+        </div>
         <div class="row gap">
           <button id="btnNewEntry" class="primary">+ New Entry</button>
           <button id="btnNewRule" class="outline">New rule</button>
+          <div class="header-user">
+            <div class="user-menu" id="accountMenu">
+              <div class="user-avatar" id="userAvatar">?</div>
+              <div id="accountDropdown" class="user-dropdown hidden">
+                <button class="user-dropdown-item" id="btnSvgAvatars">
+                  <span class="material-icons">auto_awesome</span>
+                  <span>SVG Avatars</span>
+                </button>
+                <button class="user-dropdown-item" id="btnRemoveAvatar">
+                  <span class="material-icons">account_circle</span>
+                  <span>Use Initials</span>
+                </button>
+                <button class="user-dropdown-item" id="btnLogout">
+                  <span class="material-icons">logout</span>
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
     <div class="app-body">
-      <aside class="sidebar">
-        <button class="side-item active" data-view="dashboard">
-          <span class="side-icon"><i class="fas fa-chart-line"></i></span>
-          <span class="side-text">Dashboard</span>
-        </button>
-        <button class="side-item" data-view="trade-log">
-          <span class="side-icon"><i class="fas fa-list-alt"></i></span>
-          <span class="side-text">Trade Log</span>
-        </button>
-        <button class="side-item" data-view="pre-trade">
-          <span class="side-icon"><i class="fas fa-crosshairs"></i></span>
-          <span class="side-text">Pre-Trade</span>
-        </button>
-
-        <!-- User Profile Section at Bottom -->
-        <div class="sidebar-user">
-          <div class="user-avatar" id="userAvatar">?</div>
-          <div class="user-info">
-            <div class="user-name" id="ddName">User Name</div>
-            <div class="user-email" id="ddEmail">user@example.com</div>
-          </div>
-          <div class="user-menu" id="accountMenu">
-            <button class="user-menu-btn" id="userMenuBtn"><i class="fas fa-ellipsis-v"></i></button>
-            <div id="accountDropdown" class="user-dropdown hidden">
-              <button class="user-dropdown-item" id="btnSettings">
-                <i class="fas fa-cog"></i>
-                <span>Settings</span>
-              </button>
-              <button class="user-dropdown-item" id="btnLogout">
-                <i class="fas fa-sign-out-alt"></i>
-                <span>Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </aside>
-
       <main class="content">
         <!-- Greeting -->
         <div class="greeting" id="greetingMessage"></div>
@@ -125,14 +121,14 @@
             <div class="calendar-header-section">
               <div class="calendar-nav-controls">
                 <button class="calendar-nav-btn" id="prevMonthBtn">
-                  <i class="fas fa-chevron-left"></i>
+                  <span class="material-icons">chevron_left</span>
                 </button>
                 <div class="calendar-current-month">
                   <span id="currentMonth">June 2025</span>
                   <span class="current-month-badge" id="currentMonthBadge">This month</span>
                 </div>
                 <button class="calendar-nav-btn" id="nextMonthBtn">
-                  <i class="fas fa-chevron-right"></i>
+                  <span class="material-icons">chevron_right</span>
                 </button>
               </div>
               <div class="calendar-monthly-stats">
@@ -248,11 +244,11 @@
             <div class="custom-calendar" id="customCalendar">
               <div class="calendar-header">
                 <button type="button" class="calendar-nav" id="prevMonth">
-                  <i class="fas fa-chevron-left"></i>
+                  <span class="material-icons">chevron_left</span>
                 </button>
                 <div class="calendar-month-year" id="monthYear"></div>
                 <button type="button" class="calendar-nav" id="nextMonth">
-                  <i class="fas fa-chevron-right"></i>
+                  <span class="material-icons">chevron_right</span>
                 </button>
               </div>
               <div class="calendar-grid" id="calendarGrid"></div>
@@ -295,6 +291,45 @@
       <div class="row end bordert gap">
         <button id="btnCancelDelete" class="outline">Cancel</button>
         <button id="btnConfirmDelete" class="danger">Delete</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- SVG Avatar Selector Modal -->
+  <dialog id="svgAvatarDialog" class="dialog">
+    <div class="dialog-card">
+      <div class="row between borderb">
+        <h3>Choose SVG Avatar</h3>
+        <button type="button" id="svgAvatarClose" class="icon">✕</button>
+      </div>
+      <div class="svg-avatar-grid">
+        <div class="svg-avatar-option" data-svg="user">
+          <span class="material-icons">person</span>
+          <span>User</span>
+        </div>
+        <div class="svg-avatar-option" data-svg="bull">
+          <span class="material-icons">trending_up</span>
+          <span>Bull Trader</span>
+        </div>
+        <div class="svg-avatar-option" data-svg="bear">
+          <span class="material-icons">trending_down</span>
+          <span>Bear Trader</span>
+        </div>
+        <div class="svg-avatar-option" data-svg="diamond">
+          <span class="material-icons">diamond</span>
+          <span>Diamond Hands</span>
+        </div>
+        <div class="svg-avatar-option" data-svg="star">
+          <span class="material-icons">star</span>
+          <span>Star Trader</span>
+        </div>
+        <div class="svg-avatar-option" data-svg="dollar">
+          <span class="material-icons">attach_money</span>
+          <span>Money</span>
+        </div>
+      </div>
+      <div class="row end bordert gap">
+        <button id="svgAvatarCancel" class="outline">Cancel</button>
       </div>
     </div>
   </dialog>

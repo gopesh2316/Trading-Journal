@@ -1,0 +1,81 @@
+/* Custom Icon Examples for Trading Journal */
+
+/* Example 1: Using a local image file */
+.user-avatar.custom-local {
+  background-image: url('./images/avatar.png');
+}
+
+/* Example 2: Using Base64 encoded image */
+.user-avatar.custom-base64 {
+  background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMzIiIGhlaWdodD0iMzIiIHZpZXdCb3g9IjAgMCAzMiAzMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTYiIGN5PSIxNiIgcj0iMTYiIGZpbGw9IiM0Yjk1ZmYiLz4KPHN2ZyB3aWR0aD0iMTYiIGhlaWdodD0iMTYiIHZpZXdCb3g9IjAgMCAxNiAxNiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTggNEMxMC4yMDkxIDQgMTIgNS43OTA5IDEyIDhDMTIgMTAuMjA5MSAxMC4yMDkxIDEyIDggMTJDNS43OTA5IDEyIDQgMTAuMjA5MSA0IDhDNCA1Ljc5MDkgNS43OTA5IDQgOCA0WiIgZmlsbD0id2hpdGUiLz4KPC9zdmc+Cjwvc3ZnPgo=');
+}
+
+/* Example 3: Using CSS gradients as avatar background */
+.user-avatar.custom-gradient {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+/* Example 4: Multiple background images */
+.user-avatar.custom-pattern {
+  background-image: 
+    url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">💼</text></svg>');
+}
+
+/* Example 5: Custom trading-themed icons */
+.user-avatar.trader-bull {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.user-avatar.trader-bull::after {
+  content: "📈";
+  font-size: 16px;
+}
+
+.user-avatar.trader-bear {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.user-avatar.trader-bear::after {
+  content: "📉";
+  font-size: 16px;
+}
+
+/* Example 6: Animated avatar (subtle pulse) */
+.user-avatar.animated {
+  animation: avatarPulse 2s infinite;
+}
+
+@keyframes avatarPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+/* Example 7: Custom border styles */
+.user-avatar.custom-border {
+  border: 3px solid #3b82f6;
+  box-shadow: 0 0 0 2px #ffffff, 0 0 0 4px #3b82f6;
+}
+
+/* Example 8: Icon font usage (if you want to use icon fonts) */
+.nav-icon.custom-icon::before {
+  font-family: 'Font Awesome 6 Free';
+  content: '\f201'; /* chart-area icon */
+}
+
+/* Example 9: SVG icons for navigation */
+.nav-icon.svg-dashboard {
+  background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>');
+  background-size: 16px;
+  background-repeat: no-repeat;
+  background-position: center;
+}
+
+/* Example 10: Different avatar shapes */
+.user-avatar.square {
+  border-radius: 8px; /* Square with rounded corners */
+}
+
+.user-avatar.hexagon {
+  border-radius: 0;
+  clip-path: polygon(50% 0%, 93.3% 25%, 93.3% 75%, 50% 100%, 6.7% 75%, 6.7% 25%);
+}
