@@ -282,7 +282,7 @@ function renderStats(){
       profitPercentage: profitPercentage
     },
     {label:"Avg P&L", value:formatCurrency(s.avgPnl), color: s.avgPnl >= 0 ? '#065f46' : '#9f1239'},
-    {label:"Wins", value:s.wins},
+    {label:"Wins / Losses", isWinsLosses: true, wins: s.wins, losses: s.losses},
   ];
   
   $("#statsRow").innerHTML = items.map(it=>{
@@ -308,6 +308,16 @@ function renderStats(){
               <div class="value">${it.value}</div>
             </div>
             <div class="horizontal-progress" style="--profit-percentage: ${it.profitPercentage}%"></div>
+          </div>
+        </div>
+      `;
+    }
+    if(it.isWinsLosses) {
+      return `
+        <div class="stat">
+          <div class="label">${it.label}</div>
+          <div class="value wins-losses-value">
+            <span class="wins-number">${it.wins}</span>/<span class="losses-number">${it.losses}</span>
           </div>
         </div>
       `;

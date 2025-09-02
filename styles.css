@@ -644,6 +644,20 @@ body{background:var(--bg);color:var(--text);}
 
 
 
+/* Wins/Losses Simple Value */
+.wins-losses-value {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.wins-number {
+  color: #10b981;
+}
+
+.losses-number {
+  color: #ef4444;
+}
+
 /* Profit Factor Horizontal Progress */
 .profit-factor-container {
   display: flex;
