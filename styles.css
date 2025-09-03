@@ -54,7 +54,7 @@ body{background:var(--bg);color:var(--text);}
 .nav-item:hover{background:#f5f6f9;}
 .nav-item.active{background:#efefef;border-color:var(--border);}
 .nav-icon{margin-right:8px;font-size:14px;width:16px;text-align:center;color:var(--muted);display:inline-flex;align-items:center;justify-content:center;height:16px}
-.nav-icon .material-icons{font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-top:3px}
+.nav-icon .material-icons{font-size:16px;line-height:1;display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin-top:1px}
 .nav-text{font-size:14px;font-weight:600}
 
 /* Header User Profile */
@@ -576,6 +576,37 @@ body{background:var(--bg);color:var(--text);}
   display:flex;
   flex-direction:column;
   justify-content:center;
+  transition:all 0.2s ease;
+}
+
+/* Winning Week Stats */
+.week-stat.winning-week{
+  background:#ecfdf5;
+  border:1px solid #00b97c9e;
+}
+
+.week-stat.winning-week .week-value{
+  color:#059669;
+}
+
+.week-stat.winning-week .week-label,
+.week-stat.winning-week .week-days{
+  color:#065f46;
+}
+
+/* Losing Week Stats */
+.week-stat.losing-week{
+  background:#fff2f2;
+  border:1px solid #ef444478;
+}
+
+.week-stat.losing-week .week-value{
+  color:#dc2626;
+}
+
+.week-stat.losing-week .week-label,
+.week-stat.losing-week .week-days{
+  color:#7f1d1d;
 }
 
 .week-stat-inline{
@@ -589,6 +620,35 @@ body{background:var(--bg);color:var(--text);}
   justify-content:center;
   width:120px;
   align-self:stretch;
+  transition:all 0.2s ease;
+}
+
+/* Winning Week Stats */
+.week-stat-inline.winning-week{
+  background:#ecfdf5ab;
+}
+
+.week-stat-inline.winning-week .week-value{
+  color:#059669;
+}
+
+.week-stat-inline.winning-week .week-label,
+.week-stat-inline.winning-week .week-days{
+  color:#065f46;
+}
+
+/* Losing Week Stats */
+.week-stat-inline.losing-week{
+  background:#fff2f29c;
+}
+
+.week-stat-inline.losing-week .week-value{
+  color:#dc2626;
+}
+
+.week-stat-inline.losing-week .week-label,
+.week-stat-inline.losing-week .week-days{
+  color:#7f1d1d;
 }
 
 .week-label{
@@ -687,16 +747,410 @@ body{background:var(--bg);color:var(--text);}
 
 
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px}
 .chart{width:100%;height:180px}
 
-.gridControls{display:grid;grid-template-columns:repeat(12,1fr);gap:10px;margin-bottom:12px}
-.gridControls>div:nth-child(1){grid-column:span 3}
-.gridControls>div:nth-child(2){grid-column:span 2}
-.gridControls>div:nth-child(3){grid-column:span 2}
-.gridControls>div:nth-child(4){grid-column:span 2}
-.gridControls>div:nth-child(5){grid-column:span 2}
-.gridControls>div:nth-child(6){grid-column:span 1}
+/* Donut Chart Styles */
+.donut-chart-container {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 180px;
+}
+
+.donut-center {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  z-index: 10;
+}
+
+.donut-total {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text);
+  line-height: 1;
+}
+
+.donut-label {
+  font-size: 0.75rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.donut-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 0.75rem;
+}
+
+.donut-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.donut-legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+
+/* Session Chart Styles */
+.session-legend {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: var(--muted);
+}
+
+.gridControls{
+  display:flex;
+  align-items:end;
+  gap:16px;
+  margin-bottom:16px;
+  flex-wrap:wrap;
+  background:#fff;
+  padding:20px;
+  border-radius:12px;
+  border:1px solid var(--border);
+  box-shadow:var(--shadow);
+}
+
+.gridControls>div{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:120px;
+  flex:1;
+}
+
+.gridControls>div:nth-child(2),
+.gridControls>div:nth-child(3){
+  flex:0.8;
+  min-width:100px;
+}
+
+.gridControls>div:nth-child(4),
+.gridControls>div:nth-child(5){
+  flex:0.8;
+  min-width:120px;
+}
+
+/* Date Filter Container - Separate class for date pickers */
+.date-filter-container{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-width:140px;
+  flex:1.2;
+}
+
+.gridControls input,
+.gridControls select{
+  padding:8px 12px;
+  border:1px solid #e5e7eb;
+  border-radius:6px;
+  font-size:14px;
+  background:#fff;
+  color:#111827;
+  transition:all 0.2s ease;
+  font-family:inherit;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 36px;
+}
+
+.gridControls input:focus,
+.gridControls select:focus{
+  outline:none;
+  border-color:#3b82f6;
+  box-shadow:0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Override any global select styles */
+.gridControls select,
+.gridControls select:focus,
+.gridControls select:hover {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 12px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  padding-right: 40px !important;
+}
+
+.gridControls select{
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  padding-right: 40px;
+  cursor: pointer;
+  text-indent: 0.01px;
+  text-overflow: '';
+}
+
+/* Filter Calendar Picker Specific Styles */
+.gridControls .date-picker-container {
+  position: relative;
+  width: 100%;
+}
+
+.gridControls .date-picker-input{
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+  background-position: right 12px center;
+  background-repeat: no-repeat;
+  background-size: 18px;
+  padding-right: 40px;
+  cursor: pointer;
+  width: 100%;
+}
+
+.gridControls .custom-calendar{
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  min-width: 280px;
+}
+
+.gridControls .custom-calendar .calendar-content {
+  padding: 12px;
+  margin-top: 4px;
+  display: none;
+  width: 100%;
+}
+
+.gridControls .custom-calendar .calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 0 4px;
+}
+
+.gridControls .custom-calendar .calendar-nav {
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  color: #6b7280;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  min-width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gridControls .custom-calendar .calendar-nav:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.gridControls .custom-calendar .calendar-month-year {
+  font-size: 13px;
+  font-weight: 600;
+  color: #111827;
+  text-align: center;
+  flex: 1;
+  margin: 0 8px;
+  white-space: nowrap;
+}
+
+.gridControls .custom-calendar .calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+}
+
+.gridControls .custom-calendar .calendar-day-header {
+  padding: 6px 2px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+}
+
+.gridControls .custom-calendar .calendar-day {
+  padding: 6px 2px;
+  text-align: center;
+  font-size: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #374151;
+  min-height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gridControls .custom-calendar .calendar-day:hover {
+  background: #f3f4f6;
+}
+
+.gridControls .custom-calendar .calendar-day.other-month {
+  color: #d1d5db;
+}
+
+.gridControls .custom-calendar .calendar-day.selected {
+  background: #3b82f6;
+  color: white;
+}
+
+.gridControls .custom-calendar .calendar-day.today {
+  background: #1f2937;
+  color: white;
+}
+
+.gridControls .custom-calendar .calendar-day.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+  color: #9ca3af;
+  background: #f3f4f6;
+}
+
+.gridControls .custom-calendar .calendar-day.disabled:hover {
+  background: #f3f4f6;
+  transform: none;
+}
+
+.gridControls .custom-calendar .calendar-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.gridControls .custom-calendar .calendar-btn {
+  background: none;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.gridControls .custom-calendar .calendar-btn.clear {
+  color: #6b7280;
+}
+
+.gridControls .custom-calendar .calendar-btn.clear:hover {
+  background: #f3f4f6;
+  color: #374151;
+}
+
+.gridControls .custom-calendar .calendar-btn.today {
+  color: #3b82f6;
+}
+
+.gridControls .custom-calendar .calendar-btn.today:hover {
+  background: #eff6ff;
+}
+
+/* Custom dropdown options styling */
+.gridControls select option {
+  background: #fff;
+  color: #111827;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.gridControls select option:hover {
+  background: #f3f4f6;
+}
+
+.gridControls select option:checked {
+  background: #3b82f6;
+  color: white;
+}
+
+/* Additional dropdown arrow removal */
+.gridControls select::-ms-expand {
+  display: none;
+}
+
+.gridControls select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.gridControls input:hover:not(:focus),
+.gridControls select:hover:not(:focus){
+  border-color:#d1d5db;
+}
+
+.gridControls input::placeholder{
+  color:#9ca3af;
+  font-weight:400;
+}
+
+.gridControls label{
+  font-size:12px;
+  font-weight:600;
+  color:#374151;
+  text-transform:uppercase;
+  letter-spacing:0.5px;
+}
+
+.gridControls>div:first-child{
+  flex:1;
+  min-width:120px;
+}
+
+.gridControls>div:last-child{
+  margin-left:auto;
+  flex-direction:row;
+  gap:8px;
+  flex:0;
+  min-width:120px;
+}
+
+.gridControls button{
+  padding:10px 18px;
+  border-radius:6px;
+  font-size:14px;
+  font-weight:600;
+  transition:all 0.2s ease;
+  cursor:pointer;
+  border:1px solid transparent;
+  min-width:100px;
+  border-color: var(--border)
+}
+
+.gridControls button:hover{
+  transform:translateY(0px);
+  
+}
 .tableWrap{overflow:auto}
 .table{width:100%;min-width:900px;border-collapse:collapse}
 .table th,.table td{padding:.8rem;border-bottom:1px solid var(--border);font-size:.92rem}
@@ -1119,6 +1573,21 @@ body{background:var(--bg);color:var(--text);}
   display: block;
 }
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:0px 17px;padding:20px 20px 0 20px}
+
+/* Charts Grid - Separate from other grid classes */
+.charts-grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  margin:12px 0;
+  width:100%;
+}
+
+.charts-grid .card{
+  min-height:280px;
+  display:flex;
+  flex-direction:column;
+}
 .gridspan2{grid-column:span 2}
 
 .auth{display:grid;place-items:center;min-height:100vh;padding:24px;background:#fff;}
@@ -1278,6 +1747,195 @@ body{background:var(--bg);color:var(--text);}
   color: var(--text);
 }
 
+.dark-mode .gridControls {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.dark-mode .gridControls input,
+.dark-mode .gridControls select {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.dark-mode .gridControls input:focus,
+.dark-mode .gridControls select:focus {
+  border-color: var(--accent);
+  background: var(--surface);
+}
+
+.dark-mode .gridControls input:hover:not(:focus),
+.dark-mode .gridControls select:hover:not(:focus) {
+  border-color: var(--muted);
+}
+
+.dark-mode .gridControls input::placeholder {
+  color: var(--muted);
+}
+
+.dark-mode .gridControls label {
+  color: var(--muted);
+}
+
+.dark-mode .gridControls select,
+.dark-mode .gridControls select:focus,
+.dark-mode .gridControls select:hover {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e") !important;
+  background-position: right 12px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 16px !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  -moz-appearance: none !important;
+  padding-right: 40px !important;
+}
+
+.dark-mode .gridControls .date-picker-input {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+}
+
+.dark-mode .gridControls .custom-calendar {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-nav {
+  color: var(--muted);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-nav:hover {
+  background: #334155;
+  color: var(--text);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-month-year {
+  color: var(--text);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day {
+  color: var(--text);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day:hover {
+  background: #334155;
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day.other-month {
+  color: var(--muted);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day.selected {
+  background: var(--accent);
+  color: white;
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day.today {
+  background: var(--primary-2);
+  color: var(--text);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day.disabled {
+  color: var(--muted);
+  background: #334155;
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-day.disabled:hover {
+  background: #334155;
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-footer {
+  border-top-color: var(--border);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-btn.clear {
+  color: var(--muted);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-btn.clear:hover {
+  background: #334155;
+  color: var(--text);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-btn.today {
+  color: var(--accent);
+}
+
+.dark-mode .gridControls .custom-calendar .calendar-btn.today:hover {
+  background: #1e3a8a;
+}
+
+.dark-mode .gridControls select option {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.dark-mode .gridControls select option:hover {
+  background: #334155;
+}
+
+.dark-mode .gridControls select option:checked {
+  background: var(--accent);
+  color: white;
+}
+
+/* Dark mode week stats */
+.dark-mode .week-stat-inline.winning-week {
+  background: #064e3b;
+  border-color: #065f46;
+}
+
+.dark-mode .week-stat-inline.winning-week .week-value {
+  color: #34d399;
+}
+
+.dark-mode .week-stat-inline.winning-week .week-label,
+.dark-mode .week-stat-inline.winning-week .week-days {
+  color: #6ee7b7;
+}
+
+.dark-mode .week-stat-inline.losing-week {
+  background: #7f1d1d;
+  border-color: #dc2626;
+}
+
+.dark-mode .week-stat-inline.losing-week .week-value {
+  color: #f87171;
+}
+
+.dark-mode .week-stat-inline.losing-week .week-label,
+.dark-mode .week-stat-inline.losing-week .week-days {
+  color: #fca5a5;
+}
+
+.dark-mode .week-stat.winning-week {
+  background: #064e3b;
+  border-color: #065f46;
+}
+
+.dark-mode .week-stat.winning-week .week-value {
+  color: #34d399;
+}
+
+.dark-mode .week-stat.winning-week .week-label,
+.dark-mode .week-stat.winning-week .week-days {
+  color: #6ee7b7;
+}
+
+.dark-mode .week-stat.losing-week {
+  background: #7f1d1d;
+  border-color: #dc2626;
+}
+
+.dark-mode .week-stat.losing-week .week-value {
+  color: #f87171;
+}
+
+.dark-mode .week-stat.losing-week .week-label,
+.dark-mode .week-stat.losing-week .week-days {
+  color: #fca5a5;
+}
+
 .dark-mode .currency-option {
   background: var(--surface);
   border-color: var(--border);
@@ -1294,10 +1952,65 @@ body{background:var(--bg);color:var(--text);}
   color: var(--accent);
 }
 
+@media(max-width: 1200px){
+  .gridControls{
+    gap:12px;
+  }
+  .gridControls>div{
+    min-width:100px;
+  }
+  .gridControls>div:nth-child(2),
+  .gridControls>div:nth-child(3){
+    flex:0.7;
+    min-width:90px;
+  }
+  .gridControls>div:nth-child(4),
+  .gridControls>div:nth-child(5){
+    flex:0.7;
+    min-width:110px;
+  }
+  
+  .date-filter-container{
+    flex:1;
+    min-width:130px;
+  }
+  
+  .charts-grid{
+    gap:10px;
+  }
+}
+
 @media(max-width: 900px){
   .header-nav{display:none}
   .grid3{grid-template-columns:1fr}
   .grid2{grid-template-columns:1fr}
-  .gridControls{grid-template-columns:1fr 1fr}
+  .charts-grid{grid-template-columns:1fr}
+  .gridControls{
+    flex-direction:column;
+    align-items:stretch;
+    gap:12px;
+    padding:16px;
+  }
+  .gridControls>div{
+    min-width:auto;
+    flex:none;
+  }
+  .gridControls>div:nth-child(2),
+  .gridControls>div:nth-child(3),
+  .gridControls>div:nth-child(4),
+  .gridControls>div:nth-child(5){
+    flex:none;
+    min-width:auto;
+  }
+  
+  .date-filter-container{
+    flex:none;
+    min-width:auto;
+  }
+  .gridControls>div:last-child{
+    margin-left:0;
+    justify-content:center;
+    margin-top:8px;
+  }
 }
 

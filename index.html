@@ -152,6 +152,26 @@
             </div>
           </div>
 
+          <!-- Trading Sessions Performance -->
+          <div class="charts-grid">
+            <div class="card">
+              <div class="row between tiny"><span>Currency Pair Distribution</span><span class="muted tiny">Total Trades</span></div>
+              <div class="donut-chart-container">
+                <svg id="donutChart" viewBox="0 0 320 180" class="chart"></svg>
+                <div class="donut-center">
+                  <span id="totalTrades" class="donut-total">0</span>
+                  <span class="donut-label">Total</span>
+                </div>
+              </div>
+              <div id="donutLegend" class="donut-legend"></div>
+            </div>
+            <div class="card">
+              <div class="row between tiny"><span>Session Performance</span><span class="muted tiny">Trades</span></div>
+              <svg id="sessionChart" viewBox="0 0 320 180" class="chart"></svg>
+              <div id="sessionLegend" class="session-legend"></div>
+            </div>
+          </div>
+
           <!-- Calendar Container -->
           <section class="calendar-container">
             <div class="calendar-header-section">
@@ -202,16 +222,58 @@
               </select>
             </div>
             <div>
-              <label class="tiny">Account</label>
-              <select id="accountFilter"><option>ALL</option></select>
+              <label class="tiny">Session</label>
+              <select id="sessionFilter">
+                <option value="">ALL</option>
+                <option value="Sydney">Sydney</option>
+                <option value="Tokyo">Tokyo</option>
+                <option value="London">London</option>
+                <option value="New York">New York</option>
+              </select>
             </div>
-            <div>
+            <div class="date-filter-container">
               <label class="tiny">From</label>
-              <input id="startDate" type="date">
+              <div class="date-picker-container">
+                <input id="startDate" type="text" class="date-picker-input" placeholder="mm/dd/yyyy" readonly>
+                <div class="custom-calendar" id="startDateCalendar">
+                  <div class="calendar-header">
+                    <button type="button" class="calendar-nav" id="startPrevMonth">
+                      <span class="material-icons">chevron_left</span>
+                    </button>
+                    <div class="calendar-month-year" id="startMonthYear"></div>
+                    <button type="button" class="calendar-nav" id="startNextMonth">
+                      <span class="material-icons">chevron_right</span>
+                    </button>
+                  </div>
+                  <div class="calendar-grid" id="startCalendarGrid"></div>
+                  <div class="calendar-footer">
+                    <button type="button" class="calendar-btn clear" id="startClearDate">Clear</button>
+                    <button type="button" class="calendar-btn today" id="startTodayDate">Today</button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div>
+            <div class="date-filter-container">
               <label class="tiny">To</label>
-              <input id="endDate" type="date">
+              <div class="date-picker-container">
+                <input id="endDate" type="text" class="date-picker-input" placeholder="mm/dd/yyyy" readonly>
+                <div class="custom-calendar" id="endDateCalendar">
+                  <div class="calendar-header">
+                    <button type="button" class="calendar-nav" id="endPrevMonth">
+                      <span class="material-icons">chevron_left</span>
+                    </button>
+                    <div class="calendar-month-year" id="endMonthYear"></div>
+                    <button type="button" class="calendar-nav" id="endNextMonth">
+                      <span class="material-icons">chevron_right</span>
+                    </button>
+                  </div>
+                  <div class="calendar-grid" id="endCalendarGrid"></div>
+                  <div class="calendar-footer">
+                    <button type="button" class="calendar-btn clear" id="endClearDate">Clear</button>
+                    <button type="button" class="calendar-btn today" id="endTodayDate">Today</button>
+                  </div>
+                </div>
+              </div>
             </div>
             <div>
               <label class="tiny">Sort</label>
@@ -226,7 +288,6 @@
             </div>
             <div class="row gap">
               <button id="btnReset" class="outline">Reset filters</button>
-              <button id="btnClearAll" class="danger">Clear all data</button>
             </div>
           </div>
 
@@ -235,7 +296,7 @@
             <table class="table" id="tbl">
               <thead>
                 <tr>
-                  <th>Date</th><th>Symbol</th><th>Side</th>
+                  <th>Date</th><th>Symbol</th><th>Side</th><th>Session</th>
                   <th class="right">Qty</th><th class="right">Price</th><th class="right">P&L</th>
                   <th>Account</th><th>Rule</th><th>Notes</th><th class="center">Actions</th>
                 </tr>
@@ -299,6 +360,15 @@
         <div class="form-row"><label>Symbol</label><input id="symbol" placeholder="e.g., EURUSD" required></div>
         <div class="form-row"><label>Side</label>
           <select id="side"><option>Buy</option><option>Sell</option></select>
+        </div>
+        <div class="form-row"><label>Trading Session</label>
+          <select id="tradingSession">
+            <option value="">Select Session</option>
+            <option value="Sydney">Sydney</option>
+            <option value="Tokyo">Tokyo</option>
+            <option value="London">London</option>
+            <option value="New York">New York</option>
+          </select>
         </div>
         <div class="form-row"><label>Quantity</label><input id="quantity" type="number" step="any" placeholder="e.g., 1000"></div>
         <div class="form-row"><label>Price</label><input id="price" type="number" step="any" placeholder="e.g., 1.2421"></div>

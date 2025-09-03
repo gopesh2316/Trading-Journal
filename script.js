@@ -83,6 +83,11 @@ const demoEntries = [
   { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"MSFT", side:"Buy", quantity:200, price:300, fees:3, pnl:100, account:"Primary", tags:["stock"], notes:"Test trade 3 - Win"},
   { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"TSLA", side:"Sell", quantity:10, price:800, fees:5, pnl:-75, account:"Primary", tags:["stock"], notes:"Test trade 4 - Loss"},
   { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"AMZN", side:"Buy", quantity:30, price:3200, fees:4, pnl:150, account:"Primary", tags:["stock"], notes:"Test trade 5 - Win"},
+  // Additional demo data for different weeks to test dynamic week stats
+  { id: uid(), date: normalizeDate(new Date(Date.now()-7*86400000).toISOString().slice(0,10)), symbol:"SPY", side:"Buy", quantity:50, price:450, fees:2, pnl:-120, account:"Primary", tags:["stock"], notes:"Week 1 - Losing trade"},
+  { id: uid(), date: normalizeDate(new Date(Date.now()-8*86400000).toISOString().slice(0,10)), symbol:"QQQ", side:"Sell", quantity:30, price:380, fees:1.5, pnl:-80, account:"Primary", tags:["stock"], notes:"Week 1 - Another losing trade"},
+  { id: uid(), date: normalizeDate(new Date(Date.now()-14*86400000).toISOString().slice(0,10)), symbol:"IWM", side:"Buy", quantity:100, price:180, fees:3, pnl:250, account:"Primary", tags:["stock"], notes:"Week 2 - Winning trade"},
+  { id: uid(), date: normalizeDate(new Date(Date.now()-15*86400000).toISOString().slice(0,10)), symbol:"DIA", side:"Sell", quantity:20, price:350, fees:2, pnl:180, account:"Primary", tags:["stock"], notes:"Week 2 - Another winning trade"},
 ];
 
 /* ---------- State ---------- */
@@ -90,7 +95,7 @@ let state = {
   user: null,
   entries: [],
   rules: [],
-  filters: { search:"", side:"ALL", account:"ALL", start:"", end:"", sort:"date_desc" },
+  filters: { search:"", side:"ALL", session:"", start:"", end:"", sort:"date_desc" },
   activeView: "dashboard",
   deleteTarget: null,
   preferences: {
@@ -116,7 +121,14 @@ function loadAll(){
     updateCurrencySymbol(state.preferences.currency);
   }
 }
-function saveEntries(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries)); }catch{} }
+function saveEntries(){ 
+  try{ 
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries)); 
+    console.log("Entries saved to localStorage:", state.entries.length, "entries");
+  } catch(error) {
+    console.error("Error saving entries:", error);
+  }
+}
 function saveRules(){ try{ localStorage.setItem(RULES_KEY, JSON.stringify(state.rules)); }catch{} }
 function saveUser(){ try{ state.user ? localStorage.setItem(USER_KEY, JSON.stringify(state.user)) : localStorage.removeItem(USER_KEY); }catch{} }
 function savePreferences(){ try{ localStorage.setItem(PREFS_KEY, JSON.stringify(state.preferences)); }catch{} }
@@ -210,29 +222,19 @@ function initNavigation(){
 function initFilters(){
   $("#search").oninput = (e)=>{ state.filters.search = e.target.value; renderTable(); renderStats(); };
   $("#sideFilter").onchange = (e)=>{ state.filters.side = e.target.value; renderTable(); renderStats(); };
-  $("#accountFilter").onchange = (e)=>{ state.filters.account = e.target.value; renderTable(); renderStats(); };
   $("#startDate").onchange = (e)=>{ state.filters.start = e.target.value; renderTable(); renderStats(); };
   $("#endDate").onchange = (e)=>{ state.filters.end = e.target.value; renderTable(); renderStats(); };
+  $("#sessionFilter").onchange = (e)=>{ state.filters.session = e.target.value; renderTable(); renderStats(); };
   $("#sortBy").onchange = (e)=>{ state.filters.sort = e.target.value; renderTable(); };
-  $("#btnReset").onclick = ()=>{ state.filters = {search:"", side:"ALL", account:"ALL", start:"", end:"", sort:"date_desc"}; bindFilters(); renderTable(); renderStats(); };
-  $("#btnClearAll").onclick = ()=>{
-    if(confirm("Clear ALL journal data? This will remove every entry.")){
-      state.entries = []; saveEntries(); renderAll();
-    }
-  };
+  $("#btnReset").onclick = ()=>{ state.filters = {search:"", side:"ALL", session:"", start:"", end:"", sort:"date_desc"}; bindFilters(); renderTable(); renderStats(); };
 }
 function bindFilters(){
   $("#search").value = state.filters.search;
   $("#sideFilter").value = state.filters.side;
-  $("#accountFilter").value = state.filters.account;
   $("#startDate").value = state.filters.start;
   $("#endDate").value = state.filters.end;
+  $("#sessionFilter").value = state.filters.session;
   $("#sortBy").value = state.filters.sort;
-  // Accounts list
-  const accounts = ["ALL", ...Array.from(new Set(state.entries.map(e=>e.account).filter(Boolean)))];
-  const sel = $("#accountFilter");
-  sel.innerHTML = accounts.map(a=>`<option>${a}</option>`).join("");
-  sel.value = state.filters.account;
 }
 
 /* ---------- Derived ---------- */
@@ -240,10 +242,10 @@ function filteredEntries(){
   const q = state.filters.search.trim().toLowerCase();
   // Use time range filtered entries as base
   let rows = getFilteredEntriesByTimeRange().filter(e=>{
-    if(state.filters.side !== "ALL" && e.side !== state.filters.side) return false;
-    if(state.filters.account !== "ALL" && e.account !== state.filters.account) return false;
-    if(state.filters.start && e.date < state.filters.start) return false;
-    if(state.filters.end && e.date > state.filters.end) return false;
+      if(state.filters.side !== "ALL" && e.side !== state.filters.side) return false;
+  if(state.filters.session && e.tradingSession !== state.filters.session) return false;
+  if(state.filters.start && e.date < state.filters.start) return false;
+  if(state.filters.end && e.date > state.filters.end) return false;
     if(!q) return true;
     const hay = `${e.symbol} ${e.side} ${e.account||""} ${(e.tags||[]).join(" ")} ${e.ruleTitle||""} ${e.notes||""}`.toLowerCase();
     return hay.includes(q);
@@ -410,7 +412,7 @@ function renderTable(){
   const rows = filteredEntries();
   const tb = $("#tbody");
   if(rows.length === 0){
-    tb.innerHTML = `<tr><td colspan="10" class="center muted">No entries. Click <span class="strong">New Entry</span> to add your first trade.</td></tr>`;
+    tb.innerHTML = `<tr><td colspan="11" class="center muted">No entries. Click <span class="strong">New Entry</span> to add your first trade.</td></tr>`;
     return;
   }
   tb.innerHTML = rows.map(e=>`
@@ -419,6 +421,7 @@ function renderTable(){
       <td class="strong">${e.symbol}</td>
       <td>${e.side === "Buy" ? `<span style="background:#ecfdf5;color:#065f46;padding:.2rem .4rem;border-radius:8px;font-size:.8rem">Buy</span>`
                               : `<span style="background:#fff1f2;color:#9f1239;padding:.2rem .4rem;border-radius:8px;font-size:.8rem">Sell</span>`}</td>
+      <td>${e.tradingSession || "—"}</td>
       <td class="right">${e.quantity ?? "—"}</td>
       <td class="right">${e.price ?? "—"}</td>
       <td class="right" style="color:${Number(e.pnl||0)>=0 ? '#065f46' : '#9f1239'}">${formatCurrency(e.pnl)}</td>
@@ -484,6 +487,197 @@ function renderCharts(){
     <polygon points="${inner}" fill="#e9d5ff" stroke="#c084fc"></polygon>
   `;
   $("#zellaScore").textContent = Math.round((m1+m2+m3)/3*100);
+
+  // Render new charts
+  renderDonutChart();
+  renderSessionChart();
+}
+
+function renderDonutChart() {
+  const width = 320, height = 180;
+  const cx = width / 2, cy = height / 2;
+  const radius = 60;
+  const innerRadius = 30;
+
+  // Group entries by symbol (currency pairs)
+  const symbolCounts = {};
+  state.entries.forEach(entry => {
+    const symbol = entry.symbol || 'Unknown';
+    symbolCounts[symbol] = (symbolCounts[symbol] || 0) + 1;
+  });
+
+  // Convert to array and sort by count
+  const data = Object.entries(symbolCounts)
+    .map(([symbol, count]) => ({ symbol, count }))
+    .sort((a, b) => b.count - a.count);
+
+  if (data.length === 0) {
+    $("#donutChart").innerHTML = `
+      <text x="${cx}" y="${cy}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No data</text>
+    `;
+    $("#totalTrades").textContent = "0";
+    $("#donutLegend").innerHTML = "";
+    return;
+  }
+
+  // Color palette for different currency pairs
+  const colors = [
+    '#8B5CF6', // Purple
+    '#F59E0B', // Orange
+    '#F97316', // Gold
+    '#EC4899', // Pink
+    '#06B6D4', // Light blue
+    '#10B981', // Green
+    '#EF4444', // Red
+    '#3B82F6', // Blue
+    '#8B5A2B', // Brown
+    '#9CA3AF'  // Gray
+  ];
+
+  let currentAngle = 0;
+  const totalTrades = data.reduce((sum, item) => sum + item.count, 0);
+  
+  const donutSegments = data.map((item, index) => {
+    const percentage = item.count / totalTrades;
+    const angle = percentage * 2 * Math.PI;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    
+    const x1 = cx + radius * Math.cos(startAngle);
+    const y1 = cy + radius * Math.sin(startAngle);
+    const x2 = cx + radius * Math.cos(endAngle);
+    const y2 = cy + radius * Math.sin(endAngle);
+    
+    const largeArcFlag = angle > Math.PI ? 1 : 0;
+    
+    const pathData = [
+      `M ${x1} ${y1}`,
+      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+      `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
+      `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
+      'Z'
+    ].join(' ');
+    
+    currentAngle = endAngle;
+    
+    return {
+      path: pathData,
+      color: colors[index % colors.length],
+      symbol: item.symbol,
+      count: item.count,
+      percentage: percentage
+    };
+  });
+
+  // Render donut chart
+  $("#donutChart").innerHTML = donutSegments.map(segment => 
+    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="1"></path>`
+  ).join('');
+
+  // Update total trades
+  $("#totalTrades").textContent = totalTrades;
+
+  // Render legend
+  $("#donutLegend").innerHTML = donutSegments.map(segment => 
+    `<div class="donut-legend-item">
+      <div class="donut-legend-color" style="background-color: ${segment.color}"></div>
+      <span>${segment.symbol} (${segment.count})</span>
+    </div>`
+  ).join('');
+}
+
+function renderSessionChart() {
+  const width = 320, height = 180;
+  const pad = 40;
+  const chartWidth = width - pad * 2;
+  const chartHeight = height - pad * 2;
+
+  // Define trading sessions with their time ranges (UTC)
+  const sessions = [
+    { name: 'Sydney', start: 22, end: 7, color: '#8B5CF6' },
+    { name: 'Tokyo', start: 0, end: 9, color: '#F59E0B' },
+    { name: 'London', start: 8, end: 17, color: '#10B981' },
+    { name: 'New York', start: 13, end: 22, color: '#EF4444' }
+  ];
+
+  // Calculate session performance based on actual trading session data
+  const sessionData = sessions.map(session => {
+    let wins = 0, losses = 0;
+    
+    state.entries.forEach(entry => {
+      // Use the actual trading session from the entry
+      if (entry.tradingSession === session.name) {
+        if ((entry.pnl || 0) > 0) wins++;
+        else if ((entry.pnl || 0) < 0) losses++;
+      }
+    });
+    
+    return {
+      name: session.name,
+      wins: wins,
+      losses: losses,
+      total: wins + losses,
+      winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
+      color: session.color
+    };
+  });
+
+  // Find max value for scaling
+  const maxTrades = Math.max(...sessionData.map(d => d.total), 1);
+
+  // Calculate bar dimensions
+  const barWidth = chartWidth / sessionData.length * 0.6;
+  const barSpacing = chartWidth / sessionData.length * 0.4;
+
+  // Render stacked bars (wins on top, losses on bottom)
+  const bars = sessionData.map((session, index) => {
+    const x = pad + index * (chartWidth / sessionData.length) + barSpacing / 2;
+    const winHeight = (session.wins / maxTrades) * chartHeight;
+    const lossHeight = (session.losses / maxTrades) * chartHeight;
+    
+    const winY = height - pad - winHeight - lossHeight;
+    const lossY = height - pad - lossHeight;
+    
+    return `
+      <rect x="${x}" y="${winY}" width="${barWidth}" height="${winHeight}" fill="#10B981" opacity="0.8"></rect>
+      <rect x="${x}" y="${lossY}" width="${barWidth}" height="${lossHeight}" fill="#EF4444" opacity="0.8"></rect>
+    `;
+  }).join('');
+
+  // Render axis
+  const axis = `
+    <line x1="${pad}" x2="${width - pad}" y1="${height - pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+  `;
+
+  // Render labels
+  const labels = sessionData.map((session, index) => {
+    const x = pad + index * (chartWidth / sessionData.length) + chartWidth / sessionData.length / 2;
+    const y = height - pad + 15;
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${session.name}</text>`;
+  }).join('');
+
+  // Render values on bars
+  const values = sessionData.map((session, index) => {
+    const x = pad + index * (chartWidth / sessionData.length) + chartWidth / sessionData.length / 2;
+    const totalHeight = (session.total / maxTrades) * chartHeight;
+    const y = height - pad - totalHeight - 5;
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}">${session.total}</text>`;
+  }).join('');
+
+  // Render win rate percentages
+  const winRates = sessionData.map((session, index) => {
+    const x = pad + index * (chartWidth / sessionData.length) + chartWidth / sessionData.length / 2;
+    const y = height - pad + 30;
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="8" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${Math.round(session.winRate)}%</text>`;
+  }).join('');
+
+  $("#sessionChart").innerHTML = axis + bars + labels + values + winRates;
+
+  // Render legend
+  $("#sessionLegend").innerHTML = sessionData.map(session => 
+    `<span>${session.name}: ${session.total} (${Math.round(session.winRate)}%)</span>`
+  ).join('');
 }
 
 /* ---------- Entry CRUD ---------- */
@@ -497,6 +691,7 @@ function openNewEntry(){
   
   $("#symbol").value = "";
   $("#side").value = "Buy";
+  $("#tradingSession").value = "";
   $("#quantity").value = "";
   $("#price").value = "";
   $("#pnl").value = "";
@@ -515,6 +710,7 @@ function openEdit(id){
   $("#date").value = normalizeDate(e.date) || "";
   $("#symbol").value = e.symbol || "";
   $("#side").value = e.side || "Buy";
+  $("#tradingSession").value = e.tradingSession || "";
   $("#quantity").value = e.quantity ?? "";
   $("#price").value = e.price ?? "";
   $("#pnl").value = e.pnl ?? "";
@@ -543,6 +739,7 @@ function submitEntry(e){
     date: normalizedDate,
     symbol: ($("#symbol").value||"").trim().toUpperCase(),
     side: $("#side").value,
+    tradingSession: $("#tradingSession").value || "",
     quantity: Number($("#quantity").value||"") || null,
     price: Number($("#price").value||"") || null,
     fees: ex?.fees ?? 0,
@@ -554,15 +751,30 @@ function submitEntry(e){
     targetPointMsg: $("#targetPointMsg").value || "",
     notes: $("#notes").value || "",
   };
+  
   const idx = state.entries.findIndex(x=>x.id===id);
-  if(idx>=0){ state.entries[idx]=entry; } else { state.entries = [entry, ...state.entries]; }
+  if(idx>=0){ 
+    state.entries[idx]=entry; 
+  } else { 
+    state.entries = [entry, ...state.entries]; 
+  }
+  
+  // Save to localStorage
   saveEntries();
+  
+  // Close dialog
   $("#entryDialog").close();
 
-  // Force calendar refresh to show updated trade data
+  // Immediately update all displays
+  renderAll();
+  
+  // Force a second update to ensure everything is refreshed
   setTimeout(() => {
     renderAll();
-  }, 100);
+  }, 50);
+  
+  // Show success message
+  console.log("Entry saved successfully:", entry);
 }
 function openDelete(id){
   state.deleteTarget = id;
@@ -573,10 +785,16 @@ function confirmDelete(){
   saveEntries();
   $("#deleteDialog").close();
 
-  // Force calendar refresh to show updated trade data
+  // Immediately update all displays
+  renderAll();
+  
+  // Force a second update to ensure everything is refreshed
   setTimeout(() => {
     renderAll();
-  }, 100);
+  }, 50);
+  
+  // Show success message
+  console.log("Entry deleted successfully");
 }
 
 /* ---------- Avatar Management ---------- */
@@ -1194,6 +1412,9 @@ function getFilteredEntriesByTimeRange() {
 
 /* ---------- Mount ---------- */
 function renderAll(){
+  console.log("renderAll called - updating all displays");
+  console.log("Current entries count:", state.entries.length);
+  
   renderHeader();
   renderGreeting();
   bindFilters();
@@ -1204,6 +1425,8 @@ function renderAll(){
   if (typeof renderTradingCalendar === 'function') {
     renderTradingCalendar();
   }
+  
+  console.log("renderAll completed");
 }
 function initModals(){
   $("#entryForm").onsubmit = submitEntry;
@@ -1238,6 +1461,19 @@ function initCustomCalendar() {
   const nextMonth = $("#nextMonth");
   const clearDate = $("#clearDate");
   const todayDate = $("#todayDate");
+  
+  // Flag to indicate this is the entry modal calendar
+  const isEntryModal = true;
+  
+  // ENTRY MODAL CALENDAR - First instance
+  
+  // Override the day click handler to use YYYY-MM-DD format for entry modal
+  function handleDayClick(dayDate) { // ENTRY MODAL
+    selectedDate = dayDate;
+    dateInput.value = formatDate(dayDate); // Use YYYY-MM-DD format for entry modal
+    calendar.style.display = 'none';
+    renderCalendar();
+  }
   
   let currentDate = new Date();
   let selectedDate = null;
@@ -1409,7 +1645,246 @@ function initCustomCalendar() {
   const today = new Date();
   selectedDate = today;
   currentDate = new Date(today);
-  dateInput.value = formatDisplayDate(today);
+  dateInput.value = formatDate(today); // Use YYYY-MM-DD format for entry modal
+  
+  // For entry modal, always allow previous month navigation
+  prevMonth.style.opacity = '1';
+  prevMonth.style.cursor = 'pointer';
+  prevMonth.disabled = false;
+  
+  // Remove any restrictions on previous month navigation for entry modal
+  prevMonth.onclick = () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  };
+  
+  // Override next month navigation for entry modal to allow past months
+  nextMonth.onclick = () => {
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+    
+    // For entry modal, allow navigation to any month that's not in the future
+    const today = new Date();
+    if (nextMonthDate.getFullYear() <= today.getFullYear() && 
+        nextMonthDate.getMonth() <= today.getMonth()) {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    }
+  };
+  
+  // Override updateNavigationButtons for entry modal to remove restrictions
+  function updateNavigationButtons() {
+    const today = new Date();
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+    
+    // For entry modal, allow navigation to past months but not future months
+    if (nextMonthDate.getFullYear() > today.getFullYear() || 
+        (nextMonthDate.getFullYear() === today.getFullYear() && 
+         nextMonthDate.getMonth() > today.getMonth())) {
+      nextMonth.style.opacity = '0.3';
+      nextMonth.style.cursor = 'not-allowed';
+      nextMonth.disabled = true;
+    } else {
+      nextMonth.style.opacity = '1';
+      nextMonth.style.cursor = 'pointer';
+      nextMonth.disabled = false;
+    }
+    
+    // Always allow previous month navigation for entry modal
+    prevMonth.style.opacity = '1';
+    prevMonth.style.cursor = 'pointer';
+    prevMonth.disabled = false;
+  }
+}
+
+/* ---------- Filter Bar Custom Calendar ---------- */
+function initFilterCustomCalendars() {
+  // Initialize Start Date Calendar
+  initFilterCalendar('startDate', 'startDateCalendar', 'startMonthYear', 'startCalendarGrid', 'startPrevMonth', 'startNextMonth', 'startClearDate', 'startTodayDate');
+  
+  // Initialize End Date Calendar
+  initFilterCalendar('endDate', 'endDateCalendar', 'endMonthYear', 'endCalendarGrid', 'endPrevMonth', 'endNextMonth', 'endClearDate', 'endTodayDate');
+}
+
+function initFilterCalendar(inputId, calendarId, monthYearId, gridId, prevId, nextId, clearId, todayId) {
+  const dateInput = $(`#${inputId}`);
+  const calendar = $(`#${calendarId}`);
+  const monthYear = $(`#${monthYearId}`);
+  const calendarGrid = $(`#${gridId}`);
+  const prevMonth = $(`#${prevId}`);
+  const nextMonth = $(`#${nextId}`);
+  const clearDate = $(`#${clearId}`);
+  const todayDate = $(`#${todayId}`);
+  
+  let currentDate = new Date();
+  let selectedDate = null;
+  
+  const months = ["January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"];
+  const dayHeaders = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+  
+  function formatDate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+  
+  function formatDisplayDate(date) {
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+    return `${months[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  }
+  
+  function renderCalendar() {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
+    
+    monthYear.textContent = `${months[month]} ${year}`;
+    
+    // Update navigation button states
+    updateNavigationButtons();
+    
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const daysInPrevMonth = new Date(year, month, 0).getDate();
+    
+    calendarGrid.innerHTML = '';
+    
+    // Add day headers
+    dayHeaders.forEach(day => {
+      const header = document.createElement('div');
+      header.className = 'calendar-day-header';
+      header.textContent = day;
+      calendarGrid.appendChild(header);
+    });
+    
+    // Add previous month's trailing days
+    for (let i = firstDay - 1; i >= 0; i--) {
+      const day = document.createElement('div');
+      day.className = 'calendar-day other-month';
+      day.textContent = daysInPrevMonth - i;
+      calendarGrid.appendChild(day);
+    }
+    
+    // Add current month's days
+    const today = new Date();
+    for (let day = 1; day <= daysInMonth; day++) {
+      const dayElement = document.createElement('div');
+      dayElement.className = 'calendar-day';
+      dayElement.textContent = day;
+      
+      const dayDate = new Date(year, month, day);
+      
+      // Check if it's today
+      if (dayDate.toDateString() === today.toDateString()) {
+        dayElement.classList.add('today');
+      }
+      
+      // Check if it's selected
+      if (selectedDate && dayDate.toDateString() === selectedDate.toDateString()) {
+        dayElement.classList.add('selected');
+      }
+      
+      // Disable future dates
+      if (dayDate > today) {
+        dayElement.classList.add('disabled');
+        dayElement.style.opacity = '0.3';
+        dayElement.style.cursor = 'not-allowed';
+        dayElement.style.color = '#9ca3af';
+      } else {
+        dayElement.onclick = () => {
+          selectedDate = dayDate;
+          dateInput.value = formatDisplayDate(dayDate);
+          calendar.style.display = 'none';
+          renderCalendar();
+        };
+      }
+      
+      calendarGrid.appendChild(dayElement);
+    }
+    
+    // Add next month's leading days
+    const totalCells = calendarGrid.children.length - 7; // Subtract headers
+    const remainingCells = 42 - totalCells - 7; // 6 rows * 7 days - current cells - headers
+    for (let day = 1; day <= remainingCells && totalCells < 35; day++) {
+      const dayElement = document.createElement('div');
+      dayElement.className = 'calendar-day other-month';
+      dayElement.textContent = day;
+      calendarGrid.appendChild(dayElement);
+    }
+  }
+  
+  // Event listeners
+  dateInput.onclick = () => {
+    calendar.style.display = calendar.style.display === 'block' ? 'none' : 'block';
+    renderCalendar();
+  };
+  
+  prevMonth.onclick = () => {
+    currentDate.setMonth(currentDate.getMonth() - 1);
+    renderCalendar();
+  };
+  
+  nextMonth.onclick = () => {
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+    
+    // Only allow navigation if the next month is not in the future
+    const today = new Date();
+    if (nextMonthDate.getFullYear() <= today.getFullYear() && 
+        nextMonthDate.getMonth() <= today.getMonth()) {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    }
+  };
+  
+  // Update navigation button states based on current date
+  function updateNavigationButtons() {
+    const today = new Date();
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+    
+    // Disable next month button if it would go to future
+    if (nextMonthDate.getFullYear() > today.getFullYear() || 
+        (nextMonthDate.getFullYear() === today.getFullYear() && 
+         nextMonthDate.getMonth() > today.getMonth())) {
+      nextMonth.style.opacity = '0.3';
+      nextMonth.style.cursor = 'not-allowed';
+      nextMonth.disabled = true;
+    } else {
+      nextMonth.style.opacity = '1';
+      nextMonth.style.cursor = 'pointer';
+      nextMonth.disabled = false;
+    }
+  }
+  
+  clearDate.onclick = () => {
+    selectedDate = null;
+    dateInput.value = '';
+    calendar.style.display = 'none';
+    renderCalendar();
+  };
+  
+  todayDate.onclick = () => {
+    const today = new Date();
+    selectedDate = today;
+    currentDate = new Date(today);
+    dateInput.value = formatDisplayDate(today);
+    calendar.style.display = 'none';
+    renderCalendar();
+  };
+  
+  // Close calendar when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.date-picker-container')) {
+      calendar.style.display = 'none';
+    }
+  });
+  
+  // Initial render
+  renderCalendar();
 }
 
 /* ---------- Trading Calendar ---------- */
@@ -1495,7 +1970,8 @@ function initTradingCalendar() {
       weeklyData.push({
         value: formatCurrency(weekPnl),
         days: weekTradingDays,
-        rawValue: weekPnl
+        rawValue: weekPnl,
+        isWinning: weekPnl > 0
       });
     }
     
@@ -1557,7 +2033,15 @@ function initTradingCalendar() {
       const weekStat = document.createElement('div');
       weekStat.className = 'week-stat-inline';
       
-      const data = weeklyData[week] || { value: '$0', days: 0 };
+      const data = weeklyData[week] || { value: '$0', days: 0, isWinning: false };
+      
+      // Apply dynamic styling based on week performance
+      if (data.rawValue > 0) {
+        weekStat.classList.add('winning-week');
+      } else if (data.rawValue < 0) {
+        weekStat.classList.add('losing-week');
+      }
+      // If data.rawValue === 0, no special styling is applied (neutral)
       
       weekStat.innerHTML = `
         <div class="week-label">Week ${week + 1}</div>
@@ -1719,7 +2203,15 @@ function initTradingCalendar() {
       const weekStat = document.createElement('div');
       weekStat.className = 'week-stat';
       
-      const data = weeklyData[week] || { value: '₹0', days: 0 };
+      const data = weeklyData[week] || { value: '₹0', days: 0, isWinning: false };
+      
+      // Apply dynamic styling based on week performance
+      if (data.rawValue > 0) {
+        weekStat.classList.add('winning-week');
+      } else if (data.rawValue < 0) {
+        weekStat.classList.add('losing-week');
+      }
+      // If data.rawValue === 0, no special styling is applied (neutral)
       
       weekStat.innerHTML = `
         <div class="week-label">Week ${week + 1}</div>
@@ -1762,6 +2254,7 @@ initNavigation();
 initFilters();
 initModals();
 initCustomCalendar();
+initFilterCustomCalendars();
 initTradingCalendar();
 initTimeRangeFilter();
 
