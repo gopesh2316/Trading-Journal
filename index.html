@@ -70,13 +70,17 @@
             <div class="user-menu" id="accountMenu">
               <div class="user-avatar" id="userAvatar">?</div>
               <div id="accountDropdown" class="user-dropdown hidden">
+                <button class="user-dropdown-item" id="btnChangeCurrency">
+                  <span class="material-icons">currency_exchange</span>
+                  <span>Change Currency</span>
+                </button>
                 <button class="user-dropdown-item" id="btnSvgAvatars">
                   <span class="material-icons">auto_awesome</span>
                   <span>SVG Avatars</span>
                 </button>
-                <button class="user-dropdown-item" id="btnRemoveAvatar">
-                  <span class="material-icons">account_circle</span>
-                  <span>Use Initials</span>
+                <button class="user-dropdown-item" id="btnDarkMode">
+                  <span class="material-icons">dark_mode</span>
+                  <span>Dark Mode</span>
                 </button>
                 <button class="user-dropdown-item" id="btnLogout">
                   <span class="material-icons">logout</span>
@@ -315,15 +319,15 @@
 
   <!-- Delete Modal -->
   <dialog id="deleteDialog" class="dialog">
-    <div class="dialog-card">
-      <div class="row between borderb">
-        <h3>Delete entry?</h3>
-        <button type="button" id="deleteClose" class="icon">✕</button>
+    <div class="delete-dialog-card">
+      <div class="delete-icon">
+        <span class="material-icons">delete</span>
       </div>
-      <p>Are you sure you want to delete it?</p>
-      <div class="row end bordert gap">
-        <button id="btnCancelDelete" class="outline">Cancel</button>
-        <button id="btnConfirmDelete" class="danger">Delete</button>
+      <h3 class="delete-title">Delete entry?</h3>
+      <p class="delete-message">This item will be permanently removed.<br>This action can't be undone.</p>
+      <div class="delete-actions">
+        <button id="btnCancelDelete" class="delete-cancel-btn">Cancel</button>
+        <button id="btnConfirmDelete" class="delete-confirm-btn">Delete</button>
       </div>
     </div>
   </dialog>

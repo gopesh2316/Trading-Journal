@@ -2,6 +2,7 @@
 const STORAGE_KEY = "trading-journal-entries-v1";
 const USER_KEY = "trading-journal-user-v1";
 const RULES_KEY = "trading-journal-rules-v1";
+const PREFS_KEY = "trading-journal-preferences-v1";
 
 /* ---------- Utilities ---------- */
 const $ = (sel, root=document) => root.querySelector(sel);
@@ -11,7 +12,27 @@ const formatCurrency = (n) => {
   if (n === null || n === undefined || Number.isNaN(Number(n))) return "—";
   const sign = Number(n) < 0 ? "-" : "";
   const val = Math.abs(Number(n)).toLocaleString(undefined, { maximumFractionDigits: 2 });
-  return `${sign}₹${val}`;
+
+  // Use current currency symbol from preferences, fallback to INR
+  const symbol = window.currentCurrencySymbol || (state.preferences?.currency ?
+    getCurrencySymbol(state.preferences.currency) : '₹');
+
+  return `${sign}${symbol}${val}`;
+};
+
+const getCurrencySymbol = (currencyCode) => {
+  const currencySymbols = {
+    'INR': '₹',
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'CHF': 'CHF',
+    'CNY': '¥'
+  };
+  return currencySymbols[currencyCode] || currencyCode;
 };
 const fmtDate = (iso) => {
   try{
@@ -19,6 +40,31 @@ const fmtDate = (iso) => {
     if (isNaN(d.getTime())) return iso || "";
     return d.toLocaleDateString(undefined, {year:"numeric", month:"short", day:"2-digit"});
   }catch{return iso || ""}
+};
+const normalizeDate = (dateStr) => {
+  try {
+    if (!dateStr) return new Date().toISOString().slice(0,10);
+
+    // If it's already in YYYY-MM-DD format, return as is
+    if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
+
+    // Try to parse as Date object and convert to YYYY-MM-DD
+    const date = new Date(dateStr);
+    if (isNaN(date.getTime())) {
+      console.warn(`Invalid date format: ${dateStr}, using today's date`);
+      return new Date().toISOString().slice(0,10);
+    }
+
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (error) {
+    console.error(`Error normalizing date: ${dateStr}`, error);
+    return new Date().toISOString().slice(0,10);
+  }
 };
 const initials = (str="") => {
   const s = String(str).trim().split(" ").filter(Boolean);
@@ -28,9 +74,15 @@ const initials = (str="") => {
 
 /* ---------- Demo data ---------- */
 const demoEntries = [
-  { id: uid(), date: new Date().toISOString().slice(0,10), symbol:"EURUSD", side:"Buy", quantity:2000, price:1.0852, fees:0.8, pnl:12.4, account:"Primary", tags:["forex","setup:A"], notes:"Breakout of Asia range; partial at +10 pips."},
-  { id: uid(), date: new Date(Date.now()-86400000).toISOString().slice(0,10), symbol:"BTCUSDT", side:"Sell", quantity:0.15, price:61250, fees:3.1, pnl:-45.2, account:"Binance", tags:["crypto"], notes:"Fade failed; should've waited for confirmation."},
-  { id: uid(), date: new Date(Date.now()-2*86400000).toISOString().slice(0,10), symbol:"NIFTY", side:"Buy", quantity:2, price:24550, fees:18, pnl:2250, account:"Broker-X", tags:["options","intraday"], notes:"Day trade; exit on VWAP loss of momentum."},
+  { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"EURUSD", side:"Buy", quantity:2000, price:1.0852, fees:0.8, pnl:12.4, account:"Primary", tags:["forex","setup:A"], notes:"Breakout of Asia range; partial at +10 pips."},
+  { id: uid(), date: normalizeDate(new Date(Date.now()-86400000).toISOString().slice(0,10)), symbol:"BTCUSDT", side:"Sell", quantity:0.15, price:61250, fees:3.1, pnl:-45.2, account:"Binance", tags:["crypto"], notes:"Fade failed; should've waited for confirmation."},
+  { id: uid(), date: normalizeDate(new Date(Date.now()-2*86400000).toISOString().slice(0,10)), symbol:"NIFTY", side:"Buy", quantity:2, price:24550, fees:18, pnl:2250, account:"Broker-X", tags:["options","intraday"], notes:"Day trade; exit on VWAP loss of momentum."},
+  // Test data for accuracy calculation - 5 trades on same day: 3 wins, 2 losses
+  { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"AAPL", side:"Buy", quantity:100, price:150, fees:1, pnl:50, account:"Primary", tags:["stock"], notes:"Test trade 1 - Win"},
+  { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"GOOGL", side:"Sell", quantity:50, price:2800, fees:2, pnl:-25, account:"Primary", tags:["stock"], notes:"Test trade 2 - Loss"},
+  { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"MSFT", side:"Buy", quantity:200, price:300, fees:3, pnl:100, account:"Primary", tags:["stock"], notes:"Test trade 3 - Win"},
+  { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"TSLA", side:"Sell", quantity:10, price:800, fees:5, pnl:-75, account:"Primary", tags:["stock"], notes:"Test trade 4 - Loss"},
+  { id: uid(), date: normalizeDate(new Date().toISOString().slice(0,10)), symbol:"AMZN", side:"Buy", quantity:30, price:3200, fees:4, pnl:150, account:"Primary", tags:["stock"], notes:"Test trade 5 - Win"},
 ];
 
 /* ---------- State ---------- */
@@ -41,6 +93,10 @@ let state = {
   filters: { search:"", side:"ALL", account:"ALL", start:"", end:"", sort:"date_desc" },
   activeView: "dashboard",
   deleteTarget: null,
+  preferences: {
+    currency: "INR", // Default currency
+    darkMode: false
+  }
 };
 
 /* ---------- Persistence ---------- */
@@ -48,10 +104,22 @@ function loadAll(){
   try{ state.user = JSON.parse(localStorage.getItem(USER_KEY) || "null"); }catch{ state.user=null; }
   try{ state.entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || demoEntries; }catch{ state.entries = demoEntries; }
   try{ state.rules = JSON.parse(localStorage.getItem(RULES_KEY) || "[]"); }catch{ state.rules=[]; }
+  try{ state.preferences = { ...state.preferences, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") }; }catch{ /* Use defaults */ }
+
+  // Apply dark mode on load
+  if (state.preferences.darkMode) {
+    document.body.classList.add('dark-mode');
+  }
+
+  // Initialize currency symbol
+  if (state.preferences.currency) {
+    updateCurrencySymbol(state.preferences.currency);
+  }
 }
 function saveEntries(){ try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries)); }catch{} }
 function saveRules(){ try{ localStorage.setItem(RULES_KEY, JSON.stringify(state.rules)); }catch{} }
 function saveUser(){ try{ state.user ? localStorage.setItem(USER_KEY, JSON.stringify(state.user)) : localStorage.removeItem(USER_KEY); }catch{} }
+function savePreferences(){ try{ localStorage.setItem(PREFS_KEY, JSON.stringify(state.preferences)); }catch{} }
 
 /* ---------- Auth ---------- */
 function showAuth(){
@@ -102,11 +170,19 @@ function initHeader(){
     openSvgAvatarSelector(); 
     $("#accountDropdown").classList.add("hidden");
   };
-  $("#btnRemoveAvatar").onclick = ()=>{ 
-    removeCustomAvatar(); 
+  
+  $("#btnChangeCurrency").onclick = ()=>{
+    openCurrencySelector();
     $("#accountDropdown").classList.add("hidden");
   };
-  
+  $("#btnDarkMode").onclick = ()=>{
+    toggleDarkMode();
+    $("#accountDropdown").classList.add("hidden");
+  };
+
+  // Initialize button states based on current preferences
+  updateDarkModeButton();
+
   // Close dropdown when clicking outside
   document.addEventListener('click', (e) => {
     if (!e.target.closest('#accountMenu')) {
@@ -414,7 +490,11 @@ function renderCharts(){
 function openNewEntry(){
   $("#entryTitle").textContent = "New Entry";
   $("#id").value = uid();
-  $("#date").value = new Date().toISOString().slice(0,10);
+  
+  // Always set to today's date for new entries
+  const today = new Date();
+  $("#date").value = today.toISOString().slice(0,10);
+  
   $("#symbol").value = "";
   $("#side").value = "Buy";
   $("#quantity").value = "";
@@ -432,7 +512,7 @@ function openEdit(id){
   if(!e) return;
   $("#entryTitle").textContent = "Edit Entry";
   $("#id").value = e.id;
-  $("#date").value = e.date || "";
+  $("#date").value = normalizeDate(e.date) || "";
   $("#symbol").value = e.symbol || "";
   $("#side").value = e.side || "Buy";
   $("#quantity").value = e.quantity ?? "";
@@ -453,9 +533,14 @@ function submitEntry(e){
   e.preventDefault();
   const id = $("#id").value;
   const ex = state.entries.find(x=>x.id===id);
+  const rawDate = $("#date").value;
+
+  // Normalize date to YYYY-MM-DD format
+  const normalizedDate = normalizeDate(rawDate);
+
   const entry = {
     id,
-    date: $("#date").value,
+    date: normalizedDate,
     symbol: ($("#symbol").value||"").trim().toUpperCase(),
     side: $("#side").value,
     quantity: Number($("#quantity").value||"") || null,
@@ -473,7 +558,11 @@ function submitEntry(e){
   if(idx>=0){ state.entries[idx]=entry; } else { state.entries = [entry, ...state.entries]; }
   saveEntries();
   $("#entryDialog").close();
-  renderAll();
+
+  // Force calendar refresh to show updated trade data
+  setTimeout(() => {
+    renderAll();
+  }, 100);
 }
 function openDelete(id){
   state.deleteTarget = id;
@@ -483,7 +572,11 @@ function confirmDelete(){
   state.entries = state.entries.filter(e=>e.id !== state.deleteTarget);
   saveEntries();
   $("#deleteDialog").close();
-  renderAll();
+
+  // Force calendar refresh to show updated trade data
+  setTimeout(() => {
+    renderAll();
+  }, 100);
 }
 
 /* ---------- Avatar Management ---------- */
@@ -552,6 +645,291 @@ function selectSvgAvatar(svgType) {
   saveUser();
   renderHeader();
   $("#svgAvatarDialog").close();
+}
+
+/* ---------- Currency Management ---------- */
+function openCurrencySelector() {
+  const currencies = [
+    { code: 'INR', symbol: '₹', name: 'Indian Rupee' },
+    { code: 'USD', symbol: '$', name: 'US Dollar' },
+    { code: 'EUR', symbol: '€', name: 'Euro' },
+    { code: 'GBP', symbol: '£', name: 'British Pound' },
+    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
+    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
+    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
+    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
+    { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }
+  ];
+
+  const currentCurrency = state.preferences.currency;
+  const currencyOptions = currencies.map(currency => `
+    <button class="currency-option ${currency.code === currentCurrency ? 'active' : ''}"
+            data-currency="${currency.code}"
+            onclick="selectCurrency('${currency.code}'); document.getElementById('currencyDialog').remove();">
+      <span class="currency-symbol">${currency.symbol}</span>
+      <span class="currency-name">${currency.name} (${currency.code})</span>
+    </button>
+  `).join('');
+
+  const currencyDialog = document.createElement('div');
+  currencyDialog.id = 'currencyDialog';
+  currencyDialog.className = 'dialog';
+  currencyDialog.innerHTML = `
+    <div class="dialog-card currency-dialog-card">
+      <div class="row">
+        <h3>Change Currency</h3>
+        <button class="icon" onclick="document.getElementById('currencyDialog').remove()">✕</button>
+      </div>
+      <div class="currency-options">
+        ${currencyOptions}
+      </div>
+      <div class="bordert">
+        <button class="outline wfull" onclick="document.getElementById('currencyDialog').remove()">Cancel</button>
+      </div>
+    </div>
+  `;
+
+  // Add styles for centered currency dialog
+  const style = document.createElement('style');
+  style.textContent = `
+    #currencyDialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      backdrop-filter: blur(4px);
+    }
+
+    .currency-dialog-card {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      max-width: 400px;
+      width: 90vw;
+      max-height: 80vh;
+      overflow-y: auto;
+      animation: dialogSlideIn 0.2s ease-out;
+    }
+
+    .currency-options {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 20px 0;
+    }
+
+    .currency-option {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      margin: 0 20px;
+    }
+
+    .currency-option:hover {
+      background: #f9fafb;
+      border-color: #d1d5db;
+      transform: translateY(-1px);
+    }
+
+    .currency-option.active {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #3b82f6;
+    }
+
+    .currency-symbol {
+      font-size: 18px;
+      font-weight: 600;
+      width: 24px;
+      text-align: center;
+    }
+
+    .currency-name {
+      flex: 1;
+    }
+
+    @keyframes dialogSlideIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
+    }
+
+    /* Dark mode styles for currency dialog */
+    .dark-mode #currencyDialog {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    .dark-mode .currency-dialog-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+    }
+
+    .dark-mode .currency-option {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .dark-mode .currency-option:hover {
+      background: #334155;
+    }
+
+    .dark-mode .currency-option.active {
+      background: #1e3a8a;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+  `;
+  document.head.appendChild(style);
+
+  document.body.appendChild(currencyDialog);
+
+  // Add close functionality
+  currencyDialog.addEventListener('click', (e) => {
+    if (e.target === currencyDialog) {
+      currencyDialog.remove();
+    }
+  });
+}
+
+function selectCurrency(currencyCode) {
+  state.preferences.currency = currencyCode;
+  savePreferences();
+
+  // Update the formatCurrency function to use the new currency
+  updateCurrencySymbol(currencyCode);
+
+  // Close dialog
+  document.getElementById('currencyDialog').remove();
+
+  // Refresh all displays to show new currency
+  renderAll();
+
+  // Show success message
+  showToast(`Currency changed to ${currencyCode}`);
+}
+
+function updateCurrencySymbol(currencyCode) {
+  const currencySymbols = {
+    'INR': '₹',
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'CHF': 'CHF',
+    'CNY': '¥'
+  };
+
+  const symbol = currencySymbols[currencyCode] || currencyCode;
+
+  // Update the global formatCurrency function
+  window.currentCurrencySymbol = symbol;
+}
+
+/* ---------- Dark Mode ---------- */
+function toggleDarkMode() {
+  state.preferences.darkMode = !state.preferences.darkMode;
+  savePreferences();
+
+  updateDarkModeButton();
+
+  if (state.preferences.darkMode) {
+    document.body.classList.add('dark-mode');
+    showToast('Dark mode enabled');
+  } else {
+    document.body.classList.remove('dark-mode');
+    showToast('Light mode enabled');
+  }
+}
+
+function updateDarkModeButton() {
+  const darkModeBtn = $("#btnDarkMode");
+  if (!darkModeBtn) return;
+
+  const iconSpan = darkModeBtn.querySelector('.material-icons');
+  const textSpan = darkModeBtn.querySelector('span:last-child');
+
+  if (state.preferences.darkMode) {
+    if (iconSpan) iconSpan.textContent = 'light_mode';
+    if (textSpan) textSpan.textContent = 'Light Mode';
+  } else {
+    if (iconSpan) iconSpan.textContent = 'dark_mode';
+    if (textSpan) textSpan.textContent = 'Dark Mode';
+  }
+}
+
+/* ---------- Toast Notifications ---------- */
+function showToast(message) {
+  // Remove existing toast if any
+  const existingToast = document.querySelector('.toast');
+  if (existingToast) {
+    existingToast.remove();
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
+  toast.textContent = message;
+
+  // Add styles for toast
+  const style = document.createElement('style');
+  style.textContent = `
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1f2937;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      z-index: 10000;
+      font-size: 14px;
+      animation: toastSlideIn 0.3s ease;
+    }
+    .dark-mode .toast {
+      background: #374151;
+    }
+    @keyframes toastSlideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes toastSlideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+  `;
+
+  if (!document.querySelector('style[data-toast-styles]')) {
+    style.setAttribute('data-toast-styles', 'true');
+    document.head.appendChild(style);
+  }
+
+  document.body.appendChild(toast);
+
+  // Auto remove after 3 seconds
+  setTimeout(() => {
+    toast.style.animation = 'toastSlideOut 0.3s ease';
+    setTimeout(() => toast.remove(), 300);
+  }, 3000);
 }
 
 /* ---------- Rules ---------- */
@@ -671,12 +1049,15 @@ function renderAll(){
   renderStats();
   renderTable();
   renderCharts();
+  // Refresh trading calendar if it exists
+  if (typeof renderTradingCalendar === 'function') {
+    renderTradingCalendar();
+  }
 }
 function initModals(){
   $("#entryForm").onsubmit = submitEntry;
   $("#entryClose").onclick = ()=>$("#entryDialog").close();
   $("#entryCancel").onclick = ()=>$("#entryDialog").close();
-  $("#deleteClose").onclick = ()=>$("#deleteDialog").close();
   $("#btnCancelDelete").onclick = ()=>$("#deleteDialog").close();
   $("#btnConfirmDelete").onclick = confirmDelete;
   $("#ruleForm").onsubmit = submitRule;
@@ -733,6 +1114,9 @@ function initCustomCalendar() {
     
     monthYear.textContent = `${months[month]} ${year}`;
     
+    // Update navigation button states
+    updateNavigationButtons();
+    
     const firstDay = new Date(year, month, 1).getDay();
     const daysInMonth = new Date(year, month + 1, 0).getDate();
     const daysInPrevMonth = new Date(year, month, 0).getDate();
@@ -774,12 +1158,20 @@ function initCustomCalendar() {
         dayElement.classList.add('selected');
       }
       
-      dayElement.onclick = () => {
-        selectedDate = dayDate;
-        dateInput.value = formatDisplayDate(dayDate);
-        calendar.style.display = 'none';
-        renderCalendar();
-      };
+      // Disable future dates
+      if (dayDate > today) {
+        dayElement.classList.add('disabled');
+        dayElement.style.opacity = '0.3';
+        dayElement.style.cursor = 'not-allowed';
+        dayElement.style.color = '#9ca3af';
+      } else {
+        dayElement.onclick = () => {
+          selectedDate = dayDate;
+          dateInput.value = formatDisplayDate(dayDate);
+          calendar.style.display = 'none';
+          renderCalendar();
+        };
+      }
       
       calendarGrid.appendChild(dayElement);
     }
@@ -807,9 +1199,37 @@ function initCustomCalendar() {
   };
   
   nextMonth.onclick = () => {
-    currentDate.setMonth(currentDate.getMonth() + 1);
-    renderCalendar();
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+    
+    // Only allow navigation if the next month is not in the future
+    const today = new Date();
+    if (nextMonthDate.getFullYear() <= today.getFullYear() && 
+        nextMonthDate.getMonth() <= today.getMonth()) {
+      currentDate.setMonth(currentDate.getMonth() + 1);
+      renderCalendar();
+    }
   };
+  
+  // Update navigation button states based on current date
+  function updateNavigationButtons() {
+    const today = new Date();
+    const nextMonthDate = new Date(currentDate);
+    nextMonthDate.setMonth(currentDate.getMonth() + 1);
+    
+    // Disable next month button if it would go to future
+    if (nextMonthDate.getFullYear() > today.getFullYear() || 
+        (nextMonthDate.getFullYear() === today.getFullYear() && 
+         nextMonthDate.getMonth() > today.getMonth())) {
+      nextMonth.style.opacity = '0.3';
+      nextMonth.style.cursor = 'not-allowed';
+      nextMonth.disabled = true;
+    } else {
+      nextMonth.style.opacity = '1';
+      nextMonth.style.cursor = 'pointer';
+      nextMonth.disabled = false;
+    }
+  }
   
   clearDate.onclick = () => {
     selectedDate = null;
@@ -837,15 +1257,18 @@ function initCustomCalendar() {
   // Set today's date by default
   const today = new Date();
   selectedDate = today;
+  currentDate = new Date(today);
   dateInput.value = formatDisplayDate(today);
 }
 
 /* ---------- Trading Calendar ---------- */
+let currentCalendarDate = new Date();
+let renderTradingCalendar; // Make it accessible globally
+
 function initTradingCalendar() {
-  let currentCalendarDate = new Date();
   const today = new Date();
-  
-  function renderTradingCalendar() {
+
+  renderTradingCalendar = function() {
     const year = currentCalendarDate.getFullYear();
     const month = currentCalendarDate.getMonth();
     const monthNames = ["January", "February", "March", "April", "May", "June",
@@ -863,8 +1286,69 @@ function initTradingCalendar() {
       badge.classList.add("hidden");
     }
     
+    // Update monthly stats
+    updateMonthlyStats(year, month);
+    
     renderCalendarGrid();
     renderWeeklyStats();
+  };
+  
+  function updateMonthlyStats(year, month) {
+    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const endDate = `${year}-${String(month + 1).padStart(2, '0')}-${new Date(year, month + 1, 0).getDate()}`;
+    
+    // Get all trades for this month
+    const monthTrades = state.entries.filter(entry => entry.date >= startDate && entry.date <= endDate);
+    
+    if (monthTrades.length === 0) {
+      $(".monthly-days").textContent = "0 days";
+      $(".monthly-value").textContent = "₹0";
+      return;
+    }
+    
+    // Count unique trading days
+    const uniqueDays = new Set(monthTrades.map(trade => trade.date)).size;
+    const totalPnl = monthTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+    
+    $(".monthly-days").textContent = `${uniqueDays} day${uniqueDays !== 1 ? 's' : ''}`;
+    $(".monthly-value").textContent = formatCurrency(totalPnl);
+  }
+  
+  function calculateWeeklyStats(year, month, weeksNeeded, firstDay, daysInMonth) {
+    const weeklyData = [];
+    
+    for (let week = 0; week < weeksNeeded; week++) {
+      let weekPnl = 0;
+      let weekTradingDays = 0;
+      const tradingDaysInWeek = new Set();
+      
+      // Check each day in this week
+      for (let dayInWeek = 0; dayInWeek < 7; dayInWeek++) {
+        const cellIndex = week * 7 + dayInWeek;
+        const dayNumber = cellIndex - firstDay + 1;
+        
+        if (dayNumber > 0 && dayNumber <= daysInMonth) {
+          const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+          const dayTrades = state.entries.filter(entry => entry.date === dayStr);
+          
+          if (dayTrades.length > 0) {
+            tradingDaysInWeek.add(dayStr);
+            const dayPnl = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+            weekPnl += dayPnl;
+          }
+        }
+      }
+      
+      weekTradingDays = tradingDaysInWeek.size;
+      
+      weeklyData.push({
+        value: formatCurrency(weekPnl),
+        days: weekTradingDays,
+        rawValue: weekPnl
+      });
+    }
+    
+    return weeklyData;
   }
   
   function renderCalendarGrid() {
@@ -895,14 +1379,8 @@ function initTradingCalendar() {
     // Calculate how many weeks we need to show all days of the month
     const weeksNeeded = Math.ceil((firstDay + daysInMonth) / 7);
     
-    // Sample weekly data (replace with real data calculation)
-    const weeklyData = [
-      { value: '$1K', days: 2 },
-      { value: '$0', days: 0 },
-      { value: '$0', days: 0 },
-      { value: '$0', days: 0 },
-      { value: '$0', days: 0 }
-    ];
+    // Calculate real weekly data
+    const weeklyData = calculateWeeklyStats(year, month, weeksNeeded, firstDay, daysInMonth);
     
     // Fill the calendar grid week by week
     for (let week = 0; week < weeksNeeded; week++) {
@@ -933,7 +1411,7 @@ function initTradingCalendar() {
       weekStat.innerHTML = `
         <div class="week-label">Week ${week + 1}</div>
         <div class="week-value">${data.value}</div>
-        <div class="week-days">${data.days} days</div>
+        <div class="week-days">${data.days} day${data.days !== 1 ? 's' : ''}</div>
       `;
       
       calendarGrid.appendChild(weekStat);
@@ -971,10 +1449,10 @@ function initTradingCalendar() {
       dayElement.classList.add('winning-trade');
       dayElement.innerHTML = `
         <div class="day-number">${dayNumber}</div>
-        <div class="trade-amount">+₹${tradeData.amount.toLocaleString()}</div>
-        <div class="trade-stats">Total Trades: ${tradeData.totalTrades}</div>
+        <div class="trade-amount">${formatCurrency(tradeData.totalPnl)}</div>
+        <div class="trade-stats">Total trades: ${tradeData.totalTrades}</div>
         <div class="trade-stats">Accuracy: ${tradeData.accuracy}%</div>
-        <div class="trade-stats">Change: ${tradeData.change}%</div>
+        <div class="trade-stats">Change: ${tradeData.change > 0 ? '+' : ''}${tradeData.change}%</div>
         <button class="view-button" onclick="viewTradeDetails(${dayNumber})">View</button>
       `;
     } else {
@@ -982,10 +1460,10 @@ function initTradingCalendar() {
       dayElement.classList.add('losing-trade');
       dayElement.innerHTML = `
         <div class="day-number">${dayNumber}</div>
-        <div class="trade-amount">-₹${tradeData.amount.toLocaleString()}</div>
-        <div class="trade-stats">Total Trades: ${tradeData.totalTrades}</div>
+        <div class="trade-amount">${formatCurrency(tradeData.totalPnl)}</div>
+        <div class="trade-stats">Total trades: ${tradeData.totalTrades}</div>
         <div class="trade-stats">Accuracy: ${tradeData.accuracy}%</div>
-        <div class="trade-stats">Change: ${tradeData.change}%</div>
+        <div class="trade-stats">Change: ${tradeData.change > 0 ? '+' : ''}${tradeData.change}%</div>
         <button class="view-button" onclick="viewTradeDetails(${dayNumber})">View</button>
       `;
     }
@@ -995,51 +1473,107 @@ function initTradingCalendar() {
   
   // Helper function to get trade data for a specific day
   function getTradeDataForDay(dayNumber) {
-    // Sample data - replace with real data from your trading system
-    const sampleTradeData = {
-      2: null, // No trading
-      3: { // Winning trade
-        isWinning: true,
-        amount: 5600,
-        totalTrades: 2,
-        accuracy: 100,
-        change: 5
-      },
-      4: { // Losing trade
-        isWinning: false,
-        amount: 5600,
-        totalTrades: 2,
-        accuracy: 100,
-        change: 5
-      }
-    };
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const dayStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNumber).padStart(2, '0')}`;
+
+      // Get all trades for this specific day (normalize both sides for comparison)
+    const dayTrades = state.entries.filter(entry => {
+      const normalizedEntryDate = normalizeDate(entry.date);
+      return normalizedEntryDate === dayStr;
+    });
     
-    return sampleTradeData[dayNumber] || null;
+    if (dayTrades.length === 0) {
+      return null; // No trading data for this day
+    }
+    
+    // Calculate statistics for this day
+    const totalPnl = dayTrades.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+    const totalTrades = dayTrades.length;
+    const winningTrades = dayTrades.filter(trade => (trade.pnl || 0) > 0).length;
+    const losingTrades = dayTrades.filter(trade => (trade.pnl || 0) <= 0).length;
+    
+    // Calculate accuracy: (winning trades / total trades) * 100
+    const accuracy = totalTrades > 0 ? Math.round((winningTrades / totalTrades) * 100) : 0;
+    
+    // Debug logging for accuracy calculation
+    console.log(`Day ${dayStr}: Total trades: ${totalTrades}, Winning: ${winningTrades}, Losing: ${losingTrades}, Accuracy: ${accuracy}%`);
+    
+    // Calculate balance change from previous day
+    const changePercentage = calculateDayBalanceChange(dayStr, totalPnl);
+    
+    return {
+      isWinning: totalPnl > 0,
+      amount: Math.abs(totalPnl),
+      totalTrades: totalTrades,
+      accuracy: accuracy,
+      change: changePercentage,
+      totalPnl: totalPnl
+    };
+  }
+  
+  // Helper function to calculate balance change percentage from previous day
+  function calculateDayBalanceChange(currentDateStr, currentDayPnl) {
+    // Get previous day with trading activity
+    const currentDate = new Date(currentDateStr);
+    let previousDate = new Date(currentDate);
+    previousDate.setDate(currentDate.getDate() - 1);
+    
+    // Find the most recent previous day with trading activity
+    let previousDayBalance = 0;
+    let daysSearched = 0;
+    const maxDaysToSearch = 30; // Prevent infinite loops
+    
+    while (daysSearched < maxDaysToSearch) {
+      const prevDateStr = `${previousDate.getFullYear()}-${String(previousDate.getMonth() + 1).padStart(2, '0')}-${String(previousDate.getDate()).padStart(2, '0')}`;
+      const prevDayTrades = state.entries.filter(entry => entry.date === prevDateStr);
+      
+      if (prevDayTrades.length > 0) {
+        // Calculate cumulative balance up to this previous day
+        const allTradesUpToPrevDay = state.entries.filter(entry => entry.date <= prevDateStr);
+        previousDayBalance = allTradesUpToPrevDay.reduce((sum, trade) => sum + (trade.pnl || 0), 0);
+        break;
+      }
+      
+      previousDate.setDate(previousDate.getDate() - 1);
+      daysSearched++;
+    }
+    
+    // If no previous trading day found, assume starting balance of 0
+    const currentDayBalance = previousDayBalance + currentDayPnl;
+    
+    if (previousDayBalance === 0) {
+      return currentDayPnl > 0 ? 100 : (currentDayPnl < 0 ? -100 : 0);
+    }
+    
+    const changePercentage = ((currentDayBalance - previousDayBalance) / Math.abs(previousDayBalance)) * 100;
+    return Math.round(changePercentage * 100) / 100; // Round to 2 decimal places
   }
   
   function renderWeeklyStats() {
     const weeklyStatsContainer = $("#weeklyStats");
     weeklyStatsContainer.innerHTML = '';
     
-    // Sample weekly data (replace with real data calculation)
-    const weeklyData = [
-      { value: '$1K', days: 2 },
-      { value: '$0', days: 0 },
-      { value: '$0', days: 0 },
-      { value: '$0', days: 0 }
-    ];
+    const year = currentCalendarDate.getFullYear();
+    const month = currentCalendarDate.getMonth();
+    const firstDay = new Date(year, month, 1).getDay();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const weeksNeeded = Math.ceil((firstDay + daysInMonth) / 7);
     
-    // Always show exactly 4 weeks
-    for (let week = 1; week <= 4; week++) {
+    // Calculate real weekly data
+    const weeklyData = calculateWeeklyStats(year, month, weeksNeeded, firstDay, daysInMonth);
+    
+    // Show all weeks in the month
+    for (let week = 0; week < weeksNeeded; week++) {
       const weekStat = document.createElement('div');
       weekStat.className = 'week-stat';
       
-      const data = weeklyData[week - 1] || { value: '$0', days: 0 };
+      const data = weeklyData[week] || { value: '₹0', days: 0 };
       
       weekStat.innerHTML = `
-        <div class="week-label">Week ${week}</div>
+        <div class="week-label">Week ${week + 1}</div>
         <div class="week-value">${data.value}</div>
-        <div class="week-days">${data.days} days</div>
+        <div class="week-days">${data.days} day${data.days !== 1 ? 's' : ''}</div>
       `;
       
       weeklyStatsContainer.appendChild(weekStat);
@@ -1051,12 +1585,12 @@ function initTradingCalendar() {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
     renderTradingCalendar();
   };
-  
+
   $("#nextMonthBtn").onclick = () => {
     currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
     renderTradingCalendar();
   };
-  
+
   // Initial render
   renderTradingCalendar();
 }
