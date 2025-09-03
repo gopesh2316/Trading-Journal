@@ -654,42 +654,45 @@ function openCurrencySelector() {
     { code: 'USD', symbol: '$', name: 'US Dollar' },
     { code: 'EUR', symbol: '€', name: 'Euro' },
     { code: 'GBP', symbol: '£', name: 'British Pound' },
-    { code: 'JPY', symbol: '¥', name: 'Japanese Yen' },
-    { code: 'CAD', symbol: 'C$', name: 'Canadian Dollar' },
-    { code: 'AUD', symbol: 'A$', name: 'Australian Dollar' },
-    { code: 'CHF', symbol: 'CHF', name: 'Swiss Franc' },
     { code: 'CNY', symbol: '¥', name: 'Chinese Yuan' }
   ];
 
   const currentCurrency = state.preferences.currency;
   const currencyOptions = currencies.map(currency => `
-    <button class="currency-option ${currency.code === currentCurrency ? 'active' : ''}"
-            data-currency="${currency.code}"
-            onclick="selectCurrency('${currency.code}'); document.getElementById('currencyDialog').remove();">
-      <span class="currency-symbol">${currency.symbol}</span>
-      <span class="currency-name">${currency.name} (${currency.code})</span>
-    </button>
+    <div class="currency-option ${currency.code === currentCurrency ? 'active' : ''}"
+         data-currency="${currency.code}">
+      <div class="currency-icon">
+        <span class="currency-symbol">${currency.symbol}</span>
+      </div>
+      <div class="currency-details">
+        <div class="currency-name">${currency.name}</div>
+        <div class="currency-code">${currency.code}</div>
+      </div>
+      ${currency.code === currentCurrency ? '<div class="check-icon">✓</div>' : ''}
+    </div>
   `).join('');
 
   const currencyDialog = document.createElement('div');
   currencyDialog.id = 'currencyDialog';
   currencyDialog.className = 'dialog';
   currencyDialog.innerHTML = `
-    <div class="dialog-card currency-dialog-card">
-      <div class="row">
+    <div class="currency-dialog-card">
+      <div class="currency-dialog-header">
         <h3>Change Currency</h3>
-        <button class="icon" onclick="document.getElementById('currencyDialog').remove()">✕</button>
+        <button class="close-btn" onclick="document.getElementById('currencyDialog').remove()">
+          <span class="material-icons">close</span>
+        </button>
       </div>
       <div class="currency-options">
         ${currencyOptions}
       </div>
-      <div class="bordert">
-        <button class="outline wfull" onclick="document.getElementById('currencyDialog').remove()">Cancel</button>
+      <div class="currency-dialog-footer">
+        <button class="cancel-btn" onclick="document.getElementById('currencyDialog').remove()">Cancel</button>
       </div>
     </div>
   `;
 
-  // Add styles for centered currency dialog
+  // Add styles for improved currency dialog
   const style = document.createElement('style');
   style.textContent = `
     #currencyDialog {
@@ -698,72 +701,166 @@ function openCurrencySelector() {
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
+      background: rgba(0, 0, 0, 0.5);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 1000;
-      backdrop-filter: blur(4px);
+      backdrop-filter: blur(8px);
     }
 
     .currency-dialog-card {
       background: white;
-      border-radius: 12px;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-      max-width: 400px;
+      border-radius: 16px;
+      box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
       width: 90vw;
-      max-height: 80vh;
-      overflow-y: auto;
-      animation: dialogSlideIn 0.2s ease-out;
+      max-width: 420px;
+      max-height: 85vh;
+      overflow: hidden;
+      animation: currencyDialogSlideIn 0.3s ease-out;
+    }
+
+    .currency-dialog-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 24px 24px 16px 24px;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    .currency-dialog-header h3 {
+      margin: 0;
+      font-size: 20px;
+      font-weight: 700;
+      color: #111827;
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      padding: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      color: #6b7280;
+      transition: all 0.2s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .close-btn:hover {
+      background: #f3f4f6;
+      color: #374151;
+    }
+
+    .close-btn .material-icons {
+      font-size: 20px;
     }
 
     .currency-options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 20px 0;
+      padding: 16px 0;
+      max-height: 400px;
+      overflow-y: auto;
     }
 
     .currency-option {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
+      gap: 16px;
+      padding: 16px 24px;
       cursor: pointer;
       transition: all 0.2s ease;
-      margin: 0 20px;
+      position: relative;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
     }
 
     .currency-option:hover {
       background: #f9fafb;
-      border-color: #d1d5db;
-      transform: translateY(-1px);
     }
 
     .currency-option.active {
       background: #eff6ff;
-      border-color: #3b82f6;
-      color: #3b82f6;
+    }
+
+    .currency-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .currency-option.active .currency-icon {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
 
     .currency-symbol {
-      font-size: 18px;
-      font-weight: 600;
-      width: 24px;
-      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+      color: #374151;
     }
 
-    .currency-name {
+    .currency-option.active .currency-symbol {
+      color: white;
+    }
+
+    .currency-details {
       flex: 1;
     }
 
-    @keyframes dialogSlideIn {
+    .currency-name {
+      font-size: 16px;
+      font-weight: 600;
+      color: #111827;
+      margin-bottom: 4px;
+    }
+
+    .currency-code {
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: 500;
+    }
+
+    .check-icon {
+      color: #3b82f6;
+      font-size: 20px;
+      font-weight: bold;
+      margin-left: auto;
+    }
+
+    .currency-dialog-footer {
+      padding: 16px 24px 24px 24px;
+      border-top: 1px solid #e5e7eb;
+    }
+
+    .cancel-btn {
+      width: 100%;
+      padding: 12px 24px;
+      background: #f9fafb;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      color: #374151;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .cancel-btn:hover {
+      background: #f3f4f6;
+      border-color: #9ca3af;
+    }
+
+    @keyframes currencyDialogSlideIn {
       from {
         opacity: 0;
-        transform: scale(0.9) translateY(-20px);
+        transform: scale(0.95) translateY(-10px);
       }
       to {
         opacity: 1;
@@ -773,7 +870,7 @@ function openCurrencySelector() {
 
     /* Dark mode styles for currency dialog */
     .dark-mode #currencyDialog {
-      background: rgba(0, 0, 0, 0.6);
+      background: rgba(0, 0, 0, 0.7);
     }
 
     .dark-mode .currency-dialog-card {
@@ -781,9 +878,20 @@ function openCurrencySelector() {
       border: 1px solid var(--border);
     }
 
-    .dark-mode .currency-option {
-      background: var(--surface);
-      border-color: var(--border);
+    .dark-mode .currency-dialog-header {
+      border-bottom-color: var(--border);
+    }
+
+    .dark-mode .currency-dialog-header h3 {
+      color: var(--text);
+    }
+
+    .dark-mode .close-btn {
+      color: var(--muted);
+    }
+
+    .dark-mode .close-btn:hover {
+      background: #334155;
       color: var(--text);
     }
 
@@ -793,13 +901,56 @@ function openCurrencySelector() {
 
     .dark-mode .currency-option.active {
       background: #1e3a8a;
-      border-color: var(--accent);
-      color: var(--accent);
+    }
+
+    .dark-mode .currency-icon {
+      background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    }
+
+    .dark-mode .currency-option.active .currency-icon {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+
+    .dark-mode .currency-symbol {
+      color: var(--text);
+    }
+
+    .dark-mode .currency-name {
+      color: var(--text);
+    }
+
+    .dark-mode .currency-code {
+      color: var(--muted);
+    }
+
+    .dark-mode .currency-dialog-footer {
+      border-top-color: var(--border);
+    }
+
+    .dark-mode .cancel-btn {
+      background: var(--surface);
+      border-color: var(--border);
+      color: var(--text);
+    }
+
+    .dark-mode .cancel-btn:hover {
+      background: #334155;
+      border-color: var(--muted);
     }
   `;
   document.head.appendChild(style);
 
   document.body.appendChild(currencyDialog);
+
+  // Add click handlers for currency options
+  const currencyOptionElements = currencyDialog.querySelectorAll('.currency-option');
+  currencyOptionElements.forEach(option => {
+    option.addEventListener('click', () => {
+      const currencyCode = option.dataset.currency;
+      selectCurrency(currencyCode);
+      currencyDialog.remove();
+    });
+  });
 
   // Add close functionality
   currencyDialog.addEventListener('click', (e) => {
