@@ -2014,3 +2014,449 @@ body{background:var(--bg);color:var(--text);}
   }
 }
 
+/* Risk Metrics Styles */
+.risk-metrics {
+  margin: 0px 0;
+  padding: 0 0px;
+}
+
+.risk-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 13px;
+}
+
+.risk-metric-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 17px;
+  text-align: center;
+  transition: all 0.3s ease;
+  box-shadow: 0px 1.5px 2px 0px rgba(225,229,237,.4);
+}
+
+.risk-metric-card:hover {
+  transform: translateY(0px);
+}
+
+.risk-metric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.risk-metric-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  text-align: left;
+}
+
+.risk-metric-icon {
+  display: none;
+}
+
+.risk-metric-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+  line-height: 1.2;
+}
+
+.risk-metric-description {
+  font-size: 12px;
+  color: var(--text);
+  margin-bottom: 4px;
+  opacity: 0.8;
+}
+
+.risk-metric-subtitle {
+  font-size: 11px;
+  color: var(--muted);
+  opacity: 0.6;
+}
+
+/* Dark mode styles for risk metrics */
+.dark-mode .risk-metric-card {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.dark-mode .risk-metric-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Responsive design for risk metrics */
+@media(max-width: 1200px) {
+  .risk-metrics-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+}
+
+@media(max-width: 600px) {
+  .risk-metrics-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .risk-metric-card {
+    padding: 16px;
+  }
+  
+  .risk-metric-value {
+    font-size: 20px;
+  }
+}
+
+/* Analysis Grid Styles */
+.analysis-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 13px 0;
+}
+
+.analysis-grid .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0px 1.5px 2px 0px rgba(225,229,237,.4);
+}
+
+/* Responsive design for analysis grid */
+@media(max-width: 1200px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media(max-width: 600px) {
+  .analysis-grid .card {
+    padding: 16px;
+  }
+}
+
+/* Trading Heatmap Styles */
+.heatmap-container {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin: 13px 0;
+  box-shadow: 0px 1.5px 2px 0px rgba(225,229,237,.4);
+  min-height: 280px;
+}
+
+.heatmap-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.heatmap-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.heatmap-title .material-icons {
+  font-size: 18px;
+  color: #484848;
+}
+
+.heatmap-year-selector {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.heatmap-year-selector select {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 32px 8px 12px;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.heatmap-year-selector .material-icons {
+  position: absolute;
+  right: 8px;
+  font-size: 16px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.heatmap-grid {
+  display: flex;
+  gap: 0px;
+  margin-bottom: 22px;
+  width: 100%;
+}
+
+.month-block {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  max-width: calc(100% / 12);
+}
+
+.month-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+.days-grid {
+  display: grid;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+  width: 83%;
+}
+
+.heatmap-day {
+  width: 14px;
+  height: 14px;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.heatmap-day:hover {
+  transform: scale(1.1);
+  z-index: 10;
+}
+
+.heatmap-tooltip {
+  position: fixed;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  font-size: 14px;
+  color: #374151;
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  white-space: nowrap;
+  max-width: 300px;
+  transform: translateX(-50%);
+}
+
+.heatmap-tooltip.show {
+  opacity: 1;
+}
+
+.tooltip-content {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.tooltip-label {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.tooltip-date {
+  color: #374151;
+  font-weight: 600;
+}
+
+.tooltip-separator {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.tooltip-value {
+  color: #374151;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.tooltip-value.positive {
+  color: #059669;
+}
+
+.tooltip-value.negative {
+  color: #dc2626;
+}
+
+.heatmap-day.empty {
+  background-color: transparent;
+  cursor: default;
+}
+
+.heatmap-day.no-trades {
+  background-color: #ebedf0;
+}
+
+/* Profit levels (green) */
+.heatmap-day.profit-level-1 { background-color: #9be9a8; }
+.heatmap-day.profit-level-2 { background-color: #40c463; }
+.heatmap-day.profit-level-3 { background-color: #30a14e; }
+.heatmap-day.profit-level-4 { background-color: #216e39; }
+
+/* Loss levels (red) */
+.heatmap-day.loss-level-1 { background-color: #ffb3ba; }
+.heatmap-day.loss-level-2 { background-color: #ff8080; }
+.heatmap-day.loss-level-3 { background-color: #e53e3e; }
+.heatmap-day.loss-level-4 { background-color: #c53030; }
+
+.heatmap-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.legend-dots {
+  display: flex;
+  gap: 2px;
+}
+
+.legend-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+}
+
+.legend-separator {
+  margin: 0 4px;
+  color: var(--muted);
+}
+
+/* Legend dot colors */
+.legend-dot.profit-level-1 { background-color: #9be9a8; }
+.legend-dot.profit-level-2 { background-color: #40c463; }
+.legend-dot.profit-level-3 { background-color: #30a14e; }
+.legend-dot.profit-level-4 { background-color: #216e39; }
+
+.legend-dot.loss-level-1 { background-color: #ffb3ba; }
+.legend-dot.loss-level-2 { background-color: #ff8080; }
+.legend-dot.loss-level-3 { background-color: #e53e3e; }
+.legend-dot.loss-level-4 { background-color: #c53030; }
+
+/* Dark mode styles for heatmap */
+.dark-mode .heatmap-container {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.dark-mode .heatmap-year-selector select {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.dark-mode .heatmap-day.no-trades { background-color: #161b22; }
+
+/* Dark mode profit levels (green) */
+.dark-mode .heatmap-day.profit-level-1 { background-color: #0e4429; }
+.dark-mode .heatmap-day.profit-level-2 { background-color: #006d32; }
+.dark-mode .heatmap-day.profit-level-3 { background-color: #26a641; }
+.dark-mode .heatmap-day.profit-level-4 { background-color: #39d353; }
+
+/* Dark mode loss levels (red) */
+.dark-mode .heatmap-day.loss-level-1 { background-color: #7f1d1d; }
+.dark-mode .heatmap-day.loss-level-2 { background-color: #991b1b; }
+.dark-mode .heatmap-day.loss-level-3 { background-color: #b91c1c; }
+.dark-mode .heatmap-day.loss-level-4 { background-color: #dc2626; }
+
+/* Dark mode legend colors */
+.dark-mode .legend-dot.profit-level-1 { background-color: #0e4429; }
+.dark-mode .legend-dot.profit-level-2 { background-color: #006d32; }
+.dark-mode .legend-dot.profit-level-3 { background-color: #26a641; }
+.dark-mode .legend-dot.profit-level-4 { background-color: #39d353; }
+
+.dark-mode .legend-dot.loss-level-1 { background-color: #7f1d1d; }
+.dark-mode .legend-dot.loss-level-2 { background-color: #991b1b; }
+.dark-mode .legend-dot.loss-level-3 { background-color: #b91c1c; }
+.dark-mode .legend-dot.loss-level-4 { background-color: #dc2626; }
+
+/* Dark mode tooltip styles */
+.dark-mode .heatmap-tooltip {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.dark-mode .tooltip-label {
+  color: var(--muted);
+}
+
+.dark-mode .tooltip-date {
+  color: var(--text);
+}
+
+.dark-mode .tooltip-separator {
+  color: var(--muted);
+}
+
+.dark-mode .tooltip-value {
+  color: var(--text);
+}
+
+.dark-mode .tooltip-value.positive {
+  color: #34d399;
+}
+
+.dark-mode .tooltip-value.negative {
+  color: #f87171;
+}
+
+/* Responsive design for heatmap */
+@media(max-width: 1200px) {
+  .heatmap-grid {
+    grid-template-columns: repeat(26, 1fr);
+  }
+}
+
+@media(max-width: 600px) {
+  .heatmap-container {
+    padding: 16px;
+  }
+  
+  .heatmap-header {
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  
+  .heatmap-day {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+  }
+}
+

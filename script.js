@@ -286,6 +286,102 @@ function byDateData(){
   let cum=0;
   return rows.map(([date,pnl])=>{ cum+=pnl; return {date, pnl, cum}; });
 }
+
+/* ---------- Risk Metrics Calculations ---------- */
+function calculateRiskMetrics(rows) {
+  if (rows.length === 0) {
+    return {
+      riskRewardRatio: 0,
+      positionSizingEfficiency: 0,
+      expectancy: 0,
+      sharpeRatio: 0
+    };
+  }
+
+  // Calculate Risk:Reward Ratio
+  const winningTrades = rows.filter(e => (e.pnl || 0) > 0);
+  const losingTrades = rows.filter(e => (e.pnl || 0) <= 0);
+  
+  const avgWin = winningTrades.length > 0 ? 
+    winningTrades.reduce((sum, e) => sum + (e.pnl || 0), 0) / winningTrades.length : 0;
+  const avgLoss = losingTrades.length > 0 ? 
+    Math.abs(losingTrades.reduce((sum, e) => sum + (e.pnl || 0), 0)) / losingTrades.length : 1;
+  
+  const riskRewardRatio = avgLoss > 0 ? avgWin / avgLoss : 0;
+
+  // Calculate Position Sizing Efficiency (simplified - based on P&L consistency)
+  const pnlValues = rows.map(e => Math.abs(e.pnl || 0));
+  const avgPnlSize = pnlValues.reduce((sum, val) => sum + val, 0) / pnlValues.length;
+  const pnlVariance = pnlValues.reduce((sum, val) => sum + Math.pow(val - avgPnlSize, 2), 0) / pnlValues.length;
+  const pnlStdDev = Math.sqrt(pnlVariance);
+  const positionSizingEfficiency = avgPnlSize > 0 ? Math.max(0, 100 - (pnlStdDev / avgPnlSize * 100)) : 0;
+
+  // Calculate Expectancy
+  const winRate = winningTrades.length / rows.length;
+  const lossRate = losingTrades.length / rows.length;
+  const expectancy = (winRate * avgWin) - (lossRate * avgLoss);
+
+  // Calculate Sharpe Ratio (simplified)
+  const returns = rows.map(e => e.pnl || 0);
+  const avgReturn = returns.reduce((sum, ret) => sum + ret, 0) / returns.length;
+  const returnVariance = returns.reduce((sum, ret) => sum + Math.pow(ret - avgReturn, 2), 0) / returns.length;
+  const returnStdDev = Math.sqrt(returnVariance);
+  const sharpeRatio = returnStdDev > 0 ? avgReturn / returnStdDev : 0;
+
+  return {
+    riskRewardRatio: riskRewardRatio,
+    positionSizingEfficiency: positionSizingEfficiency,
+    expectancy: expectancy,
+    sharpeRatio: sharpeRatio
+  };
+}
+
+function renderRiskMetrics() {
+  const rows = filteredEntries();
+  const metrics = calculateRiskMetrics(rows);
+  
+  // Update the DOM elements
+  $("#riskRewardRatio").textContent = metrics.riskRewardRatio.toFixed(2);
+  $("#positionSizingEfficiency").textContent = Math.round(metrics.positionSizingEfficiency) + "%";
+  $("#expectancy").textContent = formatCurrency(metrics.expectancy);
+  $("#sharpeRatio").textContent = metrics.sharpeRatio.toFixed(2);
+  
+  // Add color coding based on performance
+  const riskRewardEl = $("#riskRewardRatio");
+  const positionSizingEl = $("#positionSizingEfficiency");
+  const expectancyEl = $("#expectancy");
+  const sharpeEl = $("#sharpeRatio");
+  
+  // Risk:Reward Ratio - Green if >= 2, Yellow if >= 1, Red if < 1
+  if (metrics.riskRewardRatio >= 2) {
+    riskRewardEl.style.color = '#065f46';
+  } else if (metrics.riskRewardRatio >= 1) {
+    riskRewardEl.style.color = '#92400e';
+  } else {
+    riskRewardEl.style.color = '#9f1239';
+  }
+  
+  // Position Sizing - Green if >= 80%, Yellow if >= 60%, Red if < 60%
+  if (metrics.positionSizingEfficiency >= 80) {
+    positionSizingEl.style.color = '#065f46';
+  } else if (metrics.positionSizingEfficiency >= 60) {
+    positionSizingEl.style.color = '#92400e';
+  } else {
+    positionSizingEl.style.color = '#9f1239';
+  }
+  
+  // Expectancy - Green if positive, Red if negative
+  expectancyEl.style.color = metrics.expectancy >= 0 ? '#065f46' : '#9f1239';
+  
+  // Sharpe Ratio - Green if >= 1, Yellow if >= 0.5, Red if < 0.5
+  if (metrics.sharpeRatio >= 1) {
+    sharpeEl.style.color = '#065f46';
+  } else if (metrics.sharpeRatio >= 0.5) {
+    sharpeEl.style.color = '#92400e';
+  } else {
+    sharpeEl.style.color = '#9f1239';
+  }
+}
 /* ---------- Rendering ---------- */
 function renderHeader(){
   const name = state.user?.name || "";
@@ -491,6 +587,9 @@ function renderCharts(){
   // Render new charts
   renderDonutChart();
   renderSessionChart();
+  renderRulesHistogram();
+  renderEquityCurve();
+  renderTradingHeatmap();
 }
 
 function renderDonutChart() {
@@ -678,6 +777,327 @@ function renderSessionChart() {
   $("#sessionLegend").innerHTML = sessionData.map(session => 
     `<span>${session.name}: ${session.total} (${Math.round(session.winRate)}%)</span>`
   ).join('');
+}
+
+function renderRulesHistogram() {
+  const width = 320, height = 180;
+  const pad = 40;
+  const chartWidth = width - pad * 2;
+  const chartHeight = height - pad * 2;
+
+  // Count rules usage
+  const ruleCounts = {};
+  state.entries.forEach(entry => {
+    if (entry.ruleTitle) {
+      ruleCounts[entry.ruleTitle] = (ruleCounts[entry.ruleTitle] || 0) + 1;
+    }
+  });
+
+  // Convert to array and sort by count (descending)
+  const data = Object.entries(ruleCounts)
+    .map(([rule, count]) => ({ rule, count }))
+    .sort((a, b) => b.count - a.count);
+
+  if (data.length === 0) {
+    $("#rulesHistogram").innerHTML = `
+      <text x="${width/2}" y="${height/2}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No rules data</text>
+    `;
+    return;
+  }
+
+  // Color palette for rules
+  const colors = [
+    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
+    '#F97316', '#06B6D4', '#EC4899', '#84CC16', '#6366F1'
+  ];
+
+  // Find max count for scaling
+  const maxCount = Math.max(...data.map(d => d.count));
+
+  // Calculate bar dimensions
+  const barWidth = Math.max(8, chartWidth / data.length * 0.7);
+  const barSpacing = chartWidth / data.length * 0.3;
+
+  // Render bars
+  const bars = data.map((item, index) => {
+    const x = pad + index * (chartWidth / data.length) + barSpacing / 2;
+    const barHeight = (item.count / maxCount) * chartHeight;
+    const y = height - pad - barHeight;
+    const color = colors[index % colors.length];
+    
+    return `
+      <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" opacity="0.8"></rect>
+    `;
+  }).join('');
+
+  // Render axis
+  const axis = `
+    <line x1="${pad}" x2="${width - pad}" y1="${height - pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+  `;
+
+  // Render labels (rule names)
+  const labels = data.map((item, index) => {
+    const x = pad + index * (chartWidth / data.length) + chartWidth / data.length / 2;
+    const y = height - pad + 15;
+    const ruleName = item.rule.length > 8 ? item.rule.substring(0, 8) + '...' : item.rule;
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="9" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${ruleName}</text>`;
+  }).join('');
+
+  // Render values on bars
+  const values = data.map((item, index) => {
+    const x = pad + index * (chartWidth / data.length) + chartWidth / data.length / 2;
+    const barHeight = (item.count / maxCount) * chartHeight;
+    const y = height - pad - barHeight - 5;
+    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}">${item.count}</text>`;
+  }).join('');
+
+  $("#rulesHistogram").innerHTML = axis + bars + labels + values;
+}
+
+function renderEquityCurve() {
+  const width = 320, height = 180;
+  const pad = 40;
+  const chartWidth = width - pad * 2;
+  const chartHeight = height - pad * 2;
+
+  // Get sorted entries by date
+  const sortedEntries = state.entries
+    .sort((a, b) => new Date(a.date) - new Date(b.date))
+    .map((entry, index) => ({
+      ...entry,
+      tradeIndex: index,
+      pnl: entry.pnl || 0
+    }));
+
+  if (sortedEntries.length === 0) {
+    $("#equityCurve").innerHTML = `
+      <text x="${width/2}" y="${height/2}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No data</text>
+    `;
+    return;
+  }
+
+  // Calculate cumulative P&L and drawdown
+  let cumulative = 0;
+  let peak = 0;
+  const equityData = sortedEntries.map(entry => {
+    cumulative += entry.pnl;
+    peak = Math.max(peak, cumulative);
+    const drawdown = cumulative - peak;
+    return {
+      tradeIndex: entry.tradeIndex,
+      cumulative: cumulative,
+      drawdown: drawdown,
+      peak: peak
+    };
+  });
+
+  // Find min and max for scaling
+  const minY = Math.min(0, ...equityData.map(d => d.drawdown));
+  const maxY = Math.max(1, ...equityData.map(d => d.cumulative));
+
+  // Scale functions
+  const xScale = (index) => pad + (index * chartWidth) / Math.max(1, sortedEntries.length - 1);
+  const yScale = (value) => height - pad - ((value - minY) * chartHeight) / Math.max(1, maxY - minY);
+
+  // Create equity curve line
+  const equityLine = equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' ');
+
+  // Create drawdown area
+  const drawdownArea = equityData.map((d, i) => {
+    const x = xScale(d.tradeIndex);
+    const y = yScale(d.cumulative);
+    const drawdownY = yScale(d.cumulative - d.drawdown);
+    return `${x},${y} ${x},${drawdownY}`;
+  }).join(' ');
+
+  // Render equity curve
+  const equityCurve = `
+    <polyline points="${equityLine}" fill="none" stroke="#3B82F6" stroke-width="2"></polyline>
+  `;
+
+  // Render drawdown area
+  const drawdown = `
+    <defs>
+      <linearGradient id="drawdownGradient" x1="0" x2="0" y1="0" y2="1">
+        <stop offset="0%" stop-color="#EF4444" stop-opacity="0.3"/>
+        <stop offset="100%" stop-color="#EF4444" stop-opacity="0.1"/>
+      </linearGradient>
+    </defs>
+    <path d="M ${equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' L ')} L ${xScale(equityData[equityData.length-1].tradeIndex)},${yScale(0)} L ${xScale(0)},${yScale(0)} Z" fill="url(#drawdownGradient)"></path>
+  `;
+
+  // Render axis
+  const axis = `
+    <line x1="${pad}" x2="${width - pad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+  `;
+
+  // Render final values
+  const finalEquity = equityData[equityData.length - 1];
+  const finalValue = `
+    <text x="${width - pad - 5}" y="${yScale(finalEquity.cumulative) - 5}" text-anchor="end" font-size="10" fill="#3B82F6" font-weight="600">
+      ₹${formatCurrency(finalEquity.cumulative).replace('₹', '')}
+    </text>
+  `;
+
+  $("#equityCurve").innerHTML = drawdown + equityCurve + axis + finalValue;
+}
+
+function renderTradingHeatmap() {
+  const currentYear = parseInt($("#heatmapYearSelect").value) || new Date().getFullYear();
+  
+  // Get trades for the selected year
+  const yearTrades = state.entries.filter(entry => {
+    const entryYear = new Date(entry.date).getFullYear();
+    return entryYear === currentYear;
+  });
+
+  // Group trades by day and calculate daily P&L
+  const dailyPnL = {};
+  yearTrades.forEach(entry => {
+    const dateKey = entry.date;
+    if (!dailyPnL[dateKey]) {
+      dailyPnL[dateKey] = 0;
+    }
+    dailyPnL[dateKey] += (entry.pnl || 0);
+  });
+
+  // Update trade count display
+  const totalTrades = yearTrades.length;
+  $("#heatmapTradeCount").textContent = `${totalTrades} Trade${totalTrades !== 1 ? 's' : ''} in ${currentYear}`;
+
+  // Generate heatmap grid
+  const heatmapGrid = $("#heatmapGrid");
+  heatmapGrid.innerHTML = '';
+
+  // Find max absolute P&L for scaling
+  const maxAbsPnL = Math.max(...Object.values(dailyPnL).map(Math.abs), 1);
+
+  // Create monthly blocks
+  const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+  
+  months.forEach((month, monthIndex) => {
+    const monthBlock = document.createElement('div');
+    monthBlock.className = 'month-block';
+    
+    // Add month label
+    const monthLabel = document.createElement('div');
+    monthLabel.className = 'month-label';
+    monthLabel.textContent = month;
+    monthBlock.appendChild(monthLabel);
+    
+    // Create days grid for this month
+    const daysGrid = document.createElement('div');
+    daysGrid.className = 'days-grid';
+    
+    // Get number of days in this month
+    const daysInMonth = new Date(currentYear, monthIndex + 1, 0).getDate();
+    const firstDayOfMonth = new Date(currentYear, monthIndex, 1).getDay();
+    
+    // Calculate number of weeks needed for this month
+    const totalDays = firstDayOfMonth + daysInMonth;
+    const numberOfWeeks = Math.ceil(totalDays / 7);
+    
+    // Set the grid template columns based on number of weeks
+    daysGrid.style.gridTemplateColumns = `repeat(${numberOfWeeks}, 1fr)`;
+    
+    // Create 7 rows (one for each day of the week)
+    for (let dayOfWeek = 0; dayOfWeek < 7; dayOfWeek++) {
+      for (let week = 0; week < numberOfWeeks; week++) {
+        const dayNumber = week * 7 + dayOfWeek - firstDayOfMonth + 1;
+        
+        if (dayNumber < 1 || dayNumber > daysInMonth) {
+          // Empty cell for days outside the month
+          const emptyDay = document.createElement('div');
+          emptyDay.className = 'heatmap-day empty';
+          daysGrid.appendChild(emptyDay);
+        } else {
+          // Valid day in the month
+          const date = new Date(currentYear, monthIndex, dayNumber);
+          const dateKey = date.toISOString().slice(0, 10);
+          const dayPnL = dailyPnL[dateKey] || 0;
+          
+          const dayElement = document.createElement('div');
+          dayElement.className = 'heatmap-day';
+          
+          if (dayPnL > 0) {
+            // Profitable day - green
+            const intensity = Math.min(4, Math.ceil((dayPnL / maxAbsPnL) * 4));
+            dayElement.classList.add(`profit-level-${intensity}`);
+          } else if (dayPnL < 0) {
+            // Losing day - red
+            const intensity = Math.min(4, Math.ceil((Math.abs(dayPnL) / maxAbsPnL) * 4));
+            dayElement.classList.add(`loss-level-${intensity}`);
+          } else {
+            // No trades - gray
+            dayElement.classList.add('no-trades');
+          }
+          
+          // Add custom tooltip functionality
+          dayElement.addEventListener('mouseenter', (e) => {
+            const tooltip = $("#heatmapTooltip");
+            const tooltipDate = $("#tooltipDate");
+            const tooltipValue = $("#tooltipValue");
+            
+            // Update tooltip content
+            tooltipDate.textContent = date.toLocaleDateString('en-US', { 
+              month: 'long', 
+              day: 'numeric', 
+              year: 'numeric' 
+            });
+            
+            if (dayPnL > 0) {
+              tooltipValue.textContent = `₹${Math.abs(dayPnL).toFixed(2)}`;
+              tooltipValue.className = 'tooltip-value positive';
+            } else if (dayPnL < 0) {
+              tooltipValue.textContent = `₹${Math.abs(dayPnL).toFixed(2)}`;
+              tooltipValue.className = 'tooltip-value negative';
+            } else {
+              tooltipValue.textContent = '₹0.00';
+              tooltipValue.className = 'tooltip-value';
+            }
+            
+            // Position tooltip
+            const rect = e.target.getBoundingClientRect();
+            const tooltipRect = tooltip.getBoundingClientRect();
+            
+            let left = rect.left + rect.width/2;
+            let top = rect.top - tooltipRect.height - 15; // Position above with 15px gap
+            
+            // Adjust if tooltip would go off-screen
+            if (left + tooltipRect.width/2 > window.innerWidth) {
+              left = window.innerWidth - tooltipRect.width/2 - 10;
+            }
+            if (left - tooltipRect.width/2 < 0) {
+              left = tooltipRect.width/2 + 10;
+            }
+            if (top < 0) {
+              top = rect.bottom + 10; // Show below if not enough space above
+            }
+            
+            tooltip.style.left = `${left}px`;
+            tooltip.style.top = `${top}px`;
+            tooltip.classList.add('show');
+          });
+          
+          dayElement.addEventListener('mouseleave', () => {
+            $("#heatmapTooltip").classList.remove('show');
+          });
+          
+          daysGrid.appendChild(dayElement);
+        }
+      }
+    }
+    
+    monthBlock.appendChild(daysGrid);
+    heatmapGrid.appendChild(monthBlock);
+  });
+
+  // Add year selector functionality
+  $("#heatmapYearSelect").onchange = () => {
+    renderTradingHeatmap();
+  };
 }
 
 /* ---------- Entry CRUD ---------- */
@@ -1325,12 +1745,23 @@ function submitRule(e){
 }
 
 /* ---------- Time Range Filter ---------- */
-let currentTimeRange = '30d';
+let currentTimeRange = 'all';
 
 function initTimeRangeFilter() {
   const timeRangeBtn = $("#timeRangeBtn");
   const timeRangeDropdown = $("#timeRangeDropdown");
   const selectedTimeRangeSpan = $("#selectedTimeRange");
+  
+  // Set default selection based on currentTimeRange
+  const defaultOption = document.querySelector(`[data-range="${currentTimeRange}"]`);
+  if (defaultOption) {
+    const defaultCheckbox = defaultOption.querySelector('input[type="checkbox"]');
+    const defaultLabel = defaultOption.querySelector('label');
+    if (defaultCheckbox && defaultLabel) {
+      defaultCheckbox.checked = true;
+      selectedTimeRangeSpan.textContent = defaultLabel.textContent;
+    }
+  }
   
   // Toggle dropdown
   timeRangeBtn.onclick = (e) => {
@@ -1384,6 +1815,9 @@ function getFilteredEntriesByTimeRange() {
   let startDate = new Date();
   
   switch(currentTimeRange) {
+    case 'all':
+      // Return all entries without date filtering
+      return state.entries;
     case '24h':
       startDate.setDate(now.getDate() - 1);
       break;
@@ -1419,6 +1853,7 @@ function renderAll(){
   renderGreeting();
   bindFilters();
   renderStats();
+  renderRiskMetrics();
   renderTable();
   renderCharts();
   // Refresh trading calendar if it exists

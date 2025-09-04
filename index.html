@@ -102,7 +102,7 @@
           
           <div class="time-range-filter">
             <button class="time-range-btn" id="timeRangeBtn">
-              <span id="selectedTimeRange">Last 30 days</span>
+              <span id="selectedTimeRange">All time</span>
               <span class="material-icons">expand_more</span>
             </button>
             <div class="time-range-dropdown hidden" id="timeRangeDropdown">
@@ -115,12 +115,16 @@
                 <label for="range7d">Last 7 days</label>
               </div>
               <div class="time-range-option" data-range="30d">
-                <input type="checkbox" id="range30d" checked>
+                <input type="checkbox" id="range30d">
                 <label for="range30d">Last 30 days</label>
               </div>
               <div class="time-range-option" data-range="365d">
                 <input type="checkbox" id="range365d">
                 <label for="range365d">Last 365 days</label>
+              </div>
+              <div class="time-range-option" data-range="all">
+                <input type="checkbox" id="rangeAll" checked>
+                <label for="rangeAll">All time</label>
               </div>
               <div class="time-range-option" data-range="custom">
                 <input type="checkbox" id="rangeCustom">
@@ -132,6 +136,51 @@
         
         <!-- Stats -->
         <section class="stats" id="statsRow"></section>
+
+        <!-- Risk Metrics -->
+        <section class="risk-metrics">
+          <div class="risk-metrics-grid">
+            <div class="risk-metric-card">
+              <div class="risk-metric-header">
+                <span class="risk-metric-title">Risk:Reward Ratio</span>
+                <span class="risk-metric-icon">📊</span>
+              </div>
+              <div class="risk-metric-value" id="riskRewardRatio">0.00</div>
+              <div class="risk-metric-description">Avg Win / Avg Loss</div>
+              <div class="risk-metric-subtitle">Target: 1:2 or higher</div>
+            </div>
+            
+            <div class="risk-metric-card">
+              <div class="risk-metric-header">
+                <span class="risk-metric-title">Position Sizing</span>
+                <span class="risk-metric-icon">⚖️</span>
+              </div>
+              <div class="risk-metric-value" id="positionSizingEfficiency">0%</div>
+              <div class="risk-metric-description">Consistency Score</div>
+              <div class="risk-metric-subtitle">Risk per trade variance</div>
+            </div>
+            
+            <div class="risk-metric-card">
+              <div class="risk-metric-header">
+                <span class="risk-metric-title">Expectancy</span>
+                <span class="risk-metric-icon">🎯</span>
+              </div>
+              <div class="risk-metric-value" id="expectancy">₹0</div>
+              <div class="risk-metric-description">Expected P&L per trade</div>
+              <div class="risk-metric-subtitle">Long-term average</div>
+            </div>
+            
+            <div class="risk-metric-card">
+              <div class="risk-metric-header">
+                <span class="risk-metric-title">Sharpe Ratio</span>
+                <span class="risk-metric-icon">📈</span>
+              </div>
+              <div class="risk-metric-value" id="sharpeRatio">0.00</div>
+              <div class="risk-metric-description">Risk-adjusted returns</div>
+              <div class="risk-metric-subtitle">Consistency measure</div>
+            </div>
+          </div>
+        </section>
 
         <!-- Dashboard -->
         <section id="view-dashboard" class="view">
@@ -169,6 +218,66 @@
               <div class="row between tiny"><span>Session Performance</span><span class="muted tiny">Trades</span></div>
               <svg id="sessionChart" viewBox="0 0 320 180" class="chart"></svg>
               <div id="sessionLegend" class="session-legend"></div>
+            </div>
+          </div>
+
+          <!-- Rules Histogram and Equity Curve -->
+          <div class="analysis-grid">
+            <div class="card">
+              <div class="row between tiny"><span>Rules Usage Histogram</span><span class="muted tiny">Trade Count</span></div>
+              <svg id="rulesHistogram" viewBox="0 0 320 180" class="chart"></svg>
+              <div class="tiny muted">Most frequently used trading rules</div>
+            </div>
+            <div class="card">
+              <div class="row between tiny"><span>Equity Curve with Drawdown</span><span class="muted tiny">P&L</span></div>
+              <svg id="equityCurve" viewBox="0 0 320 180" class="chart"></svg>
+              <div class="tiny muted">Cumulative P&L and drawdown periods</div>
+            </div>
+          </div>
+
+          <!-- Trading Heatmap -->
+          <div class="heatmap-container">
+            <div class="heatmap-header">
+              <div class="heatmap-title">
+                <span class="material-icons">calendar_today</span>
+                <span id="heatmapTradeCount">0 Trades in 2025</span>
+              </div>
+              <div class="heatmap-year-selector">
+                <select id="heatmapYearSelect">
+                  <option value="2025">2025</option>
+                  <option value="2024">2024</option>
+                  <option value="2023">2023</option>
+                </select>
+                <span class="material-icons">expand_more</span>
+              </div>
+            </div>
+            <div class="heatmap-grid" id="heatmapGrid">
+              <!-- Heatmap will be generated by JavaScript -->
+            </div>
+            <div class="heatmap-tooltip" id="heatmapTooltip">
+              <div class="tooltip-content">
+                <span class="tooltip-label">Net realised P&L on</span>
+                <span class="tooltip-date" id="tooltipDate">May 22, 2024</span>
+                <span class="tooltip-separator">:</span>
+                <span class="tooltip-value" id="tooltipValue">₹68,000.55</span>
+              </div>
+            </div>
+            <div class="heatmap-legend">
+              <span>Loss</span>
+              <div class="legend-dots">
+                <div class="legend-dot loss-level-1"></div>
+                <div class="legend-dot loss-level-2"></div>
+                <div class="legend-dot loss-level-3"></div>
+                <div class="legend-dot loss-level-4"></div>
+              </div>
+              <span class="legend-separator">|</span>
+              <div class="legend-dots">
+                <div class="legend-dot profit-level-1"></div>
+                <div class="legend-dot profit-level-2"></div>
+                <div class="legend-dot profit-level-3"></div>
+                <div class="legend-dot profit-level-4"></div>
+              </div>
+              <span>Profit</span>
             </div>
           </div>
 
