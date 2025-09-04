@@ -894,8 +894,8 @@ function renderRulesHistogram() {
 
 function renderEquityCurve() {
   const width = 500, height = 180;
-  const leftPad = 35; // Further reduced space for Y-axis labels
-  const bottomPad = -2; // Further reduced space for X-axis labels
+  const leftPad = 40; // Increased space for Y-axis labels
+  const bottomPad = 5; // Increased space for X-axis labels to prevent collapse
   const rightPad = 2; // Minimal right padding
   const topPad = 28; // Increased top padding
   const chartWidth = width - leftPad - rightPad;
@@ -924,7 +924,10 @@ function renderEquityCurve() {
     return {
       tradeIndex: entry.tradeIndex,
       cumulative: cumulative,
-      date: entry.date
+      date: entry.date,
+      pnl: entry.pnl,
+      symbol: entry.symbol,
+      side: entry.side
     };
   });
 
@@ -935,6 +938,10 @@ function renderEquityCurve() {
   // Scale functions - using full chart area
   const xScale = (index) => leftPad + (index * chartWidth) / Math.max(1, sortedEntries.length - 1);
   const yScale = (value) => height - bottomPad - ((value - minY) * chartHeight) / Math.max(1, maxY - minY);
+
+  // Inverse scale functions for hover detection
+  const xScaleInverse = (x) => (x - leftPad) / (chartWidth / Math.max(1, sortedEntries.length - 1));
+  const yScaleInverse = (y) => minY + ((height - bottomPad - y) * (maxY - minY)) / chartHeight;
 
   // Create area fill path - extending to full width
   const areaPath = `M ${leftPad},${yScale(0)} L ${equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' L ')} L ${xScale(equityData[equityData.length-1].tradeIndex)},${yScale(0)} Z`;
@@ -959,7 +966,17 @@ function renderEquityCurve() {
     } else {
       label = `${kValue.toFixed(1)}K`;
     }
-    yLabels.push(`<text x="${leftPad - 5}" y="${y + 2}" text-anchor="end" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
+    
+    // Adjust positioning to prevent collapse at origin
+    let xPos = leftPad - 8;
+    let yPos = y + 2;
+    
+    // Special handling for the zero line to prevent overlap with X-axis
+    if (Math.abs(value) < 0.1) {
+      yPos = y + 8; // Move zero label up slightly
+    }
+    
+    yLabels.push(`<text x="${xPos}" y="${yPos}" text-anchor="end" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
   }
 
   // Generate X-axis labels with month names below the line
@@ -973,7 +990,17 @@ function renderEquityCurve() {
       const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
       const monthName = monthNames[date.getMonth()];
       const label = `${date.getDate()} ${monthName}`;
-      xLabels.push(`<text x="${x}" y="${height - bottomPad + 15}" text-anchor="middle" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
+      
+      // All X-axis labels should be on the same horizontal line
+      const yPosition = height - bottomPad + 15; // Consistent Y position for all labels
+      let xOffset = 0; // Default X offset
+      
+      // Special handling for the first label to avoid horizontal overlap with Y-axis
+      if (i === 0) {
+        xOffset = 15; // Move first label to the right to avoid Y-axis overlap
+      }
+      
+      xLabels.push(`<text x="${x + xOffset}" y="${yPosition}" text-anchor="middle" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
     }
   }
 
@@ -990,8 +1017,21 @@ function renderEquityCurve() {
     <path d="${areaPath}" fill="transparent"></path>
   `;
 
-  // Render line
-  const line = `<path d="${linePath}" fill="none" stroke="#3B82F6" stroke-width="2"></path>`;
+  // Render line with hover interactions
+  const line = `<path d="${linePath}" fill="none" stroke="#3B82F6" stroke-width="2" class="equity-line" id="equityLine"></path>`;
+
+  // Create invisible hover area for continuous interaction
+  const hoverArea = `
+    <rect 
+      x="${leftPad}" 
+      y="${topPad}" 
+      width="${chartWidth}" 
+      height="${chartHeight}" 
+      fill="transparent" 
+      class="equity-hover-area"
+      style="cursor: crosshair;"
+    />
+  `;
 
   // Render axis - extending to full width
   const axis = `
@@ -1008,7 +1048,141 @@ function renderEquityCurve() {
     </text>
   `;
 
-  $("#equityCurve").innerHTML = gridLines.join('') + area + line + axis + yLabels.join('') + xLabels.join('') + finalValue;
+  // Create tooltip element
+  const tooltip = `
+    <g id="equityTooltip" style="pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
+      <rect id="tooltipRect" x="0" y="0" width="160" height="50" fill="rgb(255 255 255 / 46%)" stroke="#e5e7eb" stroke-width="1" rx="8" ry="8"/>
+      <text id="tooltipDate" x="10" y="20" font-size="12" fill="#374151" font-family="Inter" font-weight="600"></text>
+      <text id="tooltipValue" x="10" y="40" font-size="14" fill="#3B82F6" font-family="Inter" font-weight="700"></text>
+    </g>
+  `;
+
+  // Create hover indicator dot
+  const hoverDot = `
+    <circle 
+      id="hoverDot" 
+      cx="0" 
+      cy="0" 
+      r="4" 
+      fill="#ef4444" 
+      stroke="#ffffff" 
+      stroke-width="2"
+      style="opacity: 0; transition: opacity 0.2s ease;"
+    />
+  `;
+
+  $("#equityCurve").innerHTML = gridLines.join('') + area + line + axis + yLabels.join('') + xLabels.join('') + finalValue + hoverArea + tooltip + hoverDot;
+
+  // Add hover event listeners
+  addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yScaleInverse, leftPad, topPad, chartWidth, chartHeight);
+}
+
+function addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yScaleInverse, leftPad, topPad, chartWidth, chartHeight) {
+  const hoverArea = document.querySelector('.equity-hover-area');
+  const tooltip = document.getElementById('equityTooltip');
+  const tooltipDate = document.getElementById('tooltipDate');
+  const tooltipValue = document.getElementById('tooltipValue');
+  const hoverDot = document.getElementById('hoverDot');
+
+  // Function to interpolate values between data points
+  function interpolateValue(x, equityData) {
+    if (equityData.length === 0) return null;
+    if (equityData.length === 1) return equityData[0];
+
+    const tradeIndex = xScaleInverse(x);
+    const index = Math.floor(tradeIndex);
+    const fraction = tradeIndex - index;
+
+    if (index < 0) return equityData[0];
+    if (index >= equityData.length - 1) return equityData[equityData.length - 1];
+
+    const point1 = equityData[index];
+    const point2 = equityData[index + 1];
+
+    // Interpolate cumulative value
+    const interpolatedCumulative = point1.cumulative + (point2.cumulative - point1.cumulative) * fraction;
+
+    // Interpolate date
+    const date1 = new Date(point1.date);
+    const date2 = new Date(point2.date);
+    const interpolatedDate = new Date(date1.getTime() + (date2.getTime() - date1.getTime()) * fraction);
+
+    return {
+      cumulative: interpolatedCumulative,
+      date: interpolatedDate,
+      tradeIndex: tradeIndex,
+      trend: point2.cumulative - point1.cumulative // Calculate trend direction
+    };
+  }
+
+  hoverArea.addEventListener('mousemove', (e) => {
+    const rect = e.target.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    // Check if mouse is within chart bounds
+    if (x < leftPad || x > leftPad + chartWidth || y < topPad || y > topPad + chartHeight) {
+      tooltip.style.opacity = '0';
+      hoverDot.style.opacity = '0';
+      return;
+    }
+
+    // Get interpolated values
+    const interpolatedData = interpolateValue(x, equityData);
+    if (!interpolatedData) return;
+
+    // Update tooltip content
+    const formattedDate = interpolatedData.date.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric'
+    });
+    
+    tooltipDate.textContent = formattedDate;
+    tooltipValue.textContent = formatCurrency(interpolatedData.cumulative);
+
+    // Position tooltip
+    let tooltipX = x + 10;
+    let tooltipY = y - 40;
+
+    // Adjust if tooltip would go off-screen - decreased space from right side
+    if (tooltipX + 160 > 500) { // SVG width (reduced from 180 to 160)
+      tooltipX = x - 170; // Reduced from 190 to 170
+    }
+    if (tooltipY < 0) {
+      tooltipY = y + 10;
+    }
+
+    tooltip.setAttribute('transform', `translate(${tooltipX}, ${tooltipY})`);
+    tooltip.style.opacity = '1';
+
+    // Update hover dot position and color based on trend
+    const interpolatedY = yScale(interpolatedData.cumulative);
+    hoverDot.setAttribute('cx', x);
+    hoverDot.setAttribute('cy', interpolatedY);
+    
+    // Set dot color based on trend direction
+    if (interpolatedData.trend > 0) {
+      // Trending up - green dot
+      hoverDot.setAttribute('fill', '#10b981');
+      hoverDot.setAttribute('stroke', '#ffffff');
+    } else if (interpolatedData.trend < 0) {
+      // Trending down - red dot
+      hoverDot.setAttribute('fill', '#ef4444');
+      hoverDot.setAttribute('stroke', '#ffffff');
+    } else {
+      // No change - blue dot (neutral)
+      hoverDot.setAttribute('fill', '#3b82f6');
+      hoverDot.setAttribute('stroke', '#ffffff');
+    }
+    
+    hoverDot.style.opacity = '1';
+  });
+
+  hoverArea.addEventListener('mouseleave', () => {
+    tooltip.style.opacity = '0';
+    hoverDot.style.opacity = '0';
+  });
 }
 
 function renderTradingHeatmap() {

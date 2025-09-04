@@ -836,7 +836,7 @@ body{
 /* Donut Tooltip */
 .donut-tooltip {
   position: absolute;
-  background: rgb(255 255 255 / 85%);
+  background: rgb(255 255 255 / 46%);
   color: #000000;
   padding: 8px 12px;
   border-radius: 6px;
@@ -849,6 +849,7 @@ body{
   z-index: 1000;
   white-space: nowrap;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(20px);
 }
 
 .donut-tooltip::after {
@@ -2606,6 +2607,101 @@ body{
   .legend-dot {
     width: 8px;
     height: 8px;
+  }
+}
+
+/* Equity Curve Hover Container/Tooltip */
+#equityTooltip {
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.15));
+  z-index: 1000;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+#tooltipRect {
+  fill: rgb(255 255 255 / 46%);
+  stroke: #e5e7eb;
+  stroke-width: 1;
+  rx: 8;
+  ry: 8;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+#tooltipDate {
+  font-size: 9px;
+  fill: #374151;
+  font-family: 'Inter', sans-serif;
+  font-weight: 600;
+  text-anchor: start;
+}
+
+#tooltipValue {
+  font-size: 12px;
+  fill: #3B82F6;
+  font-family: 'Inter', sans-serif;
+  font-weight: 700;
+  text-anchor: start;
+}
+
+/* Hover Dot Styling */
+#hoverDot {
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: all 0.2s ease;
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+/* Hover Area Styling */
+.equity-hover-area {
+  cursor: crosshair;
+  transition: all 0.2s ease;
+}
+
+.equity-hover-area:hover {
+  background: rgba(59, 130, 246, 0.05);
+}
+
+/* Dark mode styles for equity curve tooltip */
+.dark-mode #tooltipRect {
+  fill: rgba(30, 41, 59, 0.95);
+  stroke: var(--border);
+}
+
+.dark-mode #tooltipDate {
+  fill: var(--text);
+}
+
+.dark-mode #tooltipValue {
+  fill: var(--accent);
+}
+
+/* Equity line hover effect */
+.equity-line {
+  transition: stroke-width 0.2s ease;
+}
+
+.equity-line:hover {
+  stroke-width: 3;
+}
+
+/* Responsive design for equity curve */
+@media(max-width: 600px) {
+  #equityTooltip {
+    transform: scale(0.8);
+  }
+  
+  #tooltipRect {
+    width: 160px;
+    height: 50px;
+  }
+  
+  #tooltipDate {
+    font-size: 10px;
+  }
+  
+  #tooltipValue {
+    font-size: 12px;
   }
 }
 
