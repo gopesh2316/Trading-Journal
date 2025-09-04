@@ -593,10 +593,10 @@ function renderCharts(){
 }
 
 function renderDonutChart() {
-  const width = 320, height = 180;
+  const width = 160, height = 220;
   const cx = width / 2, cy = height / 2;
-  const radius = 60;
-  const innerRadius = 30;
+  const radius = 90;
+  const innerRadius = 60;
 
   // Group entries by symbol (currency pairs)
   const symbolCounts = {};
@@ -619,18 +619,19 @@ function renderDonutChart() {
     return;
   }
 
-  // Color palette for different currency pairs
+  // Purple color palette with varying opacity
+  const basePurple = '#8B5CF6';
   const colors = [
-    '#8B5CF6', // Purple
-    '#F59E0B', // Orange
-    '#F97316', // Gold
-    '#EC4899', // Pink
-    '#06B6D4', // Light blue
-    '#10B981', // Green
-    '#EF4444', // Red
-    '#3B82F6', // Blue
-    '#8B5A2B', // Brown
-    '#9CA3AF'  // Gray
+    basePurple, // Full opacity
+    `${basePurple}E6`, // 90% opacity
+    `${basePurple}CC`, // 80% opacity
+    `${basePurple}B3`, // 70% opacity
+    `${basePurple}99`, // 60% opacity
+    `${basePurple}80`, // 50% opacity
+    `${basePurple}66`, // 40% opacity
+    `${basePurple}4D`, // 30% opacity
+    `${basePurple}33`, // 20% opacity
+    `${basePurple}1A`  // 10% opacity
   ];
 
   let currentAngle = 0;
@@ -670,7 +671,11 @@ function renderDonutChart() {
 
   // Render donut chart
   $("#donutChart").innerHTML = donutSegments.map(segment => 
-    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="1"></path>`
+    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" 
+           data-symbol="${segment.symbol}" 
+           data-count="${segment.count}" 
+           data-percentage="${(segment.percentage * 100).toFixed(1)}"
+           class="donut-segment"></path>`
   ).join('');
 
   // Update total trades
@@ -683,6 +688,38 @@ function renderDonutChart() {
       <span>${segment.symbol} (${segment.count})</span>
     </div>`
   ).join('');
+
+  // Add hover event listeners to donut segments
+  addDonutHoverEvents();
+}
+
+function addDonutHoverEvents() {
+  const tooltip = document.getElementById('donutTooltip');
+  const segments = document.querySelectorAll('.donut-segment');
+  
+  segments.forEach(segment => {
+    segment.addEventListener('mouseenter', (e) => {
+      const symbol = e.target.getAttribute('data-symbol');
+      const count = e.target.getAttribute('data-count');
+      const percentage = e.target.getAttribute('data-percentage');
+      
+      tooltip.innerHTML = `${symbol}<br><span style="font-size: 0.7rem; opacity: 0.8;">${count} trades (${percentage}%)</span>`;
+      tooltip.style.opacity = '1';
+    });
+    
+    segment.addEventListener('mousemove', (e) => {
+      const rect = e.target.closest('.donut-chart-wrapper').getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top - 40; // Position above cursor
+      
+      tooltip.style.left = x + 'px';
+      tooltip.style.top = y + 'px';
+    });
+    
+    segment.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+    });
+  });
 }
 
 function renderSessionChart() {
@@ -856,10 +893,13 @@ function renderRulesHistogram() {
 }
 
 function renderEquityCurve() {
-  const width = 320, height = 180;
-  const pad = 40;
-  const chartWidth = width - pad * 2;
-  const chartHeight = height - pad * 2;
+  const width = 500, height = 180;
+  const leftPad = 35; // Further reduced space for Y-axis labels
+  const bottomPad = -2; // Further reduced space for X-axis labels
+  const rightPad = 2; // Minimal right padding
+  const topPad = 28; // Increased top padding
+  const chartWidth = width - leftPad - rightPad;
+  const chartHeight = height - topPad - bottomPad;
 
   // Get sorted entries by date
   const sortedEntries = state.entries
@@ -877,71 +917,98 @@ function renderEquityCurve() {
     return;
   }
 
-  // Calculate cumulative P&L and drawdown
+  // Calculate cumulative P&L
   let cumulative = 0;
-  let peak = 0;
   const equityData = sortedEntries.map(entry => {
     cumulative += entry.pnl;
-    peak = Math.max(peak, cumulative);
-    const drawdown = cumulative - peak;
     return {
       tradeIndex: entry.tradeIndex,
       cumulative: cumulative,
-      drawdown: drawdown,
-      peak: peak
+      date: entry.date
     };
   });
 
   // Find min and max for scaling
-  const minY = Math.min(0, ...equityData.map(d => d.drawdown));
+  const minY = Math.min(0, ...equityData.map(d => d.cumulative));
   const maxY = Math.max(1, ...equityData.map(d => d.cumulative));
 
-  // Scale functions
-  const xScale = (index) => pad + (index * chartWidth) / Math.max(1, sortedEntries.length - 1);
-  const yScale = (value) => height - pad - ((value - minY) * chartHeight) / Math.max(1, maxY - minY);
+  // Scale functions - using full chart area
+  const xScale = (index) => leftPad + (index * chartWidth) / Math.max(1, sortedEntries.length - 1);
+  const yScale = (value) => height - bottomPad - ((value - minY) * chartHeight) / Math.max(1, maxY - minY);
 
-  // Create equity curve line
-  const equityLine = equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' ');
+  // Create area fill path - extending to full width
+  const areaPath = `M ${leftPad},${yScale(0)} L ${equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' L ')} L ${xScale(equityData[equityData.length-1].tradeIndex)},${yScale(0)} Z`;
 
-  // Create drawdown area
-  const drawdownArea = equityData.map((d, i) => {
-    const x = xScale(d.tradeIndex);
-    const y = yScale(d.cumulative);
-    const drawdownY = yScale(d.cumulative - d.drawdown);
-    return `${x},${y} ${x},${drawdownY}`;
-  }).join(' ');
+  // Create line path
+  const linePath = `M ${equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' L ')}`;
 
-  // Render equity curve
-  const equityCurve = `
-    <polyline points="${equityLine}" fill="none" stroke="#3B82F6" stroke-width="2"></polyline>
+  // Generate Y-axis labels with rounded K format
+  const yLabels = [];
+  const maxValue = Math.ceil(maxY / 500) * 500; // Round up to nearest 500
+  const minValue = Math.floor(minY / 500) * 500; // Round down to nearest 500
+  const yStep = (maxValue - minValue) / 6;
+  for (let i = 0; i <= 6; i++) {
+    const value = minValue + (i * yStep);
+    const y = yScale(value);
+    const kValue = value / 1000;
+    let label;
+    if (kValue === 0) {
+      label = '0';
+    } else if (kValue % 1 === 0) {
+      label = `${kValue}K`;
+    } else {
+      label = `${kValue.toFixed(1)}K`;
+    }
+    yLabels.push(`<text x="${leftPad - 5}" y="${y + 2}" text-anchor="end" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
+  }
+
+  // Generate X-axis labels with month names below the line
+  const xLabels = [];
+  const xStep = Math.max(1, Math.floor(sortedEntries.length / 4));
+  for (let i = 0; i <= 4; i++) {
+    const index = i * xStep;
+    if (index < sortedEntries.length) {
+      const x = xScale(index);
+      const date = new Date(sortedEntries[index].date);
+      const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+      const monthName = monthNames[date.getMonth()];
+      const label = `${date.getDate()} ${monthName}`;
+      xLabels.push(`<text x="${x}" y="${height - bottomPad + 15}" text-anchor="middle" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
+    }
+  }
+
+  // Render grid lines extending full width
+  const gridLines = [];
+  for (let i = 0; i <= 6; i++) {
+    const value = minValue + (i * yStep);
+    const y = yScale(value);
+    gridLines.push(`<line x1="${leftPad}" x2="${width - rightPad}" y1="${y}" y2="${y}" stroke="#f3f4f6" stroke-width="1"></line>`);
+  }
+
+  // Render area fill - transparent
+  const area = `
+    <path d="${areaPath}" fill="transparent"></path>
   `;
 
-  // Render drawdown area
-  const drawdown = `
-    <defs>
-      <linearGradient id="drawdownGradient" x1="0" x2="0" y1="0" y2="1">
-        <stop offset="0%" stop-color="#EF4444" stop-opacity="0.3"/>
-        <stop offset="100%" stop-color="#EF4444" stop-opacity="0.1"/>
-      </linearGradient>
-    </defs>
-    <path d="M ${equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' L ')} L ${xScale(equityData[equityData.length-1].tradeIndex)},${yScale(0)} L ${xScale(0)},${yScale(0)} Z" fill="url(#drawdownGradient)"></path>
-  `;
+  // Render line
+  const line = `<path d="${linePath}" fill="none" stroke="#3B82F6" stroke-width="2"></path>`;
 
-  // Render axis
+  // Render axis - extending to full width
   const axis = `
-    <line x1="${pad}" x2="${width - pad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#e5e7eb" stroke-width="1"></line>
-    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${leftPad}" x2="${width - rightPad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${leftPad}" x2="${leftPad}" y1="${topPad}" y2="${height - bottomPad}" stroke="#e5e7eb" stroke-width="1"></line>
   `;
 
-  // Render final values
+  // Render final value - positioned at the very edge
   const finalEquity = equityData[equityData.length - 1];
+  const finalValueFormatted = finalEquity.cumulative.toLocaleString('en-IN');
   const finalValue = `
-    <text x="${width - pad - 5}" y="${yScale(finalEquity.cumulative) - 5}" text-anchor="end" font-size="10" fill="#3B82F6" font-weight="600">
-      ₹${formatCurrency(finalEquity.cumulative).replace('₹', '')}
+    <text x="${width - rightPad - 1}" y="${yScale(finalEquity.cumulative) - 2}" text-anchor="end" font-size="11" fill="#3B82F6" font-weight="600" font-family="Inter">
+      ${finalValueFormatted}
     </text>
   `;
 
-  $("#equityCurve").innerHTML = drawdown + equityCurve + axis + finalValue;
+  $("#equityCurve").innerHTML = gridLines.join('') + area + line + axis + yLabels.join('') + xLabels.join('') + finalValue;
 }
 
 function renderTradingHeatmap() {
