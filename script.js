@@ -549,7 +549,7 @@ function renderCharts(){
     <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#fecaca"/></linearGradient></defs>
     <path d="${area}" fill="url(#g1)" opacity=".35"></path>
     <polyline points="${line}" fill="none" stroke="#4b5563" stroke-width="2"></polyline>
-    <line x1="${pad}" x2="${width-pad}" y1="${height-pad}" y2="${height-pad}" stroke="#e5e7eb"></line>
+    <line x1="${pad}" x2="${width-pad}" y1="${height-pad}" y2="${height-pad}" stroke="#b1b1b1"></line>
   `;
   // bars
   const barW = Math.max(2, (width - pad*2) / Math.max(1, data.length*1.2));
@@ -560,7 +560,7 @@ function renderCharts(){
     const h = Math.abs(y1 - y0);
     return `<rect x="${x}" y="${Math.min(y0,y1)}" width="${barW}" height="${h}" fill="${r.pnl>=0?'#10b981':'#ef4444'}" opacity=".85"></rect>`;
   }).join("");
-  $("#bars").innerHTML = `<line x1="${pad}" x2="${width-pad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#e5e7eb"></line>${bars}`;
+  $("#bars").innerHTML = `<line x1="${pad}" x2="${width-pad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>${bars}`;
 
   // radar triangle (Zella Score)
   const wins = state.entries.filter(e=>(e.pnl||0)>0).length;
@@ -587,7 +587,7 @@ function renderCharts(){
   // Render new charts
   renderDonutChart();
   renderSessionChart();
-  renderRulesHistogram();
+  renderRulesDonutChart();
   renderEquityCurve();
   renderTradingHeatmap();
 }
@@ -705,15 +705,67 @@ function addDonutHoverEvents() {
       
       tooltip.innerHTML = `${symbol}<br><span style="font-size: 0.7rem; opacity: 0.8;">${count} trades (${percentage}%)</span>`;
       tooltip.style.opacity = '1';
+      
+      // Initial positioning centered above cursor
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
+      
+      // Get tooltip dimensions
+      tooltip.style.visibility = 'hidden';
+      tooltip.style.opacity = '1';
+      const tooltipRect = tooltip.getBoundingClientRect();
+      tooltip.style.visibility = 'visible';
+      
+      // Position tooltip centered above cursor
+      let left = mouseX;
+      let top = mouseY - tooltipRect.height - 15; // 15px gap above cursor
+      
+      // Adjust if tooltip would go off-screen horizontally
+      if (left + tooltipRect.width/2 > window.innerWidth) {
+        left = window.innerWidth - tooltipRect.width/2 - 10;
+      }
+      if (left - tooltipRect.width/2 < 0) {
+        left = tooltipRect.width/2 + 10;
+      }
+      
+      // Adjust if tooltip would go off-screen vertically
+      if (top < 10) {
+        top = mouseY + 15; // Show below cursor if not enough space above
+      }
+      
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
     });
     
     segment.addEventListener('mousemove', (e) => {
-      const rect = e.target.closest('.donut-chart-wrapper').getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top - 40; // Position above cursor
+      const mouseX = e.clientX;
+      const mouseY = e.clientY;
       
-      tooltip.style.left = x + 'px';
-      tooltip.style.top = y + 'px';
+      // Get tooltip dimensions
+      tooltip.style.visibility = 'hidden';
+      tooltip.style.opacity = '1';
+      const tooltipRect = tooltip.getBoundingClientRect();
+      tooltip.style.visibility = 'visible';
+      
+      // Position tooltip centered above cursor
+      let left = mouseX;
+      let top = mouseY - tooltipRect.height - 15; // 15px gap above cursor
+      
+      // Adjust if tooltip would go off-screen horizontally
+      if (left + tooltipRect.width/2 > window.innerWidth) {
+        left = window.innerWidth - tooltipRect.width/2 - 10;
+      }
+      if (left - tooltipRect.width/2 < 0) {
+        left = tooltipRect.width/2 + 10;
+      }
+      
+      // Adjust if tooltip would go off-screen vertically
+      if (top < 10) {
+        top = mouseY + 15; // Show below cursor if not enough space above
+      }
+      
+      tooltip.style.left = left + 'px';
+      tooltip.style.top = top + 'px';
     });
     
     segment.addEventListener('mouseleave', () => {
@@ -782,8 +834,8 @@ function renderSessionChart() {
 
   // Render axis
   const axis = `
-    <line x1="${pad}" x2="${width - pad}" y1="${height - pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
-    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${pad}" x2="${width - pad}" y1="${height - pad}" y2="${height - pad}" stroke="#b1b1b1" stroke-width="1"></line>
+    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#b1b1b1" stroke-width="1"></line>
   `;
 
   // Render labels
@@ -816,11 +868,11 @@ function renderSessionChart() {
   ).join('');
 }
 
-function renderRulesHistogram() {
-  const width = 320, height = 180;
-  const pad = 40;
-  const chartWidth = width - pad * 2;
-  const chartHeight = height - pad * 2;
+function renderRulesDonutChart() {
+  const width = 160, height = 220;
+  const cx = width / 2, cy = height / 2;
+  const radius = 90;
+  const innerRadius = 60;
 
   // Count rules usage
   const ruleCounts = {};
@@ -836,66 +888,384 @@ function renderRulesHistogram() {
     .sort((a, b) => b.count - a.count);
 
   if (data.length === 0) {
-    $("#rulesHistogram").innerHTML = `
-      <text x="${width/2}" y="${height/2}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No rules data</text>
+    $("#rulesDonutChart").innerHTML = `
+      <text x="${cx}" y="${cy}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No rules data</text>
     `;
+    $("#totalRules").textContent = "0";
+    $("#rulesLegend").innerHTML = "";
     return;
   }
 
-  // Color palette for rules
+  // Blue color palette with varying opacity
+  const baseBlue = '#3B82F6';
   const colors = [
-    '#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6',
-    '#F97316', '#06B6D4', '#EC4899', '#84CC16', '#6366F1'
+    baseBlue, // Full opacity
+    `${baseBlue}E6`, // 90% opacity
+    `${baseBlue}CC`, // 80% opacity
+    `${baseBlue}B3`, // 70% opacity
+    `${baseBlue}99`, // 60% opacity
+    `${baseBlue}80`, // 50% opacity
+    `${baseBlue}66`, // 40% opacity
+    `${baseBlue}4D`, // 30% opacity
+    `${baseBlue}33`, // 20% opacity
+    `${baseBlue}1A`  // 10% opacity
   ];
 
-  // Find max count for scaling
-  const maxCount = Math.max(...data.map(d => d.count));
-
-  // Calculate bar dimensions
-  const barWidth = Math.max(8, chartWidth / data.length * 0.7);
-  const barSpacing = chartWidth / data.length * 0.3;
-
-  // Render bars
-  const bars = data.map((item, index) => {
-    const x = pad + index * (chartWidth / data.length) + barSpacing / 2;
-    const barHeight = (item.count / maxCount) * chartHeight;
-    const y = height - pad - barHeight;
-    const color = colors[index % colors.length];
+  let currentAngle = 0;
+  const totalRules = data.reduce((sum, item) => sum + item.count, 0);
+  
+  const donutSegments = data.map((item, index) => {
+    const percentage = item.count / totalRules;
+    const angle = percentage * 2 * Math.PI;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
     
-    return `
-      <rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" fill="${color}" opacity="0.8"></rect>
+    const x1 = cx + radius * Math.cos(startAngle);
+    const y1 = cy + radius * Math.sin(startAngle);
+    const x2 = cx + radius * Math.cos(endAngle);
+    const y2 = cy + radius * Math.sin(endAngle);
+    
+    const largeArcFlag = angle > Math.PI ? 1 : 0;
+    
+    const pathData = [
+      `M ${x1} ${y1}`,
+      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+      `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
+      `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
+      'Z'
+    ].join(' ');
+    
+    currentAngle = endAngle;
+    
+    return {
+      path: pathData,
+      color: colors[index % colors.length],
+      rule: item.rule,
+      count: item.count,
+      percentage: percentage
+    };
+  });
+
+  // Render donut chart - only show first 9 segments
+  const maxVisibleItems = 9;
+  const visibleSegments = donutSegments.slice(0, maxVisibleItems);
+  
+  $("#rulesDonutChart").innerHTML = visibleSegments.map(segment => 
+    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" 
+           data-rule="${segment.rule}" 
+           data-count="${segment.count}" 
+           data-percentage="${(segment.percentage * 100).toFixed(1)}"
+           class="rules-donut-segment"></path>`
+  ).join('');
+
+  // Update total rules
+  $("#totalRules").textContent = totalRules;
+
+  // Render legend with limit of 9 items + "See more..."
+  const remainingCount = donutSegments.length - maxVisibleItems;
+  
+  let legendHTML = visibleSegments.map(segment => 
+    `<div class="rules-legend-item">
+      <div class="rules-legend-color" style="background-color: ${segment.color}"></div>
+      <span>${segment.rule} (${segment.count})</span>
+    </div>`
+  ).join('');
+  
+  // Add "See more..." if there are more items
+  if (remainingCount > 0) {
+    legendHTML += `
+      <div class="rules-legend-item rules-see-more" onclick="openRulesPopup()">
+        <div class="rules-legend-color" style="background-color: #e5e7eb;"></div>
+        <span>See more... (${remainingCount})</span>
+      </div>
     `;
-  }).join('');
+  }
+  
+  $("#rulesLegend").innerHTML = legendHTML;
 
-  // Render axis
-  const axis = `
-    <line x1="${pad}" x2="${width - pad}" y1="${height - pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
-    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#e5e7eb" stroke-width="1"></line>
-  `;
+  // Add hover event listeners to donut segments
+  addRulesDonutHoverEvents();
+}
 
-  // Render labels (rule names)
-  const labels = data.map((item, index) => {
-    const x = pad + index * (chartWidth / data.length) + chartWidth / data.length / 2;
-    const y = height - pad + 15;
-    const ruleName = item.rule.length > 8 ? item.rule.substring(0, 8) + '...' : item.rule;
-    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="9" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${ruleName}</text>`;
-  }).join('');
+// Global variable to store all rules data for popup
+let allRulesData = null;
 
-  // Render values on bars
-  const values = data.map((item, index) => {
-    const x = pad + index * (chartWidth / data.length) + chartWidth / data.length / 2;
-    const barHeight = (item.count / maxCount) * chartHeight;
-    const y = height - pad - barHeight - 5;
-    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}">${item.count}</text>`;
-  }).join('');
+function openRulesPopup() {
+  // Store the current rules data
+  allRulesData = getRulesData();
+  
+  // Render the popup chart with all rules
+  renderRulesPopupChart();
+  
+  // Show the popup
+  const popup = document.getElementById('rulesPopup');
+  if (popup) {
+    popup.style.display = 'flex';
+    popup.classList.add('show');
+  }
+}
 
-  $("#rulesHistogram").innerHTML = axis + bars + labels + values;
+function closeRulesPopup() {
+  document.getElementById('rulesPopup').classList.remove('show');
+}
+
+// Add click outside to close functionality
+document.addEventListener('click', (e) => {
+  const popup = document.getElementById('rulesPopup');
+  const popupContent = document.querySelector('.rules-popup-content');
+  
+  if (popup && popup.classList.contains('show') && !popupContent.contains(e.target)) {
+    closeRulesPopup();
+  }
+});
+
+
+function getRulesData() {
+  // Count rules usage
+  const ruleCounts = {};
+  state.entries.forEach(entry => {
+    if (entry.ruleTitle) {
+      ruleCounts[entry.ruleTitle] = (ruleCounts[entry.ruleTitle] || 0) + 1;
+    }
+  });
+
+  // Convert to array and sort by count (descending)
+  const data = Object.entries(ruleCounts)
+    .map(([rule, count]) => ({ rule, count }))
+    .sort((a, b) => b.count - a.count);
+
+  return data;
+}
+
+function renderRulesPopupChart() {
+  if (!allRulesData || allRulesData.length === 0) {
+    $("#rulesPopupChart").innerHTML = `
+      <text x="100" y="100" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No rules data</text>
+    `;
+    $("#rulesPopupTotal").textContent = "0";
+    $("#rulesPopupLegend").innerHTML = "";
+    return;
+  }
+
+  const width = 200, height = 200;
+  const cx = width / 2, cy = height / 2;
+  const radius = 80;
+  const innerRadius = 50;
+
+  // Blue color palette with varying opacity
+  const baseBlue = '#3B82F6';
+  const colors = [
+    baseBlue, // Full opacity
+    `${baseBlue}E6`, // 90% opacity
+    `${baseBlue}CC`, // 80% opacity
+    `${baseBlue}B3`, // 70% opacity
+    `${baseBlue}99`, // 60% opacity
+    `${baseBlue}80`, // 50% opacity
+    `${baseBlue}66`, // 40% opacity
+    `${baseBlue}4D`, // 30% opacity
+    `${baseBlue}33`, // 20% opacity
+    `${baseBlue}1A`  // 10% opacity
+  ];
+
+  let currentAngle = 0;
+  const totalRules = allRulesData.reduce((sum, item) => sum + item.count, 0);
+  
+  const donutSegments = allRulesData.map((item, index) => {
+    const percentage = item.count / totalRules;
+    const angle = percentage * 2 * Math.PI;
+    const startAngle = currentAngle;
+    const endAngle = currentAngle + angle;
+    
+    const x1 = cx + radius * Math.cos(startAngle);
+    const y1 = cy + radius * Math.sin(startAngle);
+    const x2 = cx + radius * Math.cos(endAngle);
+    const y2 = cy + radius * Math.sin(endAngle);
+    
+    const largeArcFlag = angle > Math.PI ? 1 : 0;
+    
+    const pathData = [
+      `M ${x1} ${y1}`,
+      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+      `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
+      `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
+      'Z'
+    ].join(' ');
+    
+    currentAngle = endAngle;
+    
+    return {
+      path: pathData,
+      color: colors[index % colors.length],
+      rule: item.rule,
+      count: item.count,
+      percentage: percentage
+    };
+  });
+
+  // Render popup donut chart with ALL segments
+  $("#rulesPopupChart").innerHTML = donutSegments.map(segment => 
+    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" 
+           data-rule="${segment.rule}" 
+           data-count="${segment.count}" 
+           data-percentage="${(segment.percentage * 100).toFixed(1)}"
+           class="rules-popup-segment"></path>`
+  ).join('');
+
+  // Update popup total
+  $("#rulesPopupTotal").textContent = totalRules;
+
+  // Render popup legend with ALL items
+  $("#rulesPopupLegend").innerHTML = donutSegments.map(segment => 
+    `<div class="rules-popup-legend-item">
+      <div class="rules-popup-legend-color" style="background-color: ${segment.color}"></div>
+      <span>${segment.rule} (${segment.count})</span>
+    </div>`
+  ).join('');
+
+  // Add hover event listeners to popup donut segments
+  addRulesPopupHoverEvents();
+}
+
+function addRulesPopupHoverEvents() {
+  const tooltip = document.getElementById('rulesPopupTooltip');
+  let currentRuleData = null;
+  
+  // Function to update tooltip position
+  function updateTooltipPosition(e) {
+    if (!currentRuleData) return;
+    
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    
+    // Get tooltip dimensions
+    tooltip.style.visibility = 'hidden';
+    tooltip.style.opacity = '1';
+    const tooltipRect = tooltip.getBoundingClientRect();
+    tooltip.style.visibility = 'visible';
+    
+    // Position tooltip above cursor
+    let left = mouseX;
+    let top = mouseY - tooltipRect.height - 15; // 15px gap above cursor
+    
+    // Adjust if tooltip would go off-screen horizontally
+    if (left + tooltipRect.width/2 > window.innerWidth) {
+      left = window.innerWidth - tooltipRect.width/2 - 10;
+    }
+    if (left - tooltipRect.width/2 < 0) {
+      left = tooltipRect.width/2 + 10;
+    }
+    
+    // Adjust if tooltip would go off-screen vertically
+    if (top < 10) {
+      top = mouseY + 15; // Show below cursor if not enough space above
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+  
+  document.querySelectorAll('#rulesPopupChart .rules-popup-segment').forEach(segment => {
+    segment.addEventListener('mouseenter', (e) => {
+      const rule = e.target.getAttribute('data-rule');
+      const count = e.target.getAttribute('data-count');
+      const percentage = e.target.getAttribute('data-percentage');
+      
+      // Store current rule data
+      currentRuleData = { rule, count, percentage };
+      
+      // Update tooltip content
+      tooltip.innerHTML = `${rule}<br/>${count} trades (${percentage}%)`;
+      tooltip.style.opacity = '1';
+      
+      // Initial positioning
+      updateTooltipPosition(e);
+      
+      // Add mousemove listener to follow cursor
+      segment.addEventListener('mousemove', updateTooltipPosition);
+    });
+    
+    segment.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+      currentRuleData = null;
+      
+      // Remove mousemove listener
+      segment.removeEventListener('mousemove', updateTooltipPosition);
+    });
+  });
+}
+
+function addRulesDonutHoverEvents() {
+  const tooltip = document.getElementById('rulesTooltip');
+  let currentRuleData = null;
+  
+  // Function to update tooltip position
+  function updateTooltipPosition(e) {
+    if (!currentRuleData) return;
+    
+    const mouseX = e.clientX;
+    const mouseY = e.clientY;
+    
+    // Get tooltip dimensions
+    tooltip.style.visibility = 'hidden';
+    tooltip.style.opacity = '1';
+    const tooltipRect = tooltip.getBoundingClientRect();
+    tooltip.style.visibility = 'visible';
+    
+    // Position tooltip above cursor
+    let left = mouseX;
+    let top = mouseY - tooltipRect.height - 15; // 15px gap above cursor
+    
+    // Adjust if tooltip would go off-screen horizontally
+    if (left + tooltipRect.width/2 > window.innerWidth) {
+      left = window.innerWidth - tooltipRect.width/2 - 10;
+    }
+    if (left - tooltipRect.width/2 < 0) {
+      left = tooltipRect.width/2 + 10;
+    }
+    
+    // Adjust if tooltip would go off-screen vertically
+    if (top < 10) {
+      top = mouseY + 15; // Show below cursor if not enough space above
+    }
+    
+    tooltip.style.left = left + 'px';
+    tooltip.style.top = top + 'px';
+  }
+  
+  document.querySelectorAll('#rulesDonutChart .rules-donut-segment').forEach(segment => {
+    segment.addEventListener('mouseenter', (e) => {
+      const rule = e.target.getAttribute('data-rule');
+      const count = e.target.getAttribute('data-count');
+      const percentage = e.target.getAttribute('data-percentage');
+      
+      // Store current rule data
+      currentRuleData = { rule, count, percentage };
+      
+      // Update tooltip content
+      tooltip.innerHTML = `${rule}<br/>${count} trades (${percentage}%)`;
+      tooltip.style.opacity = '1';
+      
+      // Initial positioning
+      updateTooltipPosition(e);
+      
+      // Add mousemove listener to follow cursor
+      segment.addEventListener('mousemove', updateTooltipPosition);
+    });
+    
+    segment.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = '0';
+      currentRuleData = null;
+      
+      // Remove mousemove listener
+      segment.removeEventListener('mousemove', updateTooltipPosition);
+    });
+  });
 }
 
 function renderEquityCurve() {
   const width = 500, height = 180;
   const leftPad = 40; // Increased space for Y-axis labels
-  const bottomPad = 5; // Increased space for X-axis labels to prevent collapse
+  const bottomPad = 0; // Increased space for X-axis labels to prevent collapse
   const rightPad = 2; // Minimal right padding
   const topPad = 28; // Increased top padding
   const chartWidth = width - leftPad - rightPad;
@@ -1018,7 +1388,7 @@ function renderEquityCurve() {
   `;
 
   // Render line with hover interactions
-  const line = `<path d="${linePath}" fill="none" stroke="#3B82F6" stroke-width="2" class="equity-line" id="equityLine"></path>`;
+  const line = `<path d="${linePath}" fill="none" stroke="#8B5CF6" stroke-width="2" class="equity-line" id="equityLine"></path>`;
 
   // Create invisible hover area for continuous interaction
   const hoverArea = `
@@ -1035,23 +1405,28 @@ function renderEquityCurve() {
 
   // Render axis - extending to full width
   const axis = `
-    <line x1="${leftPad}" x2="${width - rightPad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#e5e7eb" stroke-width="1"></line>
-    <line x1="${leftPad}" x2="${leftPad}" y1="${topPad}" y2="${height - bottomPad}" stroke="#e5e7eb" stroke-width="1"></line>
+    <line x1="${leftPad}" x2="${width - rightPad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1" stroke-width="1"></line>
+    <line x1="${leftPad}" x2="${leftPad}" y1="${topPad}" y2="${height - bottomPad}" stroke="#b1b1b1" stroke-width="1"></line>
   `;
 
-  // Render final value - positioned at the very edge
+  // Update balance display in header
   const finalEquity = equityData[equityData.length - 1];
-  const finalValueFormatted = finalEquity.cumulative.toLocaleString('en-IN');
-  const finalValue = `
-    <text x="${width - rightPad - 1}" y="${yScale(finalEquity.cumulative) - 2}" text-anchor="end" font-size="11" fill="#3B82F6" font-weight="600" font-family="Inter">
-      ${finalValueFormatted}
-    </text>
-  `;
+  const finalValueFormatted = formatCurrency(finalEquity.cumulative);
+  const balanceElement = document.getElementById('equityBalance');
+  if (balanceElement) {
+    balanceElement.textContent = finalValueFormatted;
+  }
+
+  // Create single dot at the latest price point (same color as equity curve line)
+  const latestPoint = equityData[equityData.length - 1];
+  const latestX = xScale(latestPoint.tradeIndex);
+  const latestY = yScale(latestPoint.cumulative);
+  const latestDot = `<circle cx="${latestX}" cy="${latestY}" r="6" fill="#8B5CF6" stroke="#ffffff" stroke-width="2"/>`;
 
   // Create tooltip element
   const tooltip = `
     <g id="equityTooltip" style="pointer-events: none; opacity: 0; transition: opacity 0.2s ease;">
-      <rect id="tooltipRect" x="0" y="0" width="160" height="50" fill="rgb(255 255 255 / 46%)" stroke="#e5e7eb" stroke-width="1" rx="8" ry="8"/>
+      <rect id="tooltipRect" x="0" y="0" width="160" height="50" fill="rgb(255 255 255 / 46%)" stroke="#b1b1b1" stroke-width="1" rx="8" ry="8"/>
       <text id="tooltipDate" x="10" y="20" font-size="12" fill="#374151" font-family="Inter" font-weight="600"></text>
       <text id="tooltipValue" x="10" y="40" font-size="14" fill="#3B82F6" font-family="Inter" font-weight="700"></text>
     </g>
@@ -1067,11 +1442,17 @@ function renderEquityCurve() {
       fill="#ef4444" 
       stroke="#ffffff" 
       stroke-width="2"
-      style="opacity: 0; transition: opacity 0.2s ease;"
+      style="opacity: 0; transition: opacity 0.2s ease, cx 0.1s ease, cy 0.1s ease;"
     />
   `;
 
-  $("#equityCurve").innerHTML = gridLines.join('') + area + line + axis + yLabels.join('') + xLabels.join('') + finalValue + hoverArea + tooltip + hoverDot;
+  // Create crosshair grid lines
+  const crosshairLines = `
+    <line id="crosshairVertical" x1="0" y1="${topPad}" x2="0" y2="${height - bottomPad}" stroke="#d1d5db" stroke-width="1" stroke-dasharray="2,2" style="opacity: 0; transition: opacity 0.2s ease, x1 0.1s ease, x2 0.1s ease;"/>
+    <line id="crosshairHorizontal" x1="${leftPad}" y1="0" x2="${width - rightPad}" y2="0" stroke="#d1d5db" stroke-width="1" stroke-dasharray="2,2" style="opacity: 0; transition: opacity 0.2s ease, y1 0.1s ease, y2 0.1s ease;"/>
+  `;
+
+  $("#equityCurve").innerHTML = gridLines.join('') + area + line + axis + yLabels.join('') + xLabels.join('') + latestDot + crosshairLines + hoverArea + tooltip + hoverDot;
 
   // Add hover event listeners
   addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yScaleInverse, leftPad, topPad, chartWidth, chartHeight);
@@ -1083,6 +1464,8 @@ function addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yS
   const tooltipDate = document.getElementById('tooltipDate');
   const tooltipValue = document.getElementById('tooltipValue');
   const hoverDot = document.getElementById('hoverDot');
+  const crosshairVertical = document.getElementById('crosshairVertical');
+  const crosshairHorizontal = document.getElementById('crosshairHorizontal');
 
   // Function to interpolate values between data points
   function interpolateValue(x, equityData) {
@@ -1124,6 +1507,8 @@ function addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yS
     if (x < leftPad || x > leftPad + chartWidth || y < topPad || y > topPad + chartHeight) {
       tooltip.style.opacity = '0';
       hoverDot.style.opacity = '0';
+      crosshairVertical.style.opacity = '0';
+      crosshairHorizontal.style.opacity = '0';
       return;
     }
 
@@ -1147,7 +1532,7 @@ function addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yS
 
     // Adjust if tooltip would go off-screen - decreased space from right side
     if (tooltipX + 160 > 500) { // SVG width (reduced from 180 to 160)
-      tooltipX = x - 170; // Reduced from 190 to 170
+      tooltipX = x - 120; // Reduced gap from 170 to 120
     }
     if (tooltipY < 0) {
       tooltipY = y + 10;
@@ -1156,7 +1541,16 @@ function addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yS
     tooltip.setAttribute('transform', `translate(${tooltipX}, ${tooltipY})`);
     tooltip.style.opacity = '1';
 
-    // Update hover dot position and color based on trend
+    // Update crosshair lines position
+    crosshairVertical.setAttribute('x1', x);
+    crosshairVertical.setAttribute('x2', x);
+    crosshairVertical.style.opacity = '1';
+    
+    crosshairHorizontal.setAttribute('y1', y);
+    crosshairHorizontal.setAttribute('y2', y);
+    crosshairHorizontal.style.opacity = '1';
+
+    // Update hover dot position - keep it on the equity curve line with smooth interpolation
     const interpolatedY = yScale(interpolatedData.cumulative);
     hoverDot.setAttribute('cx', x);
     hoverDot.setAttribute('cy', interpolatedY);
@@ -1182,6 +1576,8 @@ function addEquityCurveHoverEvents(equityData, xScale, yScale, xScaleInverse, yS
   hoverArea.addEventListener('mouseleave', () => {
     tooltip.style.opacity = '0';
     hoverDot.style.opacity = '0';
+    crosshairVertical.style.opacity = '0';
+    crosshairHorizontal.style.opacity = '0';
   });
 }
 
@@ -1257,12 +1653,15 @@ function renderTradingHeatmap() {
           // Valid day in the month
           const date = new Date(currentYear, monthIndex, dayNumber);
           const dateKey = date.toISOString().slice(0, 10);
-          const dayPnL = dailyPnL[dateKey] || 0;
+          const dayPnL = dailyPnL[dateKey];
           
           const dayElement = document.createElement('div');
           dayElement.className = 'heatmap-day';
           
-          if (dayPnL > 0) {
+          if (dayPnL === undefined || dayPnL === null) {
+            // No data for this day
+            dayElement.classList.add('no-trades');
+          } else if (dayPnL > 0) {
             // Profitable day - green
             const intensity = Math.min(4, Math.ceil((dayPnL / maxAbsPnL) * 4));
             dayElement.classList.add(`profit-level-${intensity}`);
@@ -1271,55 +1670,72 @@ function renderTradingHeatmap() {
             const intensity = Math.min(4, Math.ceil((Math.abs(dayPnL) / maxAbsPnL) * 4));
             dayElement.classList.add(`loss-level-${intensity}`);
           } else {
-            // No trades - gray
+            // Zero P&L - gray
             dayElement.classList.add('no-trades');
           }
           
           // Add custom tooltip functionality
           dayElement.addEventListener('mouseenter', (e) => {
             const tooltip = $("#heatmapTooltip");
-            const tooltipDate = $("#tooltipDate");
-            const tooltipValue = $("#tooltipValue");
             
-            // Update tooltip content
-            tooltipDate.textContent = date.toLocaleDateString('en-US', { 
+            // Format date
+            const formattedDate = date.toLocaleDateString('en-US', { 
               month: 'long', 
               day: 'numeric', 
               year: 'numeric' 
             });
             
-            if (dayPnL > 0) {
-              tooltipValue.textContent = `₹${Math.abs(dayPnL).toFixed(2)}`;
-              tooltipValue.className = 'tooltip-value positive';
+            // Determine content and color
+            let content, color, fontStyle;
+            if (dayPnL === null || dayPnL === undefined) {
+              content = 'no data';
+              color = '#6b7280';
+              fontStyle = 'italic';
+            } else if (dayPnL > 0) {
+              content = `₹${dayPnL.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+              color = '#059669';
+              fontStyle = 'normal';
             } else if (dayPnL < 0) {
-              tooltipValue.textContent = `₹${Math.abs(dayPnL).toFixed(2)}`;
-              tooltipValue.className = 'tooltip-value negative';
+              content = `₹${Math.abs(dayPnL).toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
+              color = '#dc2626';
+              fontStyle = 'normal';
             } else {
-              tooltipValue.textContent = '₹0.00';
-              tooltipValue.className = 'tooltip-value';
+              content = '₹0';
+              color = '#374151';
+              fontStyle = 'normal';
             }
+            
+            // Update tooltip content
+            tooltip.innerHTML = `
+              <div class="tooltip-content">
+                <div class="tooltip-line1">Net realized P&L on</div>
+                <div class="tooltip-line2">
+                  <span class="tooltip-date">${formattedDate}</span>: <span class="tooltip-value" style="color: ${color}; font-weight: 700; font-style: ${fontStyle};">${content}</span>
+                </div>
+              </div>
+            `;
             
             // Position tooltip
             const rect = e.target.getBoundingClientRect();
-            const tooltipRect = tooltip.getBoundingClientRect();
-            
             let left = rect.left + rect.width/2;
-            let top = rect.top - tooltipRect.height - 15; // Position above with 15px gap
+            let top = rect.top - 60; // Position above
             
             // Adjust if tooltip would go off-screen
-            if (left + tooltipRect.width/2 > window.innerWidth) {
-              left = window.innerWidth - tooltipRect.width/2 - 10;
+            if (left + 150 > window.innerWidth) {
+              left = window.innerWidth - 160;
             }
-            if (left - tooltipRect.width/2 < 0) {
-              left = tooltipRect.width/2 + 10;
+            if (left < 10) {
+              left = 10;
             }
-            if (top < 0) {
+            if (top < 10) {
               top = rect.bottom + 10; // Show below if not enough space above
             }
             
             tooltip.style.left = `${left}px`;
             tooltip.style.top = `${top}px`;
             tooltip.classList.add('show');
+            
+            console.log('Tooltip shown:', formattedDate, 'P&L:', dayPnL, 'Color:', color);
           });
           
           dayElement.addEventListener('mouseleave', () => {
