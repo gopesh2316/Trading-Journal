@@ -97,6 +97,9 @@ let state = {
   rules: [],
   filters: { search:"", side:"ALL", session:"", start:"", end:"", sort:"date_desc" },
   activeView: "dashboard",
+  initialBalance: 0,
+  currentBalance: 0,
+  accountName: "",
   deleteTarget: null,
   preferences: {
     currency: "INR", // Default currency
@@ -110,6 +113,16 @@ function loadAll(){
   try{ state.entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || demoEntries; }catch{ state.entries = demoEntries; }
   try{ state.rules = JSON.parse(localStorage.getItem(RULES_KEY) || "[]"); }catch{ state.rules=[]; }
   try{ state.preferences = { ...state.preferences, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") }; }catch{ /* Use defaults */ }
+  try{ 
+    const balanceData = JSON.parse(localStorage.getItem("initialBalance") || "{}");
+    state.initialBalance = balanceData.initialBalance || 0;
+    state.currentBalance = balanceData.currentBalance || 0;
+    state.accountName = balanceData.accountName || "";
+  }catch{ 
+    state.initialBalance = 0;
+    state.currentBalance = 0;
+    state.accountName = "";
+  }
 
   // Apply dark mode on load
   if (state.preferences.darkMode) {
@@ -132,14 +145,37 @@ function saveEntries(){
 function saveRules(){ try{ localStorage.setItem(RULES_KEY, JSON.stringify(state.rules)); }catch{} }
 function saveUser(){ try{ state.user ? localStorage.setItem(USER_KEY, JSON.stringify(state.user)) : localStorage.removeItem(USER_KEY); }catch{} }
 function savePreferences(){ try{ localStorage.setItem(PREFS_KEY, JSON.stringify(state.preferences)); }catch{} }
+function saveBalance(){ 
+  try{ 
+    localStorage.setItem("initialBalance", JSON.stringify({
+      initialBalance: state.initialBalance,
+      currentBalance: state.currentBalance,
+      accountName: state.accountName
+    })); 
+  }catch{} 
+}
+function saveState(){
+  saveEntries();
+  saveRules();
+  saveUser();
+  savePreferences();
+  saveBalance();
+}
 
 /* ---------- Auth ---------- */
 function showAuth(){
   $("#auth").classList.remove("hidden");
+  $("#onboarding").classList.add("hidden");
   $("#app").classList.add("hidden");
 }
+function showOnboarding(){
+  $("#auth").classList.add("hidden");
+  $("#onboarding").classList.remove("hidden");
+}
+
 function showApp(){
   $("#auth").classList.add("hidden");
+  $("#onboarding").classList.add("hidden");
   $("#app").classList.remove("hidden");
   renderAll();
 }
@@ -161,9 +197,45 @@ function initAuth(){
     if(!password){ $("#authError").textContent="Please enter a password"; $("#authError").classList.remove("hidden"); return; }
     state.user = { name, email };
     saveUser();
+    
+    // Check if this is a new user (signup) to show onboarding
+    if(mode === "signup") {
+      showOnboarding();
+    } else {
+      showApp();
+    }
+  };
+}
+
+/* ---------- Onboarding ---------- */
+function initOnboarding(){
+  $("#startTrading").onclick = () => {
+    const initialBalance = parseFloat($("#initialBalance").value);
+    const accountName = $("#accountName").value.trim();
+    
+    if (!initialBalance || initialBalance <= 0) {
+      alert("Please enter a valid initial balance amount.");
+      return;
+    }
+    
+    if (!accountName) {
+      alert("Please enter an account name.");
+      return;
+    }
+    
+    // Set the initial balance and account name in the state
+    state.initialBalance = initialBalance;
+    state.currentBalance = initialBalance;
+    state.accountName = accountName;
+    
+    // Save the state with the initial balance and account name
+    saveState();
+    
+    // Proceed to the main app
     showApp();
   };
 }
+
 /* ---------- Header / account ---------- */
 function initHeader(){
   $("#btnNewEntry").onclick = openNewEntry;
@@ -951,7 +1023,7 @@ function renderRulesDonutChart() {
   const visibleSegments = donutSegments.slice(0, maxVisibleItems);
   
   $("#rulesDonutChart").innerHTML = visibleSegments.map(segment => 
-    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" 
+    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.2" 
            data-rule="${segment.rule}" 
            data-count="${segment.count}" 
            data-percentage="${(segment.percentage * 100).toFixed(1)}"
@@ -974,7 +1046,7 @@ function renderRulesDonutChart() {
   // Add "See more..." if there are more items
   if (remainingCount > 0) {
     legendHTML += `
-      <div class="rules-legend-item rules-see-more" onclick="openRulesPopup()">
+      <div class="rules-legend-item rules-see-more" data-action="open-rules-popup">
         <div class="rules-legend-color" style="background-color: #e5e7eb;"></div>
         <span>See more... (${remainingCount})</span>
       </div>
@@ -1006,7 +1078,11 @@ function openRulesPopup() {
 }
 
 function closeRulesPopup() {
-  document.getElementById('rulesPopup').classList.remove('show');
+  const popup = document.getElementById('rulesPopup');
+  if (popup) {
+    popup.style.display = 'none';
+    popup.classList.remove('show');
+  }
 }
 
 // Add click outside to close functionality
@@ -1104,7 +1180,7 @@ function renderRulesPopupChart() {
 
   // Render popup donut chart with ALL segments
   $("#rulesPopupChart").innerHTML = donutSegments.map(segment => 
-    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" 
+    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.2" 
            data-rule="${segment.rule}" 
            data-count="${segment.count}" 
            data-percentage="${(segment.percentage * 100).toFixed(1)}"
@@ -2534,6 +2610,19 @@ function initModals(){
   $("#svgAvatarClose").onclick = ()=>$("#svgAvatarDialog").close();
   $("#svgAvatarCancel").onclick = ()=>$("#svgAvatarDialog").close();
   
+  // Rules popup modal
+  const rulesCloseBtn = $(".rules-popup-close");
+  if (rulesCloseBtn) {
+    rulesCloseBtn.onclick = closeRulesPopup;
+  }
+  
+  // Event delegation for "See more..." button
+  document.addEventListener('click', (e) => {
+    if (e.target.closest('[data-action="open-rules-popup"]')) {
+      openRulesPopup();
+    }
+  });
+  
   // SVG Avatar selection
   $$(".svg-avatar-option").forEach(option => {
     option.onclick = () => {
@@ -3341,6 +3430,7 @@ function viewTradeDetails(dayNumber) {
 /* ---------- Boot ---------- */
 loadAll();
 initAuth();
+initOnboarding();
 initHeader();
 initNavigation();
 initFilters();
@@ -3352,5 +3442,8 @@ initTimeRangeFilter();
 
 // Bypass auth for testing
 state.user = { name: "Test User", email: "test@example.com" };
+state.initialBalance = 10000;
+state.currentBalance = 10000;
 saveUser();
+saveBalance();
 showApp();

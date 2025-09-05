@@ -41,6 +41,53 @@
     </div>
   </div>
 
+  <!-- Onboarding Screen -->
+  <div id="onboarding" class="onboarding hidden">
+    <div class="onboarding-card">
+      <div class="onboarding-content">
+        <div class="onboarding-step">
+          <h2>What should be your Initial balance?</h2>
+          <p class="onboarding-description">Set your starting trading balance to begin tracking your performance.</p>
+          
+          <div class="balance-input-container">
+            <label for="initialBalance">Initial Balance</label>
+            <div class="balance-input-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input 
+                id="initialBalance" 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                placeholder="10000.00"
+                required
+              >
+            </div>
+          </div>
+          
+          <div class="account-input-container">
+            <label for="accountName">Account Name</label>
+            <div class="account-input-wrapper">
+              <input 
+                id="accountName" 
+                type="text" 
+                placeholder="E.g, Real A/c"
+                required
+              >
+            </div>
+            <div class="balance-help-text">
+              <span class="material-icons">info</span>
+              <span>This will be your starting balance for tracking P&L calculations</span>
+            </div>
+          </div>
+          
+          <div class="onboarding-actions">
+            <button id="startTrading" class="onboarding-start-btn">Start Trading</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- App -->
   <div id="app" class="app hidden">
     <header class="app-header">
@@ -262,7 +309,7 @@
             <div class="rules-popup-content">
               <div class="rules-popup-header">
                 <h3>Rules Usage Distribution</h3>
-                <button class="rules-popup-close" onclick="closeRulesPopup()">&times;</button>
+                <button class="rules-popup-close">&times;</button>
               </div>
               <div class="rules-popup-body">
                 <div class="rules-popup-chart-container">
