@@ -189,7 +189,93 @@ body{
   display:flex;
   justify-content:space-between;
   align-items:center;
-  margin-bottom:16px;
+  margin-bottom:12px;
+}
+
+/* Account Selector */
+.account-selector{
+  position:relative;
+}
+
+.account-btn{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:8px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:500;
+  color:var(--text);
+  transition:all 0.2s ease;
+  margin-right: 11px;
+}
+
+.account-btn:hover{
+  border-color:#d1d5db;
+  background:#f9fafb;
+}
+
+.account-btn .material-icons{
+  font-size:18px;
+  color:var(--muted);
+  transition:transform 0.2s ease;
+}
+
+.account-btn.active .material-icons{
+  transform:rotate(180deg);
+}
+
+.account-dropdown{
+  position:absolute;
+  top:100%;
+  right:0;
+  margin-top:4px;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:8px;
+  box-shadow:0 4px 6px -1px rgba(0,0,0,0.1),0 2px 4px -1px rgba(0,0,0,0.06);
+  z-index:50;
+  min-width:160px;
+  padding:4px 0;
+}
+
+.account-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 12px;
+  cursor:pointer;
+  font-size:14px;
+  color:var(--text);
+  transition:background-color 0.2s ease;
+}
+
+.account-option:hover{
+  background:#f9fafb;
+}
+
+.account-option input[type="radio"]{
+  margin:0;
+  width:16px;
+  height:16px;
+}
+
+.account-option.create-account{
+  color:var(--primary);
+  font-weight:500;
+}
+
+.account-option.create-account:hover{
+  background:#f0f9ff;
+}
+
+.account-divider{
+  height:1px;
+  background:var(--border);
+  margin:4px 0;
 }
 
 .time-range-filter{
@@ -762,6 +848,82 @@ body{
 .grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px}
 .chart{width:100%;height:220px;overflow:visible}
+
+/* Session Chart Specific Styles */
+#sessionChart {
+  width: 56% !important;
+  height: 180px !important;
+  overflow: visible !important;
+  display: flex !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+}
+
+#sessionChart svg {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  overflow: visible !important;
+}
+
+#sessionChart text {
+  font-family: 'Inter', sans-serif !important;
+  font-weight: 500 !important;
+  font-size: 12px;;
+}
+
+#sessionChart rect,
+#sessionChart path {
+  vector-effect: non-scaling-stroke !important;
+}
+
+/* Session Performance Info Icon */
+.info-icon-container {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.info-icon {
+  transition: fill 0.2s ease;
+}
+
+.info-icon-container:hover .info-icon {
+  fill: var(--muted);
+}
+
+.info-tooltip {
+  position: absolute;
+  bottom: 100%;
+  right: 0;
+  margin-bottom: 8px;
+  padding: 8px 12px;
+  background: var(--text);
+  color: white;
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  z-index: 1000;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.info-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 12px;
+  border: 4px solid transparent;
+  border-top-color: var(--text);
+}
+
+.info-icon-container:hover .info-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
 
 #equityCurve {
   width: 98%;
@@ -2087,7 +2249,7 @@ body{
 }
 
 .charts-grid .card{
-  min-height:280px;
+  min-height:293px;
   display:flex;
   flex-direction:column;
   justify-content: space-between;
@@ -2180,6 +2342,35 @@ body{
 .dark-mode .calendar-day.no-trading {
   background: var(--surface);
   border-color: var(--border);
+}
+
+/* Dark mode styles for account selector */
+.dark-mode .account-btn {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.dark-mode .account-btn:hover {
+  border-color: #475569;
+  background: #334155;
+}
+
+.dark-mode .account-dropdown {
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+.dark-mode .account-option:hover {
+  background: #334155;
+}
+
+.dark-mode .account-option.create-account:hover {
+  background: #1e3a8a;
+}
+
+.dark-mode .account-divider {
+  background: var(--border);
 }
 
 .dark-mode .calendar-day.winning-trade {

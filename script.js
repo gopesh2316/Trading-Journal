@@ -170,6 +170,7 @@ function showAuth(){
 }
 function showOnboarding(){
   $("#auth").classList.add("hidden");
+  $("#app").classList.add("hidden");
   $("#onboarding").classList.remove("hidden");
 }
 
@@ -516,7 +517,6 @@ function renderStats(){
     {
       label:"Win rate", 
       value:`${Math.round(s.winRate)}%`, 
-      sub:`W ${s.wins} · L ${s.losses}`,
       isWinRate: true,
       winAngle: winAngle
     },
@@ -597,7 +597,7 @@ function renderTable(){
       <td>${e.ruleTitle || "—"}</td>
       <td title="${e.notes||""}" style="max-width:240px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${e.notes||""}</td>
       <td class="center">
-        <button class="outline" data-edit="${e.id}">Edit</button>
+        <button class="outline" data-edit="${e.id}">View</button>
         <button class="danger" data-del="${e.id}">Delete</button>
       </td>
     </tr>
@@ -847,8 +847,8 @@ function addDonutHoverEvents() {
 }
 
 function renderSessionChart() {
-  const width = 320, height = 180;
-  const pad = 40;
+  const width = 600, height = 180;
+  const pad = 20;
   const chartWidth = width - pad * 2;
   const chartHeight = height - pad * 2;
 
@@ -882,62 +882,58 @@ function renderSessionChart() {
     };
   });
 
-  // Find max value for scaling
+  // Find max value for scaling (total trades for horizontal bars)
   const maxTrades = Math.max(...sessionData.map(d => d.total), 1);
+  
+  // Find the highest win rate to determine which session should be bold
+  const maxWinRate = Math.max(...sessionData.map(d => d.winRate));
 
-  // Calculate bar dimensions
-  const barWidth = chartWidth / sessionData.length * 0.6;
-  const barSpacing = chartWidth / sessionData.length * 0.4;
+  // Calculate horizontal bar dimensions
+  const barHeight = 25;
+  const barSpacing = 55;
+  const startY = 10;
+  const barStartX = 0; // Reduced space for session names
+  const barMaxWidth = chartWidth - barStartX - 0; // Available width for bars
 
-  // Render stacked bars (wins on top, losses on bottom)
+  // Render horizontal bars
   const bars = sessionData.map((session, index) => {
-    const x = pad + index * (chartWidth / sessionData.length) + barSpacing / 2;
-    const winHeight = (session.wins / maxTrades) * chartHeight;
-    const lossHeight = (session.losses / maxTrades) * chartHeight;
+    const y = startY + index * barSpacing;
     
-    const winY = height - pad - winHeight - lossHeight;
-    const lossY = height - pad - lossHeight;
+    // Calculate bar widths based on wins and losses
+    const winWidth = (session.wins / maxTrades) * barMaxWidth;
+    const lossWidth = (session.losses / maxTrades) * barMaxWidth;
+    
+    // Determine bar color intensity - only highest win rate gets deeper colors
+    const isHighestWinRate = session.winRate === maxWinRate;
+    const winColor = isHighestWinRate ? `rgba(16, 185, 129, 0.95)` : `rgba(16, 185, 129, 0.7)`; // Deep green only for highest win rate
+    const lossColor = isHighestWinRate ? `rgba(239, 68, 68, 0.85)` : `rgba(239, 68, 68, 0.7)`; // Deep red only for highest win rate
     
     return `
-      <rect x="${x}" y="${winY}" width="${barWidth}" height="${winHeight}" fill="#10B981" opacity="0.8"></rect>
-      <rect x="${x}" y="${lossY}" width="${barWidth}" height="${lossHeight}" fill="#EF4444" opacity="0.8"></rect>
+      <!-- Loss bar (red) -->
+      <rect x="${barStartX}" y="${y}" width="${lossWidth}" height="${barHeight}" fill="${lossColor}" rx="0"></rect>
+      <!-- Win bar (green) with custom border radius -->
+      ${winWidth > 0 ? `
+        <path d="M ${barStartX + lossWidth} ${y} 
+                 L ${barStartX + lossWidth + winWidth - 6} ${y} 
+                 Q ${barStartX + lossWidth + winWidth} ${y} ${barStartX + lossWidth + winWidth} ${y + 6}
+                 L ${barStartX + lossWidth + winWidth} ${y + barHeight - 6}
+                 Q ${barStartX + lossWidth + winWidth} ${y + barHeight} ${barStartX + lossWidth + winWidth - 6} ${y + barHeight}
+                 L ${barStartX + lossWidth} ${y + barHeight}
+                 Z" fill="${winColor}"/>
+      ` : ''}
+      <!-- Session name with win rate positioned above the bar -->
+      <text x="${barStartX}" y="${y - 5}" font-size="11" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}" font-weight="${session.winRate === maxWinRate ? '800' : '500'}" font-family="Inter, sans-serif" style="font-weight: ${session.winRate === maxWinRate ? '800' : '500'} !important;">${session.name} (${Math.round(session.winRate)}%)</text>
+      <!-- Loss count positioned to the right of the loss bar -->
+      ${session.losses > 0 ? `<text x="${barStartX + lossWidth - 8}" y="${y + 16}" text-anchor="end" font-size="10" fill="white" font-weight="600">${session.losses}</text>` : ''}
+      <!-- Win count positioned to the right of the win bar -->
+      ${session.wins > 0 ? `<text x="${barStartX + lossWidth + winWidth - 8}" y="${y + 16}" text-anchor="end" font-size="10" fill="white" font-weight="600">${session.wins}</text>` : ''}
     `;
   }).join('');
 
-  // Render axis
-  const axis = `
-    <line x1="${pad}" x2="${width - pad}" y1="${height - pad}" y2="${height - pad}" stroke="#b1b1b1" stroke-width="1"></line>
-    <line x1="${pad}" x2="${pad}" y1="${pad}" y2="${height - pad}" stroke="#b1b1b1" stroke-width="1"></line>
-  `;
-
-  // Render labels
-  const labels = sessionData.map((session, index) => {
-    const x = pad + index * (chartWidth / sessionData.length) + chartWidth / sessionData.length / 2;
-    const y = height - pad + 15;
-    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${session.name}</text>`;
-  }).join('');
-
-  // Render values on bars
-  const values = sessionData.map((session, index) => {
-    const x = pad + index * (chartWidth / sessionData.length) + chartWidth / sessionData.length / 2;
-    const totalHeight = (session.total / maxTrades) * chartHeight;
-    const y = height - pad - totalHeight - 5;
-    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="10" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}">${session.total}</text>`;
-  }).join('');
-
-  // Render win rate percentages
-  const winRates = sessionData.map((session, index) => {
-    const x = pad + index * (chartWidth / sessionData.length) + chartWidth / sessionData.length / 2;
-    const y = height - pad + 30;
-    return `<text x="${x}" y="${y}" text-anchor="middle" font-size="8" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">${Math.round(session.winRate)}%</text>`;
-  }).join('');
-
-  $("#sessionChart").innerHTML = axis + bars + labels + values + winRates;
+  $("#sessionChart").innerHTML = bars;
 
   // Render legend
-  $("#sessionLegend").innerHTML = sessionData.map(session => 
-    `<span>${session.name}: ${session.total} (${Math.round(session.winRate)}%)</span>`
-  ).join('');
+  $("#sessionLegend").innerHTML = '';
 }
 
 function renderRulesDonutChart() {
@@ -2477,6 +2473,79 @@ function submitRule(e){
   renderAll();
 }
 
+/* ---------- Account Selector ---------- */
+let currentAccount = 'Real A/c';
+
+function initAccountSelector() {
+  const accountBtn = $("#accountBtn");
+  const accountDropdown = $("#accountSelectorDropdown");
+  const selectedAccountSpan = $("#selectedAccount");
+  
+  // Set default selection based on currentAccount
+  const defaultOption = document.querySelector(`[data-account="${currentAccount}"]`);
+  if (defaultOption) {
+    const defaultRadio = defaultOption.querySelector('input[type="radio"]');
+    const defaultLabel = defaultOption.querySelector('label');
+    if (defaultRadio && defaultLabel) {
+      defaultRadio.checked = true;
+      selectedAccountSpan.textContent = defaultLabel.textContent;
+    }
+  }
+  
+  // Toggle dropdown
+  accountBtn.onclick = (e) => {
+    e.stopPropagation();
+    accountDropdown.classList.toggle('hidden');
+    accountBtn.classList.toggle('active');
+  };
+  
+  // Close dropdown when clicking outside
+  document.addEventListener('click', () => {
+    accountDropdown.classList.add('hidden');
+    accountBtn.classList.remove('active');
+  });
+  
+  // Handle account selection
+  const accountOptions = document.querySelectorAll('.account-option');
+  accountOptions.forEach(option => {
+    const radio = option.querySelector('input[type="radio"]');
+    const label = option.querySelector('label');
+    
+    option.onclick = (e) => {
+      e.stopPropagation();
+      
+      // Handle create account action
+      if (option.dataset.action === 'create') {
+        // Open the onboarding screen for creating a new account
+        showOnboarding();
+        accountDropdown.classList.add('hidden');
+        accountBtn.classList.remove('active');
+        return;
+      }
+      
+      // Handle account selection
+      if (radio && label) {
+        // Uncheck all other radio buttons
+        document.querySelectorAll('input[name="account"]').forEach(r => r.checked = false);
+        
+        // Check selected radio
+        radio.checked = true;
+        
+        // Update current account
+        currentAccount = option.dataset.account;
+        selectedAccountSpan.textContent = label.textContent;
+        
+        // Close dropdown
+        accountDropdown.classList.add('hidden');
+        accountBtn.classList.remove('active');
+        
+        // TODO: Update data based on selected account
+        console.log('Selected account:', currentAccount);
+      }
+    };
+  });
+}
+
 /* ---------- Time Range Filter ---------- */
 let currentTimeRange = 'all';
 
@@ -3439,6 +3508,7 @@ initCustomCalendar();
 initFilterCustomCalendars();
 initTradingCalendar();
 initTimeRangeFilter();
+initAccountSelector();
 
 // Bypass auth for testing
 state.user = { name: "Test User", email: "test@example.com" };

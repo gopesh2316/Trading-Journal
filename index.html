@@ -109,6 +109,14 @@
             <span class="nav-icon"><span class="material-icons">gps_fixed</span></span>
             <span class="nav-text">Pre-Trade</span>
           </button>
+          <button class="nav-item" data-view="records">
+            <span class="nav-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#6b7280">
+                <path d="M480-120q-151 0-255.5-46.5T120-280v-400q0-66 105.5-113T480-840q149 0 254.5 47T840-680v400q0 67-104.5 113.5T480-120Zm0-479q89 0 179-25.5T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q14 30 101.5 55T480-599Zm0 199q42 0 81-4t74.5-11.5q35.5-7.5 67-18.5t57.5-25v-120q-26 14-57.5 25t-67 18.5Q600-528 561-524t-81 4q-42 0-82-4t-75.5-11.5Q287-543 256-554t-56-25v120q25 14 56 25t66.5 18.5Q358-408 398-404t82 4Zm0 200q46 0 93.5-7t87.5-18.5q40-11.5 67-26t32-29.5v-98q-26 14-57.5 25t-67 18.5Q600-328 561-324t-81 4q-42 0-82-4t-75.5-11.5Q287-343 256-354t-56-25v99q5 15 31.5 29t66.5 25.5q40 11.5 88 18.5t94 7Z"/>
+              </svg>
+            </span>
+            <span class="nav-text">Records</span>
+          </button>
         </div>
         <div class="row gap">
           <button id="btnNewEntry" class="primary">+ New Entry</button>
@@ -146,6 +154,29 @@
         <div class="time-range-section">
           <!-- Greeting -->
           <div class="greeting" id="greetingMessage"></div>
+          
+          <!-- Account Selector -->
+          <div class="account-selector">
+            <button class="account-btn" id="accountBtn">
+              <span id="selectedAccount">Real A/c</span>
+              <span class="material-icons">expand_more</span>
+            </button>
+            <div class="account-dropdown hidden" id="accountSelectorDropdown">
+              <div class="account-option" data-account="Real A/c">
+                <input type="radio" id="accountReal" name="account" checked>
+                <label for="accountReal">Real A/c</label>
+              </div>
+              <div class="account-option" data-account="Demo A/c">
+                <input type="radio" id="accountDemo" name="account">
+                <label for="accountDemo">Demo A/c</label>
+              </div>
+              <div class="account-divider"></div>
+              <div class="account-option create-account" data-action="create">
+                <span class="material-icons">add</span>
+                <span>Create A/c</span>
+              </div>
+            </div>
+          </div>
           
           <div class="time-range-filter">
             <button class="time-range-btn" id="timeRangeBtn">
@@ -265,7 +296,15 @@
               </div>
             </div>
             <div class="card">
-              <div class="row between tiny"><span>Session Performance</span><span class="muted tiny">Trades</span></div>
+              <div class="row between tiny">
+                <span>Session Performance</span>
+                <div class="info-icon-container">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="#e3e3e3">
+                    <path d="M440-280h80v-240h-80v240Zm40-320q17 0 28.5-11.5T520-640q0-17-11.5-28.5T480-680q-17 0-28.5 11.5T440-640q0 17 11.5 28.5T480-600Zm0 520q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+                  </svg>
+                  <div class="info-tooltip">Shows the total Wins and Losses of a session</div>
+                </div>
+              </div>
               <svg id="sessionChart" viewBox="0 0 320 180" class="chart"></svg>
               <div id="sessionLegend" class="session-legend"></div>
             </div>
