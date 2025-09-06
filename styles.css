@@ -361,7 +361,7 @@ body{
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;margin-bottom:12px}
 .stat{border:1px solid var(--border);border-radius:12px;background:#fff;padding:1rem;box-shadow:var(--shadow)}
 .stat .label{color:var(--muted);font-size:.85rem}
-.stat .value{font-weight:700;font-size:1.4rem}
+.stat .value{font-weight:700;font-size:1.4rem;margin-top: 3px;}
 
 /* Calendar Container */
 .calendar-container{
@@ -2300,11 +2300,11 @@ body{
 
 /* ---------- Dark Mode Styles ---------- */
 .dark-mode {
-  --bg: #0f172a;
-  --surface: #1e293b;
+  --bg: #171717;
+  --surface: #1f1f1f;
   --text: #f1f5f9;
-  --muted: #94a3b8;
-  --border: #334155;
+  --muted: #d7d7d7;
+  --border: #2e2e2e;
   --primary: #f1f5f9;
   --primary-2: #334155;
   --accent: #60a5fa;
@@ -2318,7 +2318,7 @@ body{
 }
 
 .dark-mode .app-header {
-  background: rgba(15, 23, 42, 0.9);
+  background: #1f1f1f;
   border-bottom-color: var(--border);
 }
 
@@ -2327,6 +2327,7 @@ body{
 .dark-mode .stat {
   background: var(--surface);
   border-color: var(--border);
+  box-shadow: none !important;
 }
 
 .dark-mode .calendar-day {
@@ -2374,22 +2375,22 @@ body{
 }
 
 .dark-mode .calendar-day.winning-trade {
-  background: #064e3b;
-  border-color: #065f46;
+  background: #00261c;
+  border-color: #065f46d1;
 }
 
 .dark-mode .calendar-day.losing-trade {
-  background: #7f1d1d;
-  border-color: #dc2626;
+  background: #3e0e0e47;
+  border-color: #6a0c0c;
 }
 
 .dark-mode .calendar-header-section {
-  background: #1e293b;
+  background: #282828;
   border-color: var(--border);
 }
 
 .dark-mode .weekday-header {
-  background: #334155;
+  background: #282828;
 }
 
 .dark-mode .user-dropdown {
@@ -2398,7 +2399,7 @@ body{
 }
 
 .dark-mode .user-dropdown-item:hover {
-  background: #334155;
+  background: #2e2e2e;
 }
 
 .dark-mode .dialog-card {
@@ -2459,8 +2460,9 @@ body{
 }
 
 .dark-mode .calendar-day.selected {
-  background: var(--accent);
+  background: #001d4087;
   color: white;
+  border: 1px solid #06499bb8;
 }
 
 .dark-mode .calendar-day.today {
@@ -2745,7 +2747,7 @@ body{
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 12px;
-  margin-bottom: 13px;
+  margin-bottom: 12px;
 }
 
 .risk-metric-card {
@@ -2805,6 +2807,7 @@ body{
 .dark-mode .risk-metric-card {
   background: var(--surface);
   border-color: var(--border);
+  box-shadow: none;
 }
 
 .dark-mode .risk-metric-card:hover {
@@ -3095,6 +3098,7 @@ body{
 .dark-mode .heatmap-container {
   background: var(--surface);
   border-color: var(--border);
+  box-shadow: none;
 }
 
 .dark-mode .heatmap-year-selector select {
@@ -3103,7 +3107,7 @@ body{
   color: var(--text);
 }
 
-.dark-mode .heatmap-day.no-trades { background-color: #161b22; }
+.dark-mode .heatmap-day.no-trades { background-color: #282828; }
 
 /* Dark mode profit levels (green) */
 .dark-mode .heatmap-day.profit-level-1 { background-color: #0e4429; }
@@ -3255,6 +3259,88 @@ body{
   stroke: var(--border);
 }
 
+/* Dark mode styles for equity curve grid lines */
+.dark-mode #equityCurve line[stroke="#f3f4f6"] {
+  stroke: #2a2a2a !important; /* Darker grid lines */
+}
+
+.dark-mode #equityCurve line[stroke="#d1d5db"] {
+  stroke: #4b5563 !important; /* Darker crosshair lines */
+}
+
+/* Dark mode styles for session chart text */
+.dark-mode #sessionChart text {
+  fill: #e5e7eb !important; /* Light text for dark mode */
+}
+
+/* Dark mode styles for profit factor text */
+.dark-mode .profit-factor-text .value {
+  color: #f9fafb !important; /* Light text for dark mode */
+}
+
+/* Dark mode styles for navigation text */
+.dark-mode .nav-text {
+  color: #d1d5db !important; /* Light gray text for dark mode */
+}
+
+/* Dark mode styles for navigation item hover */
+.dark-mode .nav-item:hover {
+  background: #3e3e3e; /* Dark background for hover state */
+}
+
+/* Dark mode styles for active navigation item */
+.dark-mode .nav-item.active {
+  background: #2e2e2e !important; /* Dark background for active nav item */
+  border-color: #4b5563 !important; /* Dark border for active nav item */
+}
+
+.dark-mode .nav-item.active .nav-text {
+  color: #ffffff !important; /* White text for active nav item */
+}
+
+.dark-mode .nav-item.active .nav-icon {
+  color: #ffffff !important; /* White icon for active nav item */
+}
+
+/* Dark mode styles for time range button */
+.dark-mode .time-range-btn {
+  color: #e5e7eb !important; /* Light text for dark mode */
+  background-color: #1f1f1f !important; /* Dark background */
+  border-color: #2e2e2e !important;
+  box-shadow: none; /* Dark border */
+}
+
+.dark-mode .time-range-btn:hover {
+  background-color: #4b5563 !important; /* Darker on hover */
+}
+
+/* Dark mode styles for greeting */
+.dark-mode .greeting {
+  color: #e5e7eb !important; /* Light text for dark mode */
+}
+
+/* Dark mode styles for current month badge */
+.dark-mode .current-month-badge {
+  color: #d5d5d5 !important; /* Light gray text for dark mode */
+  background-color: #404040 !important; /* Dark background */
+}
+
+/* Dark mode styles for week stat inline */
+.dark-mode .week-stat-inline {
+  color: #d1d5db !important;
+  background-color: #282828; /* Light gray text for dark mode */
+}
+
+/* Dark mode styles for dialog card heading */
+.dark-mode .dialog-card h3 {
+  color: #f9fafb !important; /* Light text for dark mode */
+}
+
+/* Dark mode styles for form row labels */
+.dark-mode .form-row label {
+  color: #e5e7eb !important; /* Light text for dark mode */
+}
+
 .dark-mode #tooltipDate {
   fill: var(--text);
 }
@@ -3289,6 +3375,99 @@ body{
   
   #tooltipValue {
     font-size: 12px;
+  }
+}
+
+/* Trading Scores Container */
+.trading-scores-container {
+  display: flex;
+  justify-content: space-evenly;
+  align-items: center;
+  padding: 20px 0;
+  gap: 0px;
+  border-radius: 8px;
+  margin-top: 8px;
+}
+
+.score-donut-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+  position: relative;
+}
+
+.score-donut-chart {
+  width: 133px;
+  height: 133px;
+  transform: rotate(-90deg);
+}
+
+.score-donut-center {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+}
+
+.score-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.score-label {
+  font-size: 13px;
+  color: #6b7280;
+  text-align: center;
+  margin-top: 3px;
+  font-weight: 500;
+  padding: 0 18px;
+}
+
+/* Dark mode support for trading scores */
+.dark-mode .score-value {
+  color: #f9fafb;
+}
+
+.dark-mode .score-label {
+  color: #9ca3af;
+  padding: 0 18px;
+}
+
+/* Responsive adjustments for trading scores */
+@media (max-width: 768px) {
+  .trading-scores-container {
+    flex-direction: column;
+    gap: 0px;
+    padding: 15px 0;
+  }
+  
+  .score-donut-chart {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .score-value {
+    font-size: 18px;
+  }
+  
+  .score-label {
+    font-size: 10px;
   }
 }
 

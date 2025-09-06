@@ -634,27 +634,8 @@ function renderCharts(){
   }).join("");
   $("#bars").innerHTML = `<line x1="${pad}" x2="${width-pad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>${bars}`;
 
-  // radar triangle (Zella Score)
-  const wins = state.entries.filter(e=>(e.pnl||0)>0).length;
-  const n = state.entries.length || 1;
-  const winPct = Math.round((wins/n)*100);
-  const ps = state.entries.map(e=>e.pnl||0);
-  const pos = ps.filter(v=>v>0), neg = ps.filter(v=>v<=0);
-  const aw = pos.length? (pos.reduce((a,b)=>a+b,0)/pos.length):0;
-  const al = neg.length? Math.abs(neg.reduce((a,b)=>a+b,0)/neg.length):0;
-  const pf = al===0 ? 1 : Math.max(0, aw/al);
-  const wl = al===0 ? 1 : Math.max(0, aw/al);
-  const norm = (v,max=100)=> Math.max(0, Math.min(1, v/max));
-  const m1 = norm(winPct), m2 = norm(wl*50), m3 = norm(pf*50);
-  const cx = width/2, cy = height/2+10, R=60;
-  const p = (ang, k=1)=> [cx + Math.cos(ang)*R*k, cy + Math.sin(ang)*R*k];
-  const outer = [ -90, 30, 150 ].map(a=>p(a*Math.PI/180)).map(([x,y])=>`${x},${y}`).join(" ");
-  const inner = [ [-90,m1], [30,m2], [150,m3] ].map(([deg,k])=>p(deg*Math.PI/180,k)).map(([x,y])=>`${x},${y}`).join(" ");
-  $("#radar").innerHTML = `
-    <polygon points="${outer}" fill="#eef2ff" stroke="#c7d2fe"></polygon>
-    <polygon points="${inner}" fill="#e9d5ff" stroke="#c084fc"></polygon>
-  `;
-  $("#zellaScore").textContent = Math.round((m1+m2+m3)/3*100);
+  // Trading Scores Donut Charts
+  renderTradingScores();
 
   // Render new charts
   renderDonutChart();
@@ -662,6 +643,120 @@ function renderCharts(){
   renderRulesDonutChart();
   renderEquityCurve();
   renderTradingHeatmap();
+}
+
+function renderTradingScores() {
+  // Calculate trading scores based on trading data
+  const entries = state.entries || [];
+  const totalTrades = entries.length;
+  
+  if (totalTrades === 0) {
+    // Default values when no trades
+    $("#ruleAdherenceScore").textContent = "0%";
+    $("#disciplineScore").textContent = "0%";
+    $("#managementScore").textContent = "0%";
+    renderScoreDonut("ruleAdherenceChart", 0, "#3b82f6");
+    renderScoreDonut("disciplineScoreChart", 0, "#f59e0b");
+    renderScoreDonut("managementScoreChart", 0, "#10b981");
+    return;
+  }
+  
+  // Calculate Rule Adherence Score (based on win rate and rule following)
+  const wins = entries.filter(e => (e.pnl || 0) > 0).length;
+  const winRate = Math.round((wins / totalTrades) * 100);
+  const ruleAdherenceScore = Math.min(100, Math.max(0, winRate + (entries.filter(e => e.ruleId && e.ruleId !== "").length / totalTrades * 20)));
+  
+  // Calculate Discipline Score (based on position sizing consistency and stop loss usage)
+  const hasStopLoss = entries.filter(e => e.stopLossMsg && e.stopLossMsg.trim() !== "").length;
+  const disciplineScore = Math.min(100, Math.max(0, (hasStopLoss / totalTrades * 60) + (winRate * 0.4)));
+  
+  // Calculate Management Score (based on target achievement and risk management)
+  const hasTarget = entries.filter(e => e.targetPointMsg && e.targetPointMsg.trim() !== "").length;
+  const managementScore = Math.min(100, Math.max(0, (hasTarget / totalTrades * 50) + (winRate * 0.5)));
+  
+  // Update score displays
+  $("#ruleAdherenceScore").textContent = Math.round(ruleAdherenceScore) + "%";
+  $("#disciplineScore").textContent = Math.round(disciplineScore) + "%";
+  $("#managementScore").textContent = Math.round(managementScore) + "%";
+  
+  // Render donut charts
+  renderScoreDonut("ruleAdherenceChart", ruleAdherenceScore, "#3b82f6");
+  renderScoreDonut("disciplineScoreChart", disciplineScore, "#f59e0b");
+  renderScoreDonut("managementScoreChart", managementScore, "#10b981");
+}
+
+function renderScoreDonut(chartId, percentage, color) {
+  const svg = document.getElementById(chartId);
+  if (!svg) return;
+  
+  const radius = 35;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDasharray = circumference;
+  const strokeDashoffset = circumference - (percentage / 100) * circumference;
+  
+  // Create gradient based on color
+  let gradientId = `gradient-${chartId}`;
+  let gradientColor1, gradientColor2;
+  
+  // Use the same gradient colors for all charts
+  gradientColor1 = "#48cae4"; // Blue start
+  gradientColor2 = "#00b4d8"; // Darker blue end
+  
+  // Clear existing content first
+  svg.innerHTML = '';
+  
+  // Create defs element
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+  gradient.setAttribute('id', gradientId);
+  gradient.setAttribute('x1', '0%');
+  gradient.setAttribute('y1', '0%');
+  gradient.setAttribute('x2', '100%');
+  gradient.setAttribute('y2', '100%');
+  
+  const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  stop1.setAttribute('offset', '0%');
+  stop1.setAttribute('stop-color', gradientColor1);
+  stop1.setAttribute('stop-opacity', '1');
+  
+  const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+  stop2.setAttribute('offset', '100%');
+  stop2.setAttribute('stop-color', gradientColor2);
+  stop2.setAttribute('stop-opacity', '1');
+  
+  gradient.appendChild(stop1);
+  gradient.appendChild(stop2);
+  defs.appendChild(gradient);
+  svg.appendChild(defs);
+  
+  // Create background circle with mode-aware stroke color
+  const bgCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  bgCircle.setAttribute('cx', '50');
+  bgCircle.setAttribute('cy', '50');
+  bgCircle.setAttribute('r', radius);
+  bgCircle.setAttribute('fill', 'none');
+  
+  // Set stroke color based on dark mode
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  const strokeColor = isDarkMode ? '#262626' : '#e5e7eb';
+  bgCircle.setAttribute('stroke', strokeColor);
+  bgCircle.setAttribute('stroke-width', '10');
+  
+  // Create progress circle
+  const progressCircle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+  progressCircle.setAttribute('cx', '50');
+  progressCircle.setAttribute('cy', '50');
+  progressCircle.setAttribute('r', radius);
+  progressCircle.setAttribute('fill', 'none');
+  progressCircle.setAttribute('stroke', `url(#${gradientId})`);
+  progressCircle.setAttribute('stroke-width', '10');
+  progressCircle.setAttribute('stroke-dasharray', strokeDasharray);
+  progressCircle.setAttribute('stroke-dashoffset', strokeDashoffset);
+  progressCircle.setAttribute('stroke-linecap', 'round');
+  progressCircle.setAttribute('opacity', '0.9');
+  
+  svg.appendChild(bgCircle);
+  svg.appendChild(progressCircle);
 }
 
 function renderDonutChart() {
@@ -2377,6 +2472,12 @@ function toggleDarkMode() {
     document.body.classList.remove('dark-mode');
     showToast('Light mode enabled');
   }
+  
+  // Re-render trading scores to update stroke colors
+  renderTradingScores();
+  
+  // Re-render equity curve to update grid line colors
+  renderEquityCurve();
 }
 
 function updateDarkModeButton() {

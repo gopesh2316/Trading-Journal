@@ -264,10 +264,30 @@
         <section id="view-dashboard" class="view">
           <div class="grid3">
             <div class="card">
-              <div class="row between tiny"><span>SSS Score</span><span class="muted tiny">Win %</span></div>
-              <svg id="radar" viewBox="0 0 320 180" class="chart"></svg>
-              <div class="tiny">Your Score: <span id="zellaScore" class="strong"></span></div>
-              <div class="tiny muted">Avg win/loss & Profit factor</div>
+              <div class="row between tiny"><span>Trading Scores</span><span class="muted tiny">Performance</span></div>
+              <div class="trading-scores-container">
+                <div class="score-donut-wrapper">
+                  <svg id="ruleAdherenceChart" viewBox="0 0 100 100" class="score-donut-chart"></svg>
+                  <div class="score-donut-center">
+                    <span id="ruleAdherenceScore" class="score-value">82%</span>
+                  </div>
+                  <div class="score-label">Rule Adherence</div>
+                </div>
+                <div class="score-donut-wrapper">
+                  <svg id="disciplineScoreChart" viewBox="0 0 100 100" class="score-donut-chart"></svg>
+                  <div class="score-donut-center">
+                    <span id="disciplineScore" class="score-value">75%</span>
+                  </div>
+                  <div class="score-label">Discipline Score</div>
+                </div>
+                <div class="score-donut-wrapper">
+                  <svg id="managementScoreChart" viewBox="0 0 100 100" class="score-donut-chart"></svg>
+                  <div class="score-donut-center">
+                    <span id="managementScore" class="score-value">68%</span>
+                  </div>
+                  <div class="score-label">Management Score</div>
+                </div>
+              </div>
             </div>
             <div class="card">
               <div class="row between tiny"><span>Daily Net Cumulative P&L</span><span class="muted tiny">₹</span></div>
