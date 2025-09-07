@@ -1686,7 +1686,7 @@ body{
   display:flex;
   align-items:end;
   gap:16px;
-  margin-bottom:16px;
+  margin-bottom:12px;
   flex-wrap:wrap;
   background:#fff;
   padding:20px;
@@ -2032,7 +2032,7 @@ body{
 
 .dialog{border:0;padding:0;background:transparent}
 .dialog::backdrop{background:rgba(0,0,0,.4);backdrop-filter:blur(4px)}
-.dialog-card{background:#fff;border:1px solid var(--border);border-radius:9px;min-width:min(720px,95vw);box-shadow:0 20px 60px rgba(0,0,0,0.15);max-height:90vh;overflow-y:auto}
+.dialog-card{background:#fff;border:1px solid var(--border);border-radius:9px;width:720px;box-shadow:0 20px 60px rgba(0,0,0,0.15);max-height:90vh;overflow-y:auto}
 
 /* Delete Dialog Styling */
 .delete-dialog-card{
@@ -2640,6 +2640,7 @@ body{
   background: var(--surface);
   border-color: var(--border);
   color: var(--text);
+  box-shadow: none;
 }
 
 .dark-mode .form-row input:focus,
@@ -2676,6 +2677,7 @@ body{
 .dark-mode .gridControls {
   background: var(--surface);
   border-color: var(--border);
+  BOX-SHADOW: NONE;
 }
 
 .dark-mode .gridControls input,
@@ -2704,6 +2706,18 @@ body{
   color: var(--muted);
 }
 
+.dark-mode .gridControls button {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text);
+  box-shadow: none;
+}
+
+.dark-mode .gridControls button:hover {
+  background: #2e2e2e;
+  border-color: #2e2e2e;
+}
+
 .dark-mode .gridControls select,
 .dark-mode .gridControls select:focus,
 .dark-mode .gridControls select:hover {
@@ -2718,7 +2732,10 @@ body{
 }
 
 .dark-mode .gridControls .date-picker-input {
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e");
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'/%3e%3c/svg%3e") !important;
+  background-position: right 12px center !important;
+  background-repeat: no-repeat !important;
+  background-size: 18px !important;
 }
 
 .dark-mode .gridControls .custom-calendar {
@@ -2744,7 +2761,7 @@ body{
 }
 
 .dark-mode .gridControls .custom-calendar .calendar-day:hover {
-  background: #334155;
+  background: #2e2e2e;
 }
 
 .dark-mode .gridControls .custom-calendar .calendar-day.other-month {
@@ -2757,7 +2774,7 @@ body{
 }
 
 .dark-mode .gridControls .custom-calendar .calendar-day.today {
-  background: var(--primary-2);
+  background: #424242;
   color: var(--text);
 }
 
@@ -3840,5 +3857,447 @@ body{
 .dark-mode .rules-empty-state-button:hover {
   background: none;
   border-color: #747474;
+}
+
+/* Live Trade Page Styles */
+.live-trade-title {
+  color: #111827 !important; /* Dark text for light mode */
+  letter-spacing: -2px;
+  font-size: 45px;
+  font-weight: 600;
+  margin: 0;
+  text-align: center;
+  padding: 40px 0;
+  display: grid;
+  justify-content: start;
+  margin-top: -12px;
+}
+
+.live-trade-containers {
+  display: flex;
+  gap: 20px;
+
+}
+
+.live-trade-card {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e5e7eb;
+}
+
+.trade-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.flag-icon {
+  flex-shrink: 0;
+}
+
+.currency-pair {
+  font-size: 18px;
+  font-weight: 700;
+  color: #111827;
+  margin-left: auto;
+}
+
+.trade-direction {
+  position: absolute;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%) rotate(45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trade-details {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.detail-value {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.target-value {
+  color: #10b981 !important;
+  font-weight: 700;
+}
+
+.trade-date-section {
+  margin-bottom: 16px;
+  padding: 0px 0 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+  margin-top: -9px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+
+.trade-date-label {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.trade-date-value {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.trade-rules-section {
+  margin-top: 16px;
+}
+
+.rules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.rules-title {
+  font-size: 14px;
+  color: #111827;
+  font-weight: 600;
+}
+
+.rules-count {
+  font-size: 12px;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 2px 8px;
+  border-radius: 12px;
+}
+
+.rules-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rule-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-icon {
+  color: #10b981;
+  font-weight: bold;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.rule-text {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.4;
+}
+
+/* Dark mode styles for Live Trade */
+.dark-mode .live-trade-title {
+  color: #e5e7eb !important; /* Light text for dark mode */
+}
+
+.dark-mode .live-trade-card {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+}
+
+.dark-mode .trade-card-header {
+  border-bottom-color: #2e2e2e;
+}
+
+.dark-mode .currency-pair {
+  color: #e5e7eb;
+}
+
+.dark-mode .detail-label {
+  color: #9ca3af;
+}
+
+.dark-mode .detail-value {
+  color: #e5e7eb;
+}
+
+.dark-mode .target-value {
+  color: #10b981 !important;
+}
+
+.dark-mode .trade-date-section {
+  border-bottom-color: #2e2e2e;
+}
+
+.dark-mode .trade-date-label {
+  color: #9ca3af;
+}
+
+.dark-mode .trade-date-value {
+  color: #e5e7eb;
+}
+
+.dark-mode .rules-title {
+  color: #e5e7eb;
+}
+
+.dark-mode .rules-count {
+  color: #ffffff;
+  background: #2e2e2e;
+  PADDING: 3px 7px;
+  font-weight: 600;
+}
+
+.dark-mode .rule-text {
+  color: #d1d5db;
+}
+
+.dark-mode .trade-direction svg {
+  fill: #10b981;
+}
+
+/* Hide stats, risk metrics, and time-range-section containers only on Live Trades page */
+body:has(#view-pre-trade:not(.hidden)) .stats,
+body:has(#view-pre-trade:not(.hidden)) .risk-metrics,
+body:has(#view-pre-trade:not(.hidden)) .time-range-section {
+  display: none !important;
+}
+
+/* Custom Multi-Select Input with Tags */
+.multi-select-container {
+  position: relative;
+  width: 100%;
+}
+
+/* Multi-select input when no rules are selected (0px padding) */
+.multi-select-input {
+  position: relative;
+  border: 1px solid #d1d1d1;
+  border-radius: 6px;
+  background: var(--surface);
+  min-height: 40px;
+  padding: 0px; /* No padding when empty */
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 4px;
+  cursor: text;
+  width: 100%;
+  box-sizing: border-box;
+  box-shadow: rgba(225, 229, 237, 0.4) 0px 1.5px 2px 0px;
+}
+
+/* Multi-select input when rules are selected (8px padding) */
+.multi-select-input.has-rules {
+  padding: 8px; /* Add padding when rules are selected */
+}
+
+.multi-select-input:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.selected-rules {
+  display: inline-flex; /* Use inline-flex to not interfere with parent flex */
+  flex-wrap: wrap;
+  gap: 4px;
+  align-items: center;
+}
+
+.rule-tag {
+  background: #dfdfdfa6;
+  color: #000000;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  max-width: 150px;
+  flex-shrink: 0; /* Prevent tags from shrinking */
+}
+
+.rule-tag-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rule-tag-remove {
+  background: none;
+  border: none;
+  color: black;
+  cursor: pointer;
+  padding: 0;
+  margin-left: 4px;
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.rule-tag-remove:hover {
+  opacity: 1;
+}
+
+#rulesSearch {
+  border: none;
+  outline: none;
+  background: transparent;
+  width: 301px; /* Fixed width for the input field */
+  font-size: 14px;
+  color: var(--text);
+  flex-shrink: 0; /* Prevent the input from shrinking */
+  box-shadow: none;
+}
+
+#rulesSearch::placeholder {
+  color: var(--muted);
+}
+
+.rules-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 320px; /* Match the input field width */
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 200px;
+  overflow-y: auto;
+  z-index: 1000;
+  display: none;
+  margin-top: 6px;
+}
+
+.rules-dropdown.show {
+  display: block;
+}
+
+.rules-list {
+  padding: 4px 0;
+}
+
+.rule-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-option:hover {
+  background: var(--hover);
+}
+
+.rule-option.selected {
+  background: #e3efff;
+  color: #000000;
+}
+
+.rule-option-checkbox {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--surface);
+}
+
+.rule-option.selected .rule-option-checkbox {
+  background: white;
+  border-color: white;
+}
+
+.rule-option-checkbox::after {
+  content: '✓';
+  color: var(--primary);
+  font-size: 12px;
+  font-weight: bold;
+  opacity: 0;
+}
+
+.rule-option.selected .rule-option-checkbox::after {
+  opacity: 1;
+}
+
+/* Dark mode styles for multi-select */
+.dark-mode .multi-select-input {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+  box-shadow: none;
+}
+
+.dark-mode .multi-select-input:focus-within {
+  border-color: var(--primary);
+}
+
+.dark-mode .rule-tag {
+  background: var(--primary);
+}
+
+.dark-mode #rulesSearch {
+  color: #e5e7eb;
+}
+
+.dark-mode #rulesSearch::placeholder {
+  color: #9ca3af;
+}
+
+.dark-mode .rules-dropdown {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+}
+
+.dark-mode .rule-option {
+  color: #e5e7eb;
+}
+
+.dark-mode .rule-option:hover {
+  background: #2e2e2e;
+}
+
+.dark-mode .rule-option.selected {
+  background: var(--primary);
+}
+
+.dark-mode .rule-option-checkbox {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+}
+
+.dark-mode .rule-option.selected .rule-option-checkbox {
+  background: white;
+  border-color: white;
 }
 

@@ -152,6 +152,114 @@ function loadAll(){
     updateCurrencySymbol(state.preferences.currency);
   }
 }
+
+// Custom Multi-Select Functions
+let selectedRuleIds = [];
+
+function clearSelectedRules() {
+  selectedRuleIds = [];
+  $("#selectedRules").innerHTML = "";
+  $("#rulesSearch").value = "";
+  hideRulesDropdown();
+  
+  // Remove has-rules class when clearing all rules
+  $("#rulesMultiSelect").classList.remove('has-rules');
+}
+
+function loadSelectedRules(ruleIdsString) {
+  clearSelectedRules();
+  if (ruleIdsString) {
+    const ruleIds = ruleIdsString.split(",").filter(id => id.trim());
+    ruleIds.forEach(ruleId => {
+      const rule = state.rules.find(r => r.id === ruleId.trim());
+      if (rule) {
+        addRuleTag(rule);
+      }
+    });
+    
+    // Add has-rules class if rules were loaded
+    if (ruleIds.length > 0) {
+      $("#rulesMultiSelect").classList.add('has-rules');
+    }
+  }
+}
+
+function addRuleTag(rule) {
+  if (selectedRuleIds.includes(rule.id)) return;
+  
+  selectedRuleIds.push(rule.id);
+  
+  const tag = document.createElement('div');
+  tag.className = 'rule-tag';
+  tag.dataset.ruleId = rule.id;
+  tag.innerHTML = `
+    <span class="rule-tag-text">${rule.title}</span>
+    <button type="button" class="rule-tag-remove" onclick="removeRuleTag('${rule.id}')">×</button>
+  `;
+  
+  $("#selectedRules").appendChild(tag);
+  
+  // Add has-rules class when rules are selected
+  $("#rulesMultiSelect").classList.add('has-rules');
+}
+
+function removeRuleTag(ruleId) {
+  selectedRuleIds = selectedRuleIds.filter(id => id !== ruleId);
+  const tag = document.querySelector(`[data-rule-id="${ruleId}"]`);
+  if (tag) tag.remove();
+  
+  // Remove has-rules class when no rules are selected
+  if (selectedRuleIds.length === 0) {
+    $("#rulesMultiSelect").classList.remove('has-rules');
+  }
+}
+
+function showRulesDropdown() {
+  $("#rulesDropdown").classList.add('show');
+}
+
+function hideRulesDropdown() {
+  $("#rulesDropdown").classList.remove('show');
+}
+
+function renderRulesList(searchTerm = '') {
+  const rulesList = $("#rulesList");
+  rulesList.innerHTML = '';
+  
+  const filteredRules = state.rules.filter(rule => 
+    rule.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  filteredRules.forEach(rule => {
+    const option = document.createElement('div');
+    option.className = 'rule-option';
+    if (selectedRuleIds.includes(rule.id)) {
+      option.classList.add('selected');
+    }
+    
+    option.innerHTML = `
+      <div class="rule-option-checkbox"></div>
+      <span>${rule.title}</span>
+    `;
+    
+    option.onclick = (e) => {
+      e.stopPropagation(); // Prevent event bubbling
+      toggleRuleSelection(rule);
+    };
+    rulesList.appendChild(option);
+  });
+}
+
+function toggleRuleSelection(rule) {
+  if (selectedRuleIds.includes(rule.id)) {
+    removeRuleTag(rule.id);
+  } else {
+    addRuleTag(rule);
+  }
+  renderRulesList($("#rulesSearch").value);
+  // Keep dropdown open - don't call hideRulesDropdown()
+}
+
 function saveEntries(){ 
   try{ 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries)); 
@@ -319,11 +427,46 @@ function initNavigation(){
 }
 
 /* ---------- Filters ---------- */
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
 function initFilters(){
   $("#search").oninput = (e)=>{ state.filters.search = e.target.value; renderTable(); renderStats(); };
   $("#sideFilter").onchange = (e)=>{ state.filters.side = e.target.value; renderTable(); renderStats(); };
-  $("#startDate").onchange = (e)=>{ state.filters.start = e.target.value; renderTable(); renderStats(); };
-  $("#endDate").onchange = (e)=>{ state.filters.end = e.target.value; renderTable(); renderStats(); };
+  $("#startDate").onchange = (e)=>{
+    console.log('Start date changed to:', e.target.value);
+    // Store the actual date value for filtering (YYYY-MM-DD format)
+    const displayValue = e.target.value;
+    if (displayValue) {
+      // Convert display format "Jan 15, 2024" to "2024-01-15"
+      const date = new Date(displayValue);
+      state.filters.start = formatDate(date);
+    } else {
+      state.filters.start = '';
+    }
+    console.log('Stored start date:', state.filters.start);
+    renderTable(); 
+    renderStats(); 
+  };
+  $("#endDate").onchange = (e)=>{
+    console.log('End date changed to:', e.target.value);
+    // Store the actual date value for filtering (YYYY-MM-DD format)
+    const displayValue = e.target.value;
+    if (displayValue) {
+      // Convert display format "Jan 15, 2024" to "2024-01-15"
+      const date = new Date(displayValue);
+      state.filters.end = formatDate(date);
+    } else {
+      state.filters.end = '';
+    }
+    console.log('Stored end date:', state.filters.end);
+    renderTable(); 
+    renderStats(); 
+  };
   $("#sessionFilter").onchange = (e)=>{ state.filters.session = e.target.value; renderTable(); renderStats(); };
   $("#sortBy").onchange = (e)=>{ state.filters.sort = e.target.value; renderTable(); };
   $("#btnReset").onclick = ()=>{ state.filters = {search:"", side:"ALL", session:"", start:"", end:"", sort:"date_desc"}; bindFilters(); renderTable(); renderStats(); };
@@ -340,16 +483,50 @@ function bindFilters(){
 /* ---------- Derived ---------- */
 function filteredEntries(){
   const q = state.filters.search.trim().toLowerCase();
-  // Use time range filtered entries as base
-  let rows = getFilteredEntriesByTimeRange().filter(e=>{
+  
+  // Debug logging
+  console.log('Filter state:', {
+    start: state.filters.start,
+    end: state.filters.end,
+    hasCustomDates: !!(state.filters.start || state.filters.end)
+  });
+  
+  // If custom date range is set, use all entries and filter by custom dates
+  // Otherwise, use time range filtered entries
+  let baseEntries;
+  if (state.filters.start || state.filters.end) {
+    baseEntries = state.entries; // Use all entries for custom date filtering
+    console.log('Using custom date filtering with', baseEntries.length, 'entries');
+  } else {
+    baseEntries = getFilteredEntriesByTimeRange(); // Use time range dropdown filtering
+    console.log('Using time range filtering with', baseEntries.length, 'entries');
+  }
+  
+  let rows = baseEntries.filter(e=>{
       if(state.filters.side !== "ALL" && e.side !== state.filters.side) return false;
   if(state.filters.session && e.tradingSession !== state.filters.session) return false;
-  if(state.filters.start && e.date < state.filters.start) return false;
-  if(state.filters.end && e.date > state.filters.end) return false;
+  
+  // Normalize filter dates for proper comparison
+  const filterStart = state.filters.start ? normalizeDate(state.filters.start) : null;
+  const filterEnd = state.filters.end ? normalizeDate(state.filters.end) : null;
+  
+  console.log('Date comparison:', {
+    entryDate: e.date,
+    filterStart,
+    filterEnd,
+    startMatch: filterStart ? e.date >= filterStart : true,
+    endMatch: filterEnd ? e.date <= filterEnd : true
+  });
+  
+  if(filterStart && e.date < filterStart) return false;
+  if(filterEnd && e.date > filterEnd) return false;
     if(!q) return true;
     const hay = `${e.symbol} ${e.side} ${e.account||""} ${(e.tags||[]).join(" ")} ${e.ruleTitle||""} ${e.notes||""}`.toLowerCase();
     return hay.includes(q);
   });
+  
+  console.log('Filtered results:', rows.length, 'entries');
+  
   switch(state.filters.sort){
     case "date_asc": rows.sort((a,b)=>a.date.localeCompare(b.date) || b.id.localeCompare(a.id)); break;
     case "pnl_desc": rows.sort((a,b)=>(b.pnl||0)-(a.pnl||0)); break;
@@ -2277,7 +2454,8 @@ function openNewEntry(){
   $("#pnl").value = "";
   $("#stopLossMsg").value = "";
   $("#targetPointMsg").value = "";
-  $("#ruleId").value = "";
+  // Clear custom multi-select
+  clearSelectedRules();
   $("#notes").value = "";
   bindRuleOptions();
   $("#entryDialog").showModal();
@@ -2297,13 +2475,14 @@ function openEdit(id){
   $("#stopLossMsg").value = e.stopLossMsg || "";
   $("#targetPointMsg").value = e.targetPointMsg || "";
   bindRuleOptions();
-  $("#ruleId").value = e.ruleId || "";
+  // Load selected rules into custom multi-select
+  loadSelectedRules(e.ruleId || "");
   $("#notes").value = e.notes || "";
   $("#entryDialog").showModal();
 }
 function bindRuleOptions(){
-  const sel = $("#ruleId");
-  sel.innerHTML = `<option value="">None</option>` + state.rules.map(r=>`<option value="${r.id}">${r.title}</option>`).join("");
+  // Initialize the custom multi-select with available rules
+  renderRulesList();
 }
 function submitEntry(e){
   e.preventDefault();
@@ -2325,8 +2504,18 @@ function submitEntry(e){
     fees: ex?.fees ?? 0,
     pnl: Number($("#pnl").value||"") || null,
     account: ex?.account || "",
-    ruleId: $("#ruleId").value || "",
-    ruleTitle: (()=>{ const r = state.rules.find(r=>r.id === $("#ruleId").value); return r?.title || ""; })(),
+    ruleId: (()=>{ 
+      const selectedRules = Array.from(document.querySelectorAll('.rule-tag')).map(tag => tag.dataset.ruleId);
+      return selectedRules.filter(id => id).join(",");
+    })(),
+    ruleTitle: (()=>{ 
+      const selectedRules = Array.from(document.querySelectorAll('.rule-tag')).map(tag => tag.dataset.ruleId);
+      const ruleTitles = selectedRules.map(id => {
+        const r = state.rules.find(r => r.id === id);
+        return r?.title || "";
+      }).filter(title => title !== "");
+      return ruleTitles.join(", ");
+    })(),
     stopLossMsg: $("#stopLossMsg").value || "",
     targetPointMsg: $("#targetPointMsg").value || "",
     notes: $("#notes").value || "",
@@ -3242,6 +3431,8 @@ function initCustomCalendar() {
         dayElement.onclick = () => {
           selectedDate = dayDate;
           dateInput.value = formatDisplayDate(dayDate);
+          // Trigger the change event manually since we're setting the value programmatically
+          dateInput.dispatchEvent(new Event('change'));
           calendar.style.display = 'none';
           renderCalendar();
         };
@@ -3484,6 +3675,8 @@ function initFilterCalendar(inputId, calendarId, monthYearId, gridId, prevId, ne
         dayElement.onclick = () => {
           selectedDate = dayDate;
           dateInput.value = formatDisplayDate(dayDate);
+          // Trigger the change event manually since we're setting the value programmatically
+          dateInput.dispatchEvent(new Event('change'));
           calendar.style.display = 'none';
           renderCalendar();
         };
@@ -3954,3 +4147,36 @@ state.currentBalance = 10000;
 saveUser();
 saveBalance();
 showApp();
+
+// Initialize multi-select functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Rules search input
+  $("#rulesSearch").addEventListener('input', function(e) {
+    renderRulesList(e.target.value);
+    showRulesDropdown();
+  });
+  
+  $("#rulesSearch").addEventListener('focus', function() {
+    renderRulesList();
+    showRulesDropdown();
+  });
+  
+  // Hide dropdown when clicking outside
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('.multi-select-container')) {
+      hideRulesDropdown();
+    }
+  });
+  
+  // Prevent dropdown from closing when clicking inside it
+  $("#rulesDropdown").addEventListener('click', function(e) {
+    e.stopPropagation();
+  });
+  
+  // Handle escape key
+  $("#rulesSearch").addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+      hideRulesDropdown();
+    }
+  });
+});

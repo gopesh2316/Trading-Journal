@@ -617,16 +617,314 @@
 
         <!-- Pre-trade -->
         <section id="view-pre-trade" class="view hidden">
-          <div class="card">
-            <h3>Pre-Trade Checklist</h3>
-            <ul class="list">
-              <li>Trend alignment confirmed</li>
-              <li>Risk defined (position size, SL)</li>
-              <li>Entry criteria met (trigger, confluence)</li>
-              <li>News/volatility checked</li>
-              <li>Plan documented (targets, management)</li>
-            </ul>
-            <p class="tiny muted">(You can customize this section later.)</p>
+          <div class="live-trade-header">
+            <h2 class="live-trade-title">Ongoing Live Trades</h2>
+          </div>
+          
+          <div class="live-trade-containers">
+            <div class="live-trade-card">
+              <div class="trade-card-header">
+                <div class="flag-icon">
+                  <svg width="28" height="20" viewBox="0 0 24 16">
+                    <!-- EU Flag -->
+                    <rect width="12" height="16" fill="#003399"/>
+                    <circle cx="6" cy="8" r="2.5" fill="#FFCC00"/>
+                    <circle cx="6" cy="8" r="1.8" fill="#003399"/>
+                    <!-- US Flag -->
+                    <rect x="12" width="12" height="16" fill="#B22234"/>
+                    <rect x="12" y="1.23" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="3.69" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="6.15" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="8.61" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="11.07" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="13.53" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="15.99" width="12" height="1.23" fill="white"/>
+                  </svg>
+                </div>
+                <div class="currency-pair">EUR/USD</div>
+              </div>
+              <div class="trade-date-section">
+                <div class="trade-date-label">Trade Started:</div>
+                <div class="trade-date-value">Dec 15, 2024 - 09:30</div>
+                <div class="trade-direction">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#10b981">
+                    <path d="M440-320h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168Zm40 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="trade-details">
+                <div class="detail-row">
+                  <span class="detail-label">Target:</span>
+                  <span class="detail-value target-value">$53</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Take Profit:</span>
+                  <span class="detail-value">1.2105</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Stop Loss:</span>
+                  <span class="detail-value">1.1205</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Lot(s):</span>
+                  <span class="detail-value">0.21</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Trade Session:</span>
+                  <span class="detail-value">Sydney</span>
+                </div>
+              </div>
+              
+              <div class="trade-rules-section">
+                <div class="rules-header">
+                  <span class="rules-title">Rules Applied:</span>
+                  <span class="rules-count">3 Rules</span>
+                </div>
+                <div class="rules-list">
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Trend alignment confirmed</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Risk defined (position size, SL)</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Entry criteria met (trigger, confluence)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="live-trade-card">
+              <div class="trade-card-header">
+                <div class="flag-icon">
+                  <svg width="28" height="20" viewBox="0 0 24 16">
+                    <!-- EU Flag -->
+                    <rect width="12" height="16" fill="#003399"/>
+                    <circle cx="6" cy="8" r="2.5" fill="#FFCC00"/>
+                    <circle cx="6" cy="8" r="1.8" fill="#003399"/>
+                    <!-- US Flag -->
+                    <rect x="12" width="12" height="16" fill="#B22234"/>
+                    <rect x="12" y="1.23" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="3.69" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="6.15" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="8.61" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="11.07" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="13.53" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="15.99" width="12" height="1.23" fill="white"/>
+                  </svg>
+                </div>
+                <div class="currency-pair">EUR/USD</div>
+              </div>
+              <div class="trade-date-section">
+                <div class="trade-date-label">Trade Started:</div>
+                <div class="trade-date-value">Dec 15, 2024 - 09:30</div>
+                <div class="trade-direction">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#10b981">
+                    <path d="M440-320h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168Zm40 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="trade-details">
+                <div class="detail-row">
+                  <span class="detail-label">Target:</span>
+                  <span class="detail-value target-value">$53</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Take Profit:</span>
+                  <span class="detail-value">1.2105</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Stop Loss:</span>
+                  <span class="detail-value">1.1205</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Lot(s):</span>
+                  <span class="detail-value">0.21</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Trade Session:</span>
+                  <span class="detail-value">Sydney</span>
+                </div>
+              </div>
+              
+              <div class="trade-rules-section">
+                <div class="rules-header">
+                  <span class="rules-title">Rules Applied:</span>
+                  <span class="rules-count">3 Rules</span>
+                </div>
+                <div class="rules-list">
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Trend alignment confirmed</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Risk defined (position size, SL)</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Entry criteria met (trigger, confluence)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="live-trade-card">
+              <div class="trade-card-header">
+                <div class="flag-icon">
+                  <svg width="28" height="20" viewBox="0 0 24 16">
+                    <!-- EU Flag -->
+                    <rect width="12" height="16" fill="#003399"/>
+                    <circle cx="6" cy="8" r="2.5" fill="#FFCC00"/>
+                    <circle cx="6" cy="8" r="1.8" fill="#003399"/>
+                    <!-- US Flag -->
+                    <rect x="12" width="12" height="16" fill="#B22234"/>
+                    <rect x="12" y="1.23" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="3.69" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="6.15" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="8.61" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="11.07" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="13.53" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="15.99" width="12" height="1.23" fill="white"/>
+                  </svg>
+                </div>
+                <div class="currency-pair">EUR/USD</div>
+              </div>
+              <div class="trade-date-section">
+                <div class="trade-date-label">Trade Started:</div>
+                <div class="trade-date-value">Dec 15, 2024 - 09:30</div>
+                <div class="trade-direction">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#10b981">
+                    <path d="M440-320h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168Zm40 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="trade-details">
+                <div class="detail-row">
+                  <span class="detail-label">Target:</span>
+                  <span class="detail-value target-value">$53</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Take Profit:</span>
+                  <span class="detail-value">1.2105</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Stop Loss:</span>
+                  <span class="detail-value">1.1205</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Lot(s):</span>
+                  <span class="detail-value">0.21</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Trade Session:</span>
+                  <span class="detail-value">Sydney</span>
+                </div>
+              </div>
+              
+              <div class="trade-rules-section">
+                <div class="rules-header">
+                  <span class="rules-title">Rules Applied:</span>
+                  <span class="rules-count">3 Rules</span>
+                </div>
+                <div class="rules-list">
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Trend alignment confirmed</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Risk defined (position size, SL)</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Entry criteria met (trigger, confluence)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="live-trade-card">
+              <div class="trade-card-header">
+                <div class="flag-icon">
+                  <svg width="28" height="20" viewBox="0 0 24 16">
+                    <!-- EU Flag -->
+                    <rect width="12" height="16" fill="#003399"/>
+                    <circle cx="6" cy="8" r="2.5" fill="#FFCC00"/>
+                    <circle cx="6" cy="8" r="1.8" fill="#003399"/>
+                    <!-- US Flag -->
+                    <rect x="12" width="12" height="16" fill="#B22234"/>
+                    <rect x="12" y="1.23" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="3.69" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="6.15" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="8.61" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="11.07" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="13.53" width="12" height="1.23" fill="white"/>
+                    <rect x="12" y="15.99" width="12" height="1.23" fill="white"/>
+                  </svg>
+                </div>
+                <div class="currency-pair">EUR/USD</div>
+              </div>
+              <div class="trade-date-section">
+                <div class="trade-date-label">Trade Started:</div>
+                <div class="trade-date-value">Dec 15, 2024 - 09:30</div>
+                <div class="trade-direction">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="#10b981">
+                    <path d="M440-320h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168Zm40 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>
+                  </svg>
+                </div>
+              </div>
+              
+              <div class="trade-details">
+                <div class="detail-row">
+                  <span class="detail-label">Target:</span>
+                  <span class="detail-value target-value">$53</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Take Profit:</span>
+                  <span class="detail-value">1.2105</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Stop Loss:</span>
+                  <span class="detail-value">1.1205</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Lot(s):</span>
+                  <span class="detail-value">0.21</span>
+                </div>
+                <div class="detail-row">
+                  <span class="detail-label">Trade Session:</span>
+                  <span class="detail-value">Sydney</span>
+                </div>
+              </div>
+              
+              <div class="trade-rules-section">
+                <div class="rules-header">
+                  <span class="rules-title">Rules Applied:</span>
+                  <span class="rules-count">3 Rules</span>
+                </div>
+                <div class="rules-list">
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Trend alignment confirmed</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Risk defined (position size, SL)</span>
+                  </div>
+                  <div class="rule-item">
+                    <span class="rule-icon">✓</span>
+                    <span class="rule-text">Entry criteria met (trigger, confluence)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </main>
@@ -682,8 +980,16 @@
         <div class="form-row"><label>Realized P&L</label><input id="pnl" type="number" step="any" placeholder="e.g., 150.50"></div>
         <div class="form-row"><label>Stop Loss</label><input id="stopLossMsg" placeholder="e.g., SL below swing low"></div>
         <div class="form-row"><label>Target Point</label><input id="targetPointMsg" placeholder="e.g., TP at PDH / 2R"></div>
-        <div class="form-row"><label>Rule</label>
-          <select id="ruleId"><option value="">None</option></select>
+        <div class="form-row"><label>Rules</label>
+          <div class="multi-select-container">
+            <div class="multi-select-input" id="rulesMultiSelect">
+              <div class="selected-rules" id="selectedRules"></div>
+              <input type="text" id="rulesSearch" placeholder="Search or select rules..." autocomplete="off">
+              <div class="rules-dropdown" id="rulesDropdown">
+                <div class="rules-list" id="rulesList"></div>
+              </div>
+            </div>
+          </div>
         </div>
         <div class="form-row gridspan2"><label>Notes</label><textarea id="notes" rows="4"></textarea></div>
       </div>
