@@ -801,6 +801,10 @@ body{
   background: white;
 }
 
+.dark-mode .circular-progress::before {
+  background: #1f1f1f;
+}
+
 
 
 /* Wins/Losses Simple Value */
@@ -866,7 +870,7 @@ body{
 
 /* Override any generic chart styles for Net Daily P&L */
 .net-daily-pnl-container #bars {
-  width: 105% !important;
+  width: 104% !important;
   height: 222px !important;
   margin-top: -19px;
 }
@@ -1051,7 +1055,7 @@ body{
 
 /* Session Chart Specific Styles */
 #sessionChart {
-  width: 56% !important;
+  width: 53% !important;
   height: 180px !important;
   overflow: visible !important;
   display: flex !important;
@@ -2470,7 +2474,7 @@ body{
 .onboarding{display:grid;place-items:center;min-height:100vh;padding:24px;background:#fff;}
 .onboarding-card{width:min(551px,90vw);background:#fff;border:0;border-radius:0;padding:40px;box-shadow:none;text-align:center}
 .onboarding-content{text-align:left}
-.onboarding-step h2{margin:0 0 8px;font-size:40px;font-weight:800;color:#000000;letter-spacing: -1.4px;background: -webkit-linear-gradient(#000000, #525252);-webkit-background-clip: text;-webkit-text-fill-color: transparent;line-height:41px;}
+.onboarding-step h2{margin:0 0 8px;font-size:40px;font-weight:800;color:#000000;letter-spacing: -1.4px;background: -webkit-linear-gradient(#000000, #525252);-webkit-background-clip: text;background-clip: text;-webkit-text-fill-color: transparent;line-height:41px;}
 .onboarding-description{color:#6b7280;font-size:14px;margin:0 0 24px;line-height:1.5;}
 .balance-input-container{margin-bottom:24px}
 .balance-input-container label{display:block;margin-bottom:8px;font-weight:500;color:#374151;font-size:14px;}
@@ -2553,8 +2557,7 @@ body{
 }
 
 .dark-mode .account-btn:hover {
-  border-color: #475569;
-  background: #334155;
+  background: #2e2e2e;
 }
 
 .dark-mode .account-dropdown {
@@ -2563,7 +2566,7 @@ body{
 }
 
 .dark-mode .account-option:hover {
-  background: #334155;
+  background: #2e2e2e;
 }
 
 .dark-mode .account-option.create-account:hover {
@@ -3511,7 +3514,21 @@ body{
 }
 
 .dark-mode .time-range-btn:hover {
-  background-color: #4b5563 !important; /* Darker on hover */
+  background-color: #2e2e2e !important; /* Darker on hover */
+}
+
+.dark-mode .time-range-dropdown {
+  background: #1f1f1f !important;
+  border-color: #2e2e2e !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.dark-mode .time-range-option {
+  color: #e5e7eb !important;
+}
+
+.dark-mode .time-range-option:hover {
+  background: #2e2e2e !important;
 }
 
 /* Dark mode styles for greeting */
@@ -3669,5 +3686,159 @@ body{
   .score-label {
     font-size: 10px;
   }
+}
+
+/* Currency Empty State Styles */
+.currency-empty-state-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  padding: 0px 20px 26px 20px;
+  text-align: center;
+}
+
+.currency-empty-state-content {
+  max-width: 280px;
+}
+
+.currency-empty-state-icon {
+  margin-bottom: 4px;
+  opacity: 0.6;
+}
+
+.currency-empty-state-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px 0;
+}
+
+.currency-empty-state-description {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+  padding: 0px 35px;
+}
+
+.currency-empty-state-button {
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 7px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+  border: 1px solid #e3e3e3;
+}
+
+.currency-empty-state-button:hover {
+  border: 1px solid #a7a7a7;
+  transform: translateY(-1px);
+}
+
+.currency-empty-state-button:active {
+  transform: translateY(0);
+}
+
+/* Rules Empty State Styles */
+.rules-empty-state-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 220px;
+  padding: 27px 20px 0px 20px;
+  text-align: center;
+}
+
+.rules-empty-state-content {
+  max-width: 280px;
+}
+
+.rules-empty-state-icon {
+  margin-bottom: 4px;
+  opacity: 0.6;
+}
+
+.rules-empty-state-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 8px 0;
+}
+
+.rules-empty-state-description {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+  padding: 0px 35px;
+}
+
+.rules-empty-state-button {
+  background: white;
+  color: black;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow);
+  border: 1px solid #e3e3e3
+}
+
+.rules-empty-state-button:hover {
+  color: black;
+  transform: translateY(-1px);
+  border: 1px solid #a7a7a7
+}
+
+.rules-empty-state-button:active {
+  transform: translateY(0);
+}
+
+/* Dark mode styles for empty states */
+.dark-mode .currency-empty-state-title,
+.dark-mode .rules-empty-state-title {
+  color: var(--text);
+}
+
+.dark-mode .currency-empty-state-description,
+.dark-mode .rules-empty-state-description {
+  color: var(--muted);
+}
+
+.dark-mode .currency-empty-state-icon svg,
+.dark-mode .rules-empty-state-icon svg {
+  fill: var(--muted);
+}
+
+.dark-mode .currency-empty-state-button {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+  box-shadow: none;
+}
+
+.dark-mode .currency-empty-state-button:hover {
+  border-color: #747474;
+}
+
+.dark-mode .rules-empty-state-button {
+  border: 1px solid #2e2e2e;
+  box-shadow: none;
+  color: white;
+  background: none;
+}
+
+.dark-mode .rules-empty-state-button:hover {
+  background: none;
+  border-color: #747474;
 }
 

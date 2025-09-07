@@ -107,7 +107,7 @@
           </button>
           <button class="nav-item" data-view="pre-trade">
             <span class="nav-icon"><span class="material-icons">gps_fixed</span></span>
-            <span class="nav-text">Pre-Trade</span>
+            <span class="nav-text">Live Trade</span>
           </button>
           <button class="nav-item" data-view="records">
             <span class="nav-icon">
@@ -119,7 +119,7 @@
           </button>
         </div>
         <div class="row gap">
-          <button id="btnNewEntry" class="primary">+ New Entry</button>
+          <button id="btnNewEntry" class="primary">+ New Trade</button>
           <button id="btnNewRule" class="outline">New rule</button>
           <div class="header-user">
             <div class="user-menu" id="accountMenu">
@@ -310,7 +310,27 @@
           <div class="charts-grid">
             <div class="card">
               <div class="row between tiny"><span>Currency Pair Distribution</span><span class="muted tiny">Total Trades</span></div>
-              <div class="donut-chart-container">
+              
+              <!-- Empty State Container -->
+              <div id="currencyEmptyState" class="currency-empty-state-container">
+                <div class="currency-empty-state-content">
+                  <div class="currency-empty-state-icon">
+                    <svg width="52" height="52" viewBox="0 0 64 64" fill="#d1d5db">
+                      <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="2"/>
+                      <circle cx="22" cy="28" r="4" fill="currentColor"/>
+                      <path d="M38 28 Q42 28 42 32 Q42 36 38 36" stroke="currentColor" stroke-width="2" fill="none"/>
+                      <path d="M20 40 Q32 50 44 40" stroke="currentColor" stroke-width="2" fill="none"/>
+                      <path d="M36 22 L40 18 L44 22 L48 18" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                  </div>
+                  <h3 class="currency-empty-state-title">No Trades Yet</h3>
+                  <p class="currency-empty-state-description">Start trading to see your currency pair distribution</p>
+                  <button id="addFirstTrade" class="currency-empty-state-button">Add Your First Trade</button>
+                </div>
+              </div>
+              
+              <!-- Donut Chart Container (Hidden initially) -->
+              <div id="currencyDonutContainer" class="donut-chart-container hidden">
                 <div class="donut-chart-wrapper">
                   <svg id="donutChart" viewBox="0 0 160 220" class="chart"></svg>
                   <div class="donut-center">
@@ -341,7 +361,27 @@
           <div class="analysis-grid">
             <div class="card">
               <div class="row between tiny"><span>Rules Usage Distribution</span><span class="muted tiny">Total Rules</span></div>
-              <div class="rules-donut-container">
+              
+              <!-- Empty State Container -->
+              <div id="rulesEmptyState" class="rules-empty-state-container">
+                <div class="rules-empty-state-content">
+                  <div class="rules-empty-state-icon">
+                    <svg width="52" height="52" viewBox="0 0 64 64" fill="#d1d5db">
+                      <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="2"/>
+                      <circle cx="22" cy="28" r="4" fill="currentColor"/>
+                      <path d="M38 28 Q42 28 42 32 Q42 36 38 36" stroke="currentColor" stroke-width="2" fill="none"/>
+                      <path d="M20 40 Q32 50 44 40" stroke="currentColor" stroke-width="2" fill="none"/>
+                      <path d="M36 22 L40 18 L44 22 L48 18" stroke="currentColor" stroke-width="2" fill="none"/>
+                    </svg>
+                  </div>
+                  <h3 class="rules-empty-state-title">No Rules Yet</h3>
+                  <p class="rules-empty-state-description">Create trading rules to see your usage distribution</p>
+                  <button id="addFirstRule" class="rules-empty-state-button">Create Your First Rule</button>
+                </div>
+              </div>
+              
+              <!-- Rules Donut Chart Container (Hidden initially) -->
+              <div id="rulesDonutContainer" class="rules-donut-container hidden">
                 <div class="rules-donut-wrapper">
                   <svg id="rulesDonutChart" viewBox="0 0 160 220" class="chart"></svg>
                   <div class="rules-donut-center">

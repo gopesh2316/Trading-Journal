@@ -292,6 +292,15 @@ function initHeader(){
       $("#accountDropdown").classList.add("hidden");
     }
   });
+  
+  // Add event listeners for empty state buttons
+  $("#addFirstTrade").addEventListener('click', () => {
+    $("#btnNewEntry").click();
+  });
+  
+  $("#addFirstRule").addEventListener('click', () => {
+    $("#btnNewRule").click();
+  });
 }
 
 /* ---------- Header Navigation ---------- */
@@ -676,8 +685,8 @@ function renderNetDailyPnlChart() {
   const xScale = (i)=> pad + 10 + (i*(width-pad*2-30))/Math.max(1,(monthlyData.length-1));
   const yScale = (v)=> height - pad - ((v - minPnl) * (height - pad*2)) / Math.max(1,(maxPnl - minPnl));
   
-  // bars with hover effects
-  const barW = Math.max(2, (width - pad*2) / Math.max(1, monthlyData.length*1.2));
+  // bars with hover effects - Fixed width regardless of data count
+  const barW = 8; // Consistent bar width
   const bars = monthlyData.map((r,i)=>{
     const x = xScale(i) - barW/2;
     const y0 = yScale(0);
@@ -708,21 +717,14 @@ function renderNetDailyPnlChart() {
     yAxisLabels.push(`<text x="${pad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${formattedValue}</text>`);
   }
   
-  // X-axis labels for dates - Show only 4 labels per month
+  // X-axis labels for dates - Show exactly 3 evenly spaced labels
   const xAxisLabels = [];
-  const xAxisStep = Math.max(1, Math.floor(monthlyData.length / 4)); // Show max 4 date labels
-  for (let i = 0; i < monthlyData.length; i += xAxisStep) {
+  const xAxisStep = Math.max(1, Math.floor(monthlyData.length / 3)); // Show 3 evenly spaced labels
+  
+  // Add 3 evenly spaced labels
+  for (let i = 0; i < monthlyData.length && xAxisLabels.length < 3; i += xAxisStep) {
     const x = xScale(i);
     const date = new Date(monthlyData[i].date);
-    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    xAxisLabels.push(`<text x="${x}" y="${height - 8}" text-anchor="middle" font-size="9" fill="var(--muted)">${formattedDate}</text>`);
-  }
-  
-  // Add final date label if not already included
-  if (monthlyData.length > 0 && (monthlyData.length - 1) % xAxisStep !== 0) {
-    const lastIndex = monthlyData.length - 1;
-    const x = xScale(lastIndex);
-    const date = new Date(monthlyData[lastIndex].date);
     const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
     xAxisLabels.push(`<text x="${x}" y="${height - 8}" text-anchor="middle" font-size="9" fill="var(--muted)">${formattedDate}</text>`);
   }
@@ -1059,13 +1061,16 @@ function renderDonutChart() {
     .map(([symbol, count]) => ({ symbol, count }))
     .sort((a, b) => b.count - a.count);
 
+  // Check if we have any trades
   if (data.length === 0) {
-    $("#donutChart").innerHTML = `
-      <text x="${cx}" y="${cy}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No data</text>
-    `;
-    $("#totalTrades").textContent = "0";
-    $("#donutLegend").innerHTML = "";
+    // Show empty state, hide donut chart
+    $("#currencyEmptyState").classList.remove('hidden');
+    $("#currencyDonutContainer").classList.add('hidden');
     return;
+  } else {
+    // Hide empty state, show donut chart
+    $("#currencyEmptyState").classList.add('hidden');
+    $("#currencyDonutContainer").classList.remove('hidden');
   }
 
   // Purple color palette with varying opacity
@@ -1088,24 +1093,40 @@ function renderDonutChart() {
   
   const donutSegments = data.map((item, index) => {
     const percentage = item.count / totalTrades;
-    const angle = percentage * 2 * Math.PI;
+    // When there's only one unique currency pair, show full circle (100%)
+    const angle = data.length === 1 ? 2 * Math.PI : percentage * 2 * Math.PI;
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
     
-    const x1 = cx + radius * Math.cos(startAngle);
-    const y1 = cy + radius * Math.sin(startAngle);
-    const x2 = cx + radius * Math.cos(endAngle);
-    const y2 = cy + radius * Math.sin(endAngle);
+    let pathData;
     
-    const largeArcFlag = angle > Math.PI ? 1 : 0;
-    
-    const pathData = [
-      `M ${x1} ${y1}`,
-      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-      `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
-      `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
-      'Z'
-    ].join(' ');
+    if (data.length === 1) {
+      // Special case for full circle - create a proper donut using evenodd fill rule
+      pathData = [
+        `M ${cx + radius} ${cy}`,
+        `A ${radius} ${radius} 0 0 1 ${cx - radius} ${cy}`,
+        `A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`,
+        `M ${cx + innerRadius} ${cy}`,
+        `A ${innerRadius} ${innerRadius} 0 0 0 ${cx - innerRadius} ${cy}`,
+        `A ${innerRadius} ${innerRadius} 0 0 0 ${cx + innerRadius} ${cy}`,
+        'Z'
+      ].join(' ');
+    } else {
+      const x1 = cx + radius * Math.cos(startAngle);
+      const y1 = cy + radius * Math.sin(startAngle);
+      const x2 = cx + radius * Math.cos(endAngle);
+      const y2 = cy + radius * Math.sin(endAngle);
+      
+      const largeArcFlag = angle > Math.PI ? 1 : 0;
+      
+      pathData = [
+        `M ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
+        `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
+        'Z'
+      ].join(' ');
+    }
     
     currentAngle = endAngle;
     
@@ -1119,13 +1140,14 @@ function renderDonutChart() {
   });
 
   // Render donut chart
-  $("#donutChart").innerHTML = donutSegments.map(segment => 
-    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" 
-           data-symbol="${segment.symbol}" 
-           data-count="${segment.count}" 
-           data-percentage="${(segment.percentage * 100).toFixed(1)}"
-           class="donut-segment"></path>`
-  ).join('');
+  $("#donutChart").innerHTML = donutSegments.map(segment => {
+    const fillRule = data.length === 1 ? 'fill-rule="evenodd"' : '';
+    return `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.5" ${fillRule}
+             data-symbol="${segment.symbol}" 
+             data-count="${segment.count}" 
+             data-percentage="${(segment.percentage * 100).toFixed(1)}"
+             class="donut-segment"></path>`;
+  }).join('');
 
   // Update total trades
   $("#totalTrades").textContent = totalTrades;
@@ -1224,7 +1246,7 @@ function addDonutHoverEvents() {
 }
 
 function renderSessionChart() {
-  const width = 600, height = 180;
+  const width = 635, height = 180;
   const pad = 20;
   const chartWidth = width - pad * 2;
   const chartHeight = height - pad * 2;
@@ -1332,13 +1354,16 @@ function renderRulesDonutChart() {
     .map(([rule, count]) => ({ rule, count }))
     .sort((a, b) => b.count - a.count);
 
+  // Check if we have any rules
   if (data.length === 0) {
-    $("#rulesDonutChart").innerHTML = `
-      <text x="${cx}" y="${cy}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No rules data</text>
-    `;
-    $("#totalRules").textContent = "0";
-    $("#rulesLegend").innerHTML = "";
+    // Show empty state, hide donut chart
+    $("#rulesEmptyState").classList.remove('hidden');
+    $("#rulesDonutContainer").classList.add('hidden');
     return;
+  } else {
+    // Hide empty state, show donut chart
+    $("#rulesEmptyState").classList.add('hidden');
+    $("#rulesDonutContainer").classList.remove('hidden');
   }
 
   // Blue color palette with varying opacity
@@ -1361,24 +1386,40 @@ function renderRulesDonutChart() {
   
   const donutSegments = data.map((item, index) => {
     const percentage = item.count / totalRules;
-    const angle = percentage * 2 * Math.PI;
+    // When there's only one unique rule, show full circle (100%)
+    const angle = data.length === 1 ? 2 * Math.PI : percentage * 2 * Math.PI;
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
     
-    const x1 = cx + radius * Math.cos(startAngle);
-    const y1 = cy + radius * Math.sin(startAngle);
-    const x2 = cx + radius * Math.cos(endAngle);
-    const y2 = cy + radius * Math.sin(endAngle);
+    let pathData;
     
-    const largeArcFlag = angle > Math.PI ? 1 : 0;
-    
-    const pathData = [
-      `M ${x1} ${y1}`,
-      `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
-      `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
-      `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
-      'Z'
-    ].join(' ');
+    if (data.length === 1) {
+      // Special case for full circle - create a complete donut ring using circle elements
+      pathData = [
+        `M ${cx + radius} ${cy}`,
+        `A ${radius} ${radius} 0 0 1 ${cx - radius} ${cy}`,
+        `A ${radius} ${radius} 0 0 1 ${cx + radius} ${cy}`,
+        `M ${cx + innerRadius} ${cy}`,
+        `A ${innerRadius} ${innerRadius} 0 0 0 ${cx - innerRadius} ${cy}`,
+        `A ${innerRadius} ${innerRadius} 0 0 0 ${cx + innerRadius} ${cy}`,
+        'Z'
+      ].join(' ');
+    } else {
+      const x1 = cx + radius * Math.cos(startAngle);
+      const y1 = cy + radius * Math.sin(startAngle);
+      const x2 = cx + radius * Math.cos(endAngle);
+      const y2 = cy + radius * Math.sin(endAngle);
+      
+      const largeArcFlag = angle > Math.PI ? 1 : 0;
+      
+      pathData = [
+        `M ${x1} ${y1}`,
+        `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+        `L ${cx + innerRadius * Math.cos(endAngle)} ${cy + innerRadius * Math.sin(endAngle)}`,
+        `A ${innerRadius} ${innerRadius} 0 ${largeArcFlag} 0 ${cx + innerRadius * Math.cos(startAngle)} ${cy + innerRadius * Math.sin(startAngle)}`,
+        'Z'
+      ].join(' ');
+    }
     
     currentAngle = endAngle;
     
@@ -1395,13 +1436,14 @@ function renderRulesDonutChart() {
   const maxVisibleItems = 9;
   const visibleSegments = donutSegments.slice(0, maxVisibleItems);
   
-  $("#rulesDonutChart").innerHTML = visibleSegments.map(segment => 
-    `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.2" 
-           data-rule="${segment.rule}" 
-           data-count="${segment.count}" 
-           data-percentage="${(segment.percentage * 100).toFixed(1)}"
-           class="rules-donut-segment"></path>`
-  ).join('');
+  $("#rulesDonutChart").innerHTML = visibleSegments.map(segment => {
+    const fillRule = data.length === 1 ? 'fill-rule="evenodd"' : '';
+    return `<path d="${segment.path}" fill="${segment.color}" stroke="white" stroke-width="0.2" ${fillRule}
+             data-rule="${segment.rule}" 
+             data-count="${segment.count}" 
+             data-percentage="${(segment.percentage * 100).toFixed(1)}"
+             class="rules-donut-segment"></path>`;
+  }).join('');
 
   // Update total rules
   $("#totalRules").textContent = totalRules;
@@ -1521,7 +1563,8 @@ function renderRulesPopupChart() {
   
   const donutSegments = allRulesData.map((item, index) => {
     const percentage = item.count / totalRules;
-    const angle = percentage * 2 * Math.PI;
+    // When there's only one rule, show full circle (100%)
+    const angle = totalRules === 1 ? 2 * Math.PI : percentage * 2 * Math.PI;
     const startAngle = currentAngle;
     const endAngle = currentAngle + angle;
     
@@ -1733,6 +1776,11 @@ function renderEquityCurve() {
     $("#equityCurve").innerHTML = `
       <text x="${width/2}" y="${height/2}" text-anchor="middle" dy="0.35em" fill="${getComputedStyle(document.documentElement).getPropertyValue('--muted')}">No data</text>
     `;
+    // Update balance to show 0 when no entries
+    const balanceElement = document.getElementById('equityBalance');
+    if (balanceElement) {
+      balanceElement.textContent = '₹0';
+    }
     return;
   }
 
@@ -1750,17 +1798,23 @@ function renderEquityCurve() {
     };
   });
 
-  // Find min and max for scaling
+  // Find min and max for scaling - ensure proper bounds for fewer entries
   const minY = Math.min(0, ...equityData.map(d => d.cumulative));
   const maxY = Math.max(1, ...equityData.map(d => d.cumulative));
+  
+  // Ensure minimum range for proper scaling when there are few entries
+  const range = maxY - minY;
+  const minRange = 10; // Minimum range to prevent extreme scaling
+  const adjustedMinY = range < minRange ? minY - (minRange - range) / 2 : minY;
+  const adjustedMaxY = range < minRange ? maxY + (minRange - range) / 2 : maxY;
 
-  // Scale functions - using full chart area
+  // Scale functions - using adjusted bounds for consistent scaling
   const xScale = (index) => leftPad + (index * chartWidth) / Math.max(1, sortedEntries.length - 1);
-  const yScale = (value) => height - bottomPad - ((value - minY) * chartHeight) / Math.max(1, maxY - minY);
+  const yScale = (value) => height - bottomPad - ((value - adjustedMinY) * chartHeight) / Math.max(1, adjustedMaxY - adjustedMinY);
 
   // Inverse scale functions for hover detection
   const xScaleInverse = (x) => (x - leftPad) / (chartWidth / Math.max(1, sortedEntries.length - 1));
-  const yScaleInverse = (y) => minY + ((height - bottomPad - y) * (maxY - minY)) / chartHeight;
+  const yScaleInverse = (y) => adjustedMinY + ((height - bottomPad - y) * (adjustedMaxY - adjustedMinY)) / chartHeight;
 
   // Create area fill path - extending to full width
   const areaPath = `M ${leftPad},${yScale(0)} L ${equityData.map(d => `${xScale(d.tradeIndex)},${yScale(d.cumulative)}`).join(' L ')} L ${xScale(equityData[equityData.length-1].tradeIndex)},${yScale(0)} Z`;
@@ -1852,10 +1906,10 @@ function renderEquityCurve() {
     />
   `;
 
-  // Render axis - extending to full width
+  // Render axis - Both X and Y axis lines stay within container boundaries
   const axis = `
-    <line x1="${leftPad}" x2="${width - rightPad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1" stroke-width="1"></line>
-    <line x1="${leftPad}" x2="${leftPad}" y1="${topPad}" y2="${height - bottomPad}" stroke="#b1b1b1" stroke-width="1"></line>
+    <line x1="${leftPad}" x2="${leftPad + chartWidth}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1" stroke-width="1"></line>
+    <line x1="${leftPad}" x2="${leftPad}" y1="${topPad + 5}" y2="${height - bottomPad - 5}" stroke="#b1b1b1" stroke-width="1"></line>
   `;
 
   // Update balance display in header
