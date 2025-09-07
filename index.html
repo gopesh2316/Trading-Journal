@@ -293,8 +293,15 @@
               <div class="row between tiny"><span>Daily Net Cumulative P&L</span><span class="muted tiny">₹</span></div>
               <svg id="cum" viewBox="0 0 320 180" class="chart"></svg>
             </div>
-            <div class="card">
-              <div class="row between tiny"><span>Net Daily P&L</span><span class="muted tiny">₹</span></div>
+            <div class="net-daily-pnl-container" id="netDailyPnlContainer">
+              <div class="chart-title">
+                <span class="title-text">Net Daily P&L</span>
+                <div class="expand-icon" id="expandNetDailyPnl" onclick="toggleExpandedNetDailyPnl()">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="#e3e3e3">
+                    <path d="M200-200v-240h80v160h160v80H200Zm480-320v-160H520v-80h240v240h-80Z"/>
+                  </svg>
+                </div>
+              </div>
               <svg id="bars" viewBox="0 0 320 180" class="chart"></svg>
             </div>
           </div>
@@ -717,6 +724,23 @@
       </div>
     </form>
   </dialog>
+
+  <!-- Expanded Net Daily P&L Popup -->
+  <div id="expandedNetDailyPnlPopup" class="expanded-chart-popup hidden">
+    <div class="expanded-chart-container">
+      <div class="expanded-chart-header">
+        <h3>Net Daily P&L - Expanded View</h3>
+        <button class="close-expanded-chart" onclick="toggleExpandedNetDailyPnl()">
+          <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#6b7280">
+            <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="expanded-chart-content">
+        <svg id="expandedBars" viewBox="0 0 800 400" class="expanded-chart"></svg>
+      </div>
+    </div>
+  </div>
 
   <script src="./script.js" defer></script>
 </body>

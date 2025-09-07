@@ -849,6 +849,206 @@ body{
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow);padding:14px}
 .chart{width:100%;height:220px;overflow:visible}
 
+/* Net Daily P&L Container - Separate styling */
+.net-daily-pnl-container {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 14px;
+}
+
+.net-daily-pnl-container .chart {
+  width: 100% !important;
+  height: 180px !important;
+  overflow: visible !important;
+}
+
+/* Override any generic chart styles for Net Daily P&L */
+.net-daily-pnl-container #bars {
+  width: 105% !important;
+  height: 222px !important;
+  margin-top: -19px;
+}
+
+/* Force Net Daily P&L SVG to correct size */
+.net-daily-pnl-container svg {
+  width: 100% !important;
+  height: 180px !important;
+}
+
+.net-daily-pnl-container .chart-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  font-size: 12px;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.net-daily-pnl-container .chart-title .expand-icon {
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+  position: absolute;
+  top: 0;
+  right: 0;
+  height: 23px;
+  width: 23px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.net-daily-pnl-container:hover .chart-title .expand-icon {
+  opacity: 1;
+  visibility: visible;
+}
+
+.net-daily-pnl-container:hover .chart-title .expand-icon svg {
+  fill: #000000;
+}
+
+.net-daily-pnl-container .chart-title .title-text {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.net-daily-pnl-container .chart-title .currency-text {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Dark mode styles for Net Daily P&L */
+.dark-mode .net-daily-pnl-container {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+  box-shadow: none;
+}
+
+.dark-mode .net-daily-pnl-container .chart-title .title-text {
+  color: #e5e7eb;
+}
+
+.dark-mode .net-daily-pnl-container .chart-title .currency-text {
+  color: #9ca3af;
+}
+
+/* Dark mode styles for Net Daily P&L axis labels */
+.dark-mode .net-daily-pnl-container text[fill="var(--muted)"] {
+  fill: #9ca3af !important;
+}
+
+/* Expand icon styles for Net Daily P&L */
+.net-daily-pnl-container {
+  position: relative;
+}
+
+
+.net-daily-pnl-container .chart-title .expand-icon svg {
+  transition: fill 0.2s ease;
+}
+
+.dark-mode .net-daily-pnl-container .chart-title .expand-icon svg {
+  fill: #9ca3af;
+}
+
+.dark-mode .net-daily-pnl-container:hover .chart-title .expand-icon svg {
+  fill: #ffffff;
+}
+
+/* Expanded Chart Popup */
+.expanded-chart-popup {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(4px);
+}
+
+.expanded-chart-container {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 1000px;
+  max-height: 90%;
+  overflow: hidden;
+}
+
+.expanded-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.expanded-chart-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.close-expanded-chart {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.close-expanded-chart:hover {
+  background-color: #f3f4f6;
+}
+
+.expanded-chart-content {
+  padding: 24px;
+}
+
+.expanded-chart {
+  width: 100%;
+  height: 500px;
+  overflow: visible;
+}
+
+/* Dark mode for expanded popup */
+.dark-mode .expanded-chart-container {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+}
+
+.dark-mode .expanded-chart-header {
+  border-bottom-color: #2e2e2e;
+}
+
+.dark-mode .expanded-chart-header h3 {
+  color: #e5e7eb;
+}
+
+.dark-mode .close-expanded-chart:hover {
+  background-color: #2e2e2e;
+}
+
+.dark-mode .close-expanded-chart svg {
+  fill: #9ca3af;
+}
+
+.dark-mode .close-expanded-chart:hover svg {
+  fill: #d1d5db;
+}
+
 /* Session Chart Specific Styles */
 #sessionChart {
   width: 56% !important;

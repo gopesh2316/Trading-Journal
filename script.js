@@ -20,6 +20,24 @@ const formatCurrency = (n) => {
   return `${sign}${symbol}${val}`;
 };
 
+const formatCurrencyAbbreviated = (n) => {
+  if (n === null || n === undefined || Number.isNaN(Number(n))) return "—";
+  const sign = Number(n) < 0 ? "-" : "";
+  const absVal = Math.abs(Number(n));
+  
+  // Use current currency symbol from preferences, fallback to INR
+  const symbol = window.currentCurrencySymbol || (state.preferences?.currency ?
+    getCurrencySymbol(state.preferences.currency) : '₹');
+
+  if (absVal >= 1000000) {
+    return `${sign}${symbol}${(absVal / 1000000).toFixed(1)}M`;
+  } else if (absVal >= 1000) {
+    return `${sign}${symbol}${(absVal / 1000).toFixed(1)}k`;
+  } else {
+    return `${sign}${symbol}${absVal.toFixed(0)}`;
+  }
+};
+
 const getCurrencySymbol = (currencyCode) => {
   const currencySymbols = {
     'INR': '₹',
@@ -623,16 +641,9 @@ function renderCharts(){
     <polyline points="${line}" fill="none" stroke="#4b5563" stroke-width="2"></polyline>
     <line x1="${pad}" x2="${width-pad}" y1="${height-pad}" y2="${height-pad}" stroke="#b1b1b1"></line>
   `;
-  // bars
-  const barW = Math.max(2, (width - pad*2) / Math.max(1, data.length*1.2));
-  const bars = data.map((r,i)=>{
-    const x = xScale(i) - barW/2;
-    const y0 = yScale(0);
-    const y1 = yScale(r.pnl);
-    const h = Math.abs(y1 - y0);
-    return `<rect x="${x}" y="${Math.min(y0,y1)}" width="${barW}" height="${h}" fill="${r.pnl>=0?'#10b981':'#ef4444'}" opacity=".85"></rect>`;
-  }).join("");
-  $("#bars").innerHTML = `<line x1="${pad}" x2="${width-pad}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>${bars}`;
+  
+  // Render Net Daily P&L separately
+  renderNetDailyPnlChart();
 
   // Trading Scores Donut Charts
   renderTradingScores();
@@ -643,6 +654,254 @@ function renderCharts(){
   renderRulesDonutChart();
   renderEquityCurve();
   renderTradingHeatmap();
+}
+
+function renderNetDailyPnlChart() {
+  const data = byDateData();
+  
+  // Filter data to show only last 1 month
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  
+  const monthlyData = data.filter(item => {
+    const itemDate = new Date(item.date);
+    return itemDate >= oneMonthAgo;
+  });
+  
+  const width = 345, height = 195, pad = 26;
+  
+  // Calculate scales for Net Daily P&L
+  const minPnl = Math.min(0, ...monthlyData.map(r=>r.pnl));
+  const maxPnl = Math.max(1, ...monthlyData.map(r=>r.pnl));
+  const xScale = (i)=> pad + 10 + (i*(width-pad*2-30))/Math.max(1,(monthlyData.length-1));
+  const yScale = (v)=> height - pad - ((v - minPnl) * (height - pad*2)) / Math.max(1,(maxPnl - minPnl));
+  
+  // bars with hover effects
+  const barW = Math.max(2, (width - pad*2) / Math.max(1, monthlyData.length*1.2));
+  const bars = monthlyData.map((r,i)=>{
+    const x = xScale(i) - barW/2;
+    const y0 = yScale(0);
+    const y1 = yScale(r.pnl);
+    const h = Math.abs(y1 - y0);
+    const isPositive = r.pnl >= 0;
+    const baseColor = isPositive ? '#10b981' : '#ef4444';
+    const hoverColor = isPositive ? '#059669' : '#dc2626';
+    
+    return `<rect x="${x}" y="${Math.min(y0,y1)}" width="${barW}" height="${h}" 
+            fill="${baseColor}" opacity=".85" 
+            class="pnl-bar" 
+            data-pnl="${r.pnl}" 
+            data-date="${r.date}"
+            style="cursor: pointer; transition: fill 0.2s ease, opacity 0.2s ease;"
+            onmouseover="this.style.fill='${hoverColor}'; this.style.opacity='1'; showPnlTooltip(event, '${r.pnl}', '${r.date}')"
+            onmousemove="updatePnlTooltipPosition(event)"
+            onmouseout="this.style.fill='${baseColor}'; this.style.opacity='.85'; hidePnlTooltip()"></rect>`;
+  }).join("");
+  
+  // Y-axis labels for amounts
+  const yAxisLabels = [];
+  const yAxisSteps = 5;
+  for (let i = 0; i <= yAxisSteps; i++) {
+    const value = minPnl + (i * (maxPnl - minPnl) / yAxisSteps);
+    const y = yScale(value);
+    const formattedValue = formatCurrencyAbbreviated(value);
+    yAxisLabels.push(`<text x="${pad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${formattedValue}</text>`);
+  }
+  
+  // X-axis labels for dates - Show only 4 labels per month
+  const xAxisLabels = [];
+  const xAxisStep = Math.max(1, Math.floor(monthlyData.length / 4)); // Show max 4 date labels
+  for (let i = 0; i < monthlyData.length; i += xAxisStep) {
+    const x = xScale(i);
+    const date = new Date(monthlyData[i].date);
+    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    xAxisLabels.push(`<text x="${x}" y="${height - 8}" text-anchor="middle" font-size="9" fill="var(--muted)">${formattedDate}</text>`);
+  }
+  
+  // Add final date label if not already included
+  if (monthlyData.length > 0 && (monthlyData.length - 1) % xAxisStep !== 0) {
+    const lastIndex = monthlyData.length - 1;
+    const x = xScale(lastIndex);
+    const date = new Date(monthlyData[lastIndex].date);
+    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    xAxisLabels.push(`<text x="${x}" y="${height - 8}" text-anchor="middle" font-size="9" fill="var(--muted)">${formattedDate}</text>`);
+  }
+  
+  // Calculate X-axis line positions to align with bars
+  const firstBarX = monthlyData.length > 0 ? xScale(0) - barW/2 : pad + 5;
+  const lastBarX = monthlyData.length > 0 ? xScale(monthlyData.length - 1) + barW/2 : width - pad - 5;
+  
+  $("#bars").innerHTML = `
+    <line x1="${firstBarX}" x2="${lastBarX}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>
+    ${bars}
+    ${yAxisLabels.join('')}
+    ${xAxisLabels.join('')}
+  `;
+}
+
+// Tooltip functions for Net Daily P&L chart
+function showPnlTooltip(event, pnl, date) {
+  // Remove existing tooltip
+  hidePnlTooltip();
+  
+  const tooltip = document.createElement('div');
+  tooltip.id = 'pnlTooltip';
+  tooltip.style.cssText = `
+    position: fixed;
+    background: rgba(255, 255, 255, 0.7);
+    color: black;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    line-height: 1.4;
+    backdrop-filter: blur(20px);
+    border: 1px solid white;
+  `;
+  
+  const formattedPnl = formatCurrency(pnl);
+  const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric' 
+  });
+  
+  tooltip.innerHTML = `
+    <div style="color: ${Number(pnl) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
+      ${formattedPnl}
+    </div>
+    <div style="color:rgb(14, 14, 14); font-size: 11px;">
+      ${formattedDate}
+    </div>
+  `;
+  
+  document.body.appendChild(tooltip);
+  
+  // Position tooltip at top of cursor, centered horizontally
+  const rect = tooltip.getBoundingClientRect();
+  const x = event.clientX - rect.width / 2; // Center horizontally with cursor
+  const y = event.clientY - rect.height - 10; // Above cursor with 10px gap
+
+  tooltip.style.left = Math.max(10, Math.min(window.innerWidth - rect.width - 10, x)) + 'px';
+  tooltip.style.top = Math.max(10, y) + 'px';
+}
+
+function hidePnlTooltip() {
+  const tooltip = document.getElementById('pnlTooltip');
+  if (tooltip) {
+    tooltip.remove();
+  }
+}
+
+function updatePnlTooltipPosition(event) {
+  const tooltip = document.getElementById('pnlTooltip');
+  if (tooltip) {
+    const rect = tooltip.getBoundingClientRect();
+    const x = event.clientX - rect.width / 2; // Center horizontally with cursor
+    const y = event.clientY - rect.height - 10; // Above cursor with 10px gap
+
+    tooltip.style.left = Math.max(10, Math.min(window.innerWidth - rect.width - 10, x)) + 'px';
+    tooltip.style.top = Math.max(10, y) + 'px';
+  }
+}
+
+// Expanded Net Daily P&L functionality
+function toggleExpandedNetDailyPnl() {
+  const popup = document.getElementById('expandedNetDailyPnlPopup');
+  if (popup.classList.contains('hidden')) {
+    showExpandedNetDailyPnl();
+  } else {
+    hideExpandedNetDailyPnl();
+  }
+}
+
+function showExpandedNetDailyPnl() {
+  const popup = document.getElementById('expandedNetDailyPnlPopup');
+  popup.classList.remove('hidden');
+  renderExpandedNetDailyPnlChart();
+}
+
+function hideExpandedNetDailyPnl() {
+  const popup = document.getElementById('expandedNetDailyPnlPopup');
+  popup.classList.add('hidden');
+}
+
+function renderExpandedNetDailyPnlChart() {
+  const data = byDateData();
+  // Filter data to show only last 1 month
+  const oneMonthAgo = new Date();
+  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  const monthlyData = data.filter(item => {
+    const itemDate = new Date(item.date);
+    return itemDate >= oneMonthAgo;
+  });
+
+  const width = 800, height = 400, pad = 40; // Larger dimensions for expanded view
+  
+  // Calculate scales for expanded Net Daily P&L using monthlyData
+  const minPnl = Math.min(0, ...monthlyData.map(r=>r.pnl));
+  const maxPnl = Math.max(1, ...monthlyData.map(r=>r.pnl));
+  const xScale = (i)=> pad + 10 + (i*(width-pad*2-50))/Math.max(1,(monthlyData.length-1));
+  const yScale = (v)=> height - pad - ((v - minPnl) * (height - pad*2)) / Math.max(1,(maxPnl - minPnl));
+
+  // bars with hover effects for expanded view
+  const barW = Math.max(4, (width - pad*2) / Math.max(1, monthlyData.length*1.1));
+  const bars = monthlyData.map((r,i)=>{
+    const x = xScale(i) - barW/2;
+    const y0 = yScale(0);
+    const y1 = yScale(r.pnl);
+    const h = Math.abs(y1 - y0);
+    const isPositive = r.pnl >= 0;
+    const baseColor = isPositive ? '#10b981' : '#ef4444';
+    const hoverColor = isPositive ? '#059669' : '#dc2626';
+    return `<rect x="${x}" y="${Math.min(y0,y1)}" width="${barW}" height="${h}"
+            fill="${baseColor}" opacity=".85"
+            class="pnl-bar"
+            data-pnl="${r.pnl}"
+            data-date="${r.date}"
+            style="cursor: pointer; transition: fill 0.2s ease, opacity 0.2s ease;"
+            onmouseover="this.style.fill='${hoverColor}'; this.style.opacity='1'; showPnlTooltip(event, '${r.pnl}', '${r.date}')"
+            onmousemove="updatePnlTooltipPosition(event)"
+            onmouseout="this.style.fill='${baseColor}'; this.style.opacity='.85'; hidePnlTooltip()"></rect>`;
+  }).join("");
+
+  // Y-axis labels for amounts (expanded view)
+  const yAxisLabels = [];
+  const yAxisSteps = 8; // More steps for expanded view
+  for (let i = 0; i <= yAxisSteps; i++) {
+    const value = minPnl + (i * (maxPnl - minPnl) / yAxisSteps);
+    const y = yScale(value);
+    const formattedValue = formatCurrencyAbbreviated(value);
+    yAxisLabels.push(`<text x="${pad - 12}" y="${y + 4}" text-anchor="end" font-size="12" fill="var(--muted)">${formattedValue}</text>`);
+  }
+
+  // X-axis labels for dates (expanded view)
+  const xAxisLabels = [];
+  const xAxisStep = Math.max(1, Math.floor(monthlyData.length / 10)); // More labels for expanded view
+  for (let i = 0; i < monthlyData.length; i += xAxisStep) {
+    const x = xScale(i);
+    const date = new Date(monthlyData[i].date);
+    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    xAxisLabels.push(`<text x="${x}" y="${height - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">${formattedDate}</text>`);
+  }
+  
+  // Add final date label if not already included
+  if (monthlyData.length > 0 && (monthlyData.length - 1) % xAxisStep !== 0) {
+    const lastIndex = monthlyData.length - 1;
+    const x = xScale(lastIndex);
+    const date = new Date(monthlyData[lastIndex].date);
+    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    xAxisLabels.push(`<text x="${x}" y="${height - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">${formattedDate}</text>`);
+  }
+
+  $("#expandedBars").innerHTML = `
+    <line x1="${pad + 10}" x2="${width-pad-10}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>
+    ${bars}
+    ${yAxisLabels.join('')}
+    ${xAxisLabels.join('')}
+  `;
 }
 
 function renderTradingScores() {
@@ -661,18 +920,41 @@ function renderTradingScores() {
     return;
   }
   
-  // Calculate Rule Adherence Score (based on win rate and rule following)
+  // Calculate Rule Adherence Score - how often you followed your own pre-trade checklist
+  const ruleAdherenceTrades = entries.filter(e => e.ruleId && e.ruleId !== "").length;
+  const ruleAdherenceScore = totalTrades > 0 ? Math.round((ruleAdherenceTrades / totalTrades) * 100) : 0;
+  
+  // Calculate Trader Discipline Score - weighted mix of Rule adherence %, Avg R:R, Journal completion %
   const wins = entries.filter(e => (e.pnl || 0) > 0).length;
-  const winRate = Math.round((wins / totalTrades) * 100);
-  const ruleAdherenceScore = Math.min(100, Math.max(0, winRate + (entries.filter(e => e.ruleId && e.ruleId !== "").length / totalTrades * 20)));
+  const losses = entries.filter(e => (e.pnl || 0) < 0).length;
   
-  // Calculate Discipline Score (based on position sizing consistency and stop loss usage)
-  const hasStopLoss = entries.filter(e => e.stopLossMsg && e.stopLossMsg.trim() !== "").length;
-  const disciplineScore = Math.min(100, Math.max(0, (hasStopLoss / totalTrades * 60) + (winRate * 0.4)));
+  // Calculate Average Risk:Reward Ratio
+  let avgRiskReward = 0;
+  if (losses > 0 && wins > 0) {
+    const avgWin = wins > 0 ? entries.filter(e => (e.pnl || 0) > 0).reduce((sum, e) => sum + Math.abs(e.pnl), 0) / wins : 0;
+    const avgLoss = losses > 0 ? entries.filter(e => (e.pnl || 0) < 0).reduce((sum, e) => sum + Math.abs(e.pnl), 0) / losses : 0;
+    avgRiskReward = avgLoss > 0 ? Math.min(5, avgWin / avgLoss) : 0; // Cap at 5:1
+  }
   
-  // Calculate Management Score (based on target achievement and risk management)
-  const hasTarget = entries.filter(e => e.targetPointMsg && e.targetPointMsg.trim() !== "").length;
-  const managementScore = Math.min(100, Math.max(0, (hasTarget / totalTrades * 50) + (winRate * 0.5)));
+  // Calculate Journal completion % (trades with notes)
+  const journalCompletionTrades = entries.filter(e => e.notes && e.notes.trim() !== "").length;
+  const journalCompletionRate = totalTrades > 0 ? (journalCompletionTrades / totalTrades) * 100 : 0;
+  
+  // Weighted mix: Rule adherence (40%), Avg R:R (35%), Journal completion (25%)
+  const disciplineScore = Math.round(
+    (ruleAdherenceScore * 0.4) + 
+    (Math.min(100, avgRiskReward * 20) * 0.35) + 
+    (journalCompletionRate * 0.25)
+  );
+  
+  // Calculate Risk Management Score - Number of trades risking ≤ planned % ÷ total trades
+  const riskManagedTrades = entries.filter(e => {
+    // Check if trade has both stop loss and target, indicating planned risk
+    return e.stopLossMsg && e.stopLossMsg.trim() !== "" && 
+           e.targetPointMsg && e.targetPointMsg.trim() !== "";
+  }).length;
+  
+  const managementScore = totalTrades > 0 ? Math.round((riskManagedTrades / totalTrades) * 100) : 0;
   
   // Update score displays
   $("#ruleAdherenceScore").textContent = Math.round(ruleAdherenceScore) + "%";
