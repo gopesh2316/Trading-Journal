@@ -4079,6 +4079,8 @@ body{
 
 .dark-mode .trade-direction svg {
   fill: #10b981;
+  margin-top: -18px;
+  margin-right: 6px;
 }
 
 /* Hide stats, risk metrics, and time-range-section containers only on Live Trades page */
@@ -4300,4 +4302,352 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
   background: white;
   border-color: white;
 }
+
+/* New Trade Steps Styles */
+.new-trade-steps {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.new-trade-back-to-app {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 13px 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+}
+
+.new-trade-back-to-app:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.new-trade-back-to-app .material-icons {
+  font-size: 18px;
+}
+
+.new-trade-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: none;
+  width: 100%;
+  max-width: 400px;
+  margin: 20px;
+}
+
+.new-trade-content {
+  padding: 18PX 0px;
+}
+
+.new-trade-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 32px;
+  animation: fadeIn 0.3s ease-in-out;
+  align-items: flex-start;
+}
+
+.new-trade-step.hidden {
+  display: none;
+}
+
+.new-trade-step h2 {
+  font-size: 36px;
+  text-align: left;
+  font-weight: 700;
+  color: black;
+  margin: 0;
+  line-height: 36.1px;
+  margin-bottom: -18px;
+}
+
+.new-trade-description {
+  font-size: 16px;
+  color: #6b7280;
+  margin: 0;
+  font-weight: 400;
+}
+
+.new-trade-input-container {
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.new-trade-input-container label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  text-align: left;
+}
+
+.new-trade-input-wrapper {
+  position: relative;
+}
+
+.new-trade-input-wrapper:has(select)::after {
+  content: '';
+  position: absolute;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  width: 24px;
+  height: 24px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 -960 960 960' width='24px' fill='%23434343'%3E%3Cpath d='M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+}
+
+.new-trade-input-wrapper select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.new-trade-input-wrapper input,
+.new-trade-input-wrapper select,
+.new-trade-input-wrapper textarea {
+  width: 100%;
+  padding: 22px 26px;
+  border: 1px solid #898989;
+  border-radius: 6px;
+  font-size: 24px;
+  background: #ffffff;
+  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+}
+
+.new-trade-input-wrapper select {
+  padding-right: 60px !important; /* Extra space for dropdown icon */
+}
+
+.new-trade-input-wrapper input:focus,
+.new-trade-input-wrapper select:focus,
+.new-trade-input-wrapper textarea:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.new-trade-input-wrapper input::placeholder,
+.new-trade-input-wrapper textarea::placeholder {
+  color: #9ca3af;
+}
+
+.new-trade-input-wrapper textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.new-trade-actions {
+  display: grid;
+  gap: 16px;
+  width: 100%;
+  max-width: 400px;
+  align-content: center;
+}
+
+/* Base styles for new trade buttons - will be overridden by mode-specific styles */
+.new-trade-next-btn,
+.new-trade-save-btn {
+  padding: 22px 32px;
+  border-radius: 6px;
+  font-size: 17px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  order: 1; /* Next button appears first */
+}
+
+.new-trade-back-btn {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db00;
+  padding: 16px 32px;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-width: 120px;
+  order: 2; /* Back button appears second */
+}
+
+.new-trade-back-btn:hover {
+  background: #ededed;
+  border-color: #ededed;
+}
+
+/* Dark mode styles for new trade back button */
+.dark-mode .new-trade-back-btn {
+  background: #171717;
+  color: #e5e7eb;
+  border-color: #171717;
+  border-radius: 6px;
+  padding: 14px 30px;
+}
+
+.dark-mode .new-trade-back-btn:hover {
+  background: #2e2e2e;
+  border-color: #2e2e2e;
+}
+
+/* Light mode styles for new trade next/save buttons */
+:not(.dark-mode) .new-trade-next-btn,
+:not(.dark-mode) .new-trade-save-btn {
+  background: #000000;
+  color: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+:not(.dark-mode) .new-trade-next-btn:hover,
+:not(.dark-mode) .new-trade-save-btn:hover {
+  background: #333333;
+  color: #ffffff;
+  border-color: #333333;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+:not(.dark-mode) .new-trade-next-btn:focus,
+:not(.dark-mode) .new-trade-save-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.2);
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode styles for new trade steps */
+.dark-mode .new-trade-steps {
+  background: #171717;
+}
+
+.dark-mode .new-trade-back-to-app {
+  background: #2e2e2e;
+  color: #e5e7eb;
+  border-color: #505050;
+  box-shadow: none;
+  border-radius: 6px;;
+}
+
+.dark-mode .new-trade-back-to-app:hover {
+  background: #505050;
+  border-color: #505050;
+}
+
+.dark-mode .new-trade-card {
+  background: #171717;
+  box-shadow: none;
+}
+
+.dark-mode .new-trade-step h2 {
+  color: #e5e7eb;
+  text-align: left;
+  margin-bottom: -18px;
+  line-height: 36.1px;
+  font-size: 36px;
+  font-weight: 700;
+}
+
+.dark-mode .new-trade-description {
+  color: #9ca3af;
+}
+
+.dark-mode .new-trade-input-container label {
+  color: #d1d5db;
+}
+
+.dark-mode .new-trade-input-wrapper input,
+.dark-mode .new-trade-input-wrapper select,
+.dark-mode .new-trade-input-wrapper textarea {
+  background: #2e2e2e;
+  border-color: #2e2e2e;
+  color: #ffffff;
+  box-shadow: none;
+  padding: 18px 23px;
+  font-size: 24px;
+  border-radius: 6px;
+}
+
+.dark-mode .new-trade-input-wrapper select {
+  padding-right: 60px !important; /* Extra space for dropdown icon in dark mode */
+}
+
+.dark-mode .new-trade-input-wrapper:has(select)::after {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' height='24px' viewBox='0 -960 960 960' width='24px' fill='%239ca3af'%3E%3Cpath d='M480-344 240-584l56-56 184 184 184-184 56 56-240 240Z'/%3E%3C/svg%3E");
+}
+
+.dark-mode .new-trade-input-wrapper input:focus,
+.dark-mode .new-trade-input-wrapper select:focus,
+.dark-mode .new-trade-input-wrapper textarea:focus {
+  border-color: #3b82f6;
+}
+
+.dark-mode .new-trade-input-wrapper input::placeholder,
+.dark-mode .new-trade-input-wrapper textarea::placeholder {
+  color: #6b7280;
+}
+
+/* Dark mode styles for new trade next/save buttons */
+.dark-mode .new-trade-next-btn,
+.dark-mode .new-trade-save-btn {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #ffffff;
+  box-shadow: 0 2px 4px rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .new-trade-next-btn:hover,
+.dark-mode .new-trade-save-btn:hover {
+  background: #e5e5e5;
+  color: #000000;
+  border-color: #e5e5e5;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .new-trade-next-btn:focus,
+.dark-mode .new-trade-save-btn:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
 

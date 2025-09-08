@@ -2439,26 +2439,8 @@ function renderTradingHeatmap() {
 
 /* ---------- Entry CRUD ---------- */
 function openNewEntry(){
-  $("#entryTitle").textContent = "New Entry";
-  $("#id").value = uid();
-  
-  // Always set to today's date for new entries
-  const today = new Date();
-  $("#date").value = today.toISOString().slice(0,10);
-  
-  $("#symbol").value = "";
-  $("#side").value = "Buy";
-  $("#tradingSession").value = "";
-  $("#quantity").value = "";
-  $("#price").value = "";
-  $("#pnl").value = "";
-  $("#stopLossMsg").value = "";
-  $("#targetPointMsg").value = "";
-  // Clear custom multi-select
-  clearSelectedRules();
-  $("#notes").value = "";
-  bindRuleOptions();
-  $("#entryDialog").showModal();
+  // Show the new trade steps screen instead of the dialog
+  showNewTradeSteps();
 }
 function openEdit(id){
   const e = state.entries.find(x=>x.id===id);
@@ -2478,11 +2460,323 @@ function openEdit(id){
   // Load selected rules into custom multi-select
   loadSelectedRules(e.ruleId || "");
   $("#notes").value = e.notes || "";
+  
+  
   $("#entryDialog").showModal();
 }
+
 function bindRuleOptions(){
   // Initialize the custom multi-select with available rules
   renderRulesList();
+}
+
+/* ---------- New Trade Steps Functions ---------- */
+let newTradeCurrentStep = 1;
+const newTradeTotalSteps = 5;
+
+function showNewTradeSteps() {
+  // Reset to first step
+  newTradeCurrentStep = 1;
+  
+  // Hide all steps
+  $$(".new-trade-step").forEach(step => {
+    step.classList.add("hidden");
+  });
+  
+  // Show first step
+  $("#newTradeStep1").classList.remove("hidden");
+  
+  // Show the new trade steps screen
+  $("#newTradeSteps").classList.remove("hidden");
+  
+  // Initialize navigation
+  initNewTradeNavigation();
+  
+  // Initialize multi-select for new trade steps
+  initNewTradeMultiSelect();
+  
+  // Initialize back button
+  initNewTradeBackButton();
+  
+  // Focus on the first input
+  setTimeout(() => {
+    $("#newTradeSymbol").focus();
+  }, 100);
+}
+
+function hideNewTradeSteps() {
+  $("#newTradeSteps").classList.add("hidden");
+}
+
+function initNewTradeBackButton() {
+  $("#newTradeBackToApp").onclick = () => {
+    hideNewTradeSteps();
+  };
+}
+
+function initNewTradeMultiSelect() {
+  const rulesSearch = $("#newTradeRulesSearch");
+  const rulesDropdown = $("#newTradeRulesDropdown");
+  
+  if (!rulesSearch || !rulesDropdown) return;
+  
+  // Clear any existing event listeners
+  rulesSearch.removeEventListener('input', handleNewTradeRulesSearch);
+  rulesSearch.removeEventListener('focus', handleNewTradeRulesFocus);
+  rulesDropdown.removeEventListener('click', handleNewTradeRulesDropdownClick);
+  rulesSearch.removeEventListener('keydown', handleNewTradeRulesKeydown);
+  
+  // Add new event listeners
+  rulesSearch.addEventListener('input', handleNewTradeRulesSearch);
+  rulesSearch.addEventListener('focus', handleNewTradeRulesFocus);
+  rulesDropdown.addEventListener('click', handleNewTradeRulesDropdownClick);
+  rulesSearch.addEventListener('keydown', handleNewTradeRulesKeydown);
+  
+  // Render initial rules list
+  renderNewTradeRulesList();
+}
+
+function handleNewTradeRulesSearch(e) {
+  renderNewTradeRulesList(e.target.value);
+  showNewTradeRulesDropdown();
+}
+
+function handleNewTradeRulesFocus() {
+  renderNewTradeRulesList();
+  showNewTradeRulesDropdown();
+}
+
+function handleNewTradeRulesDropdownClick(e) {
+  e.stopPropagation();
+}
+
+function handleNewTradeRulesKeydown(e) {
+  if (e.key === 'Escape') {
+    hideNewTradeRulesDropdown();
+  }
+}
+
+function renderNewTradeRulesList(searchTerm = '') {
+  const rulesList = $("#newTradeRulesList");
+  if (!rulesList) return;
+  
+  rulesList.innerHTML = '';
+  
+  const filteredRules = state.rules.filter(rule => 
+    rule.title.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+  
+  filteredRules.forEach(rule => {
+    const ruleOption = document.createElement('div');
+    ruleOption.className = 'rule-option';
+    ruleOption.innerHTML = `
+      <div class="rule-option-checkbox"></div>
+      <span>${rule.title}</span>
+    `;
+    
+    ruleOption.onclick = () => toggleNewTradeRule(rule);
+    rulesList.appendChild(ruleOption);
+  });
+}
+
+function showNewTradeRulesDropdown() {
+  $("#newTradeRulesDropdown").classList.add('show');
+}
+
+function hideNewTradeRulesDropdown() {
+  $("#newTradeRulesDropdown").classList.remove('show');
+}
+
+function toggleNewTradeRule(rule) {
+  const selectedRules = $("#newTradeSelectedRules");
+  const existingTag = selectedRules.querySelector(`[data-rule-id="${rule.id}"]`);
+  
+  if (existingTag) {
+    existingTag.remove();
+  } else {
+    const tag = document.createElement('div');
+    tag.className = 'rule-tag';
+    tag.dataset.ruleId = rule.id;
+    tag.innerHTML = `
+      <span class="rule-tag-text">${rule.title}</span>
+      <button type="button" class="rule-tag-remove" onclick="removeNewTradeRuleTag('${rule.id}')">×</button>
+    `;
+    selectedRules.appendChild(tag);
+  }
+  
+  renderNewTradeRulesList($("#newTradeRulesSearch").value);
+}
+
+function removeNewTradeRuleTag(ruleId) {
+  const tag = $("#newTradeSelectedRules").querySelector(`[data-rule-id="${ruleId}"]`);
+  if (tag) {
+    tag.remove();
+  }
+  renderNewTradeRulesList($("#newTradeRulesSearch").value);
+}
+
+function showNewTradeStep(stepNumber) {
+  // Hide all steps
+  $$(".new-trade-step").forEach(step => {
+    step.classList.add("hidden");
+  });
+  
+  // Show the current step
+  $(`#newTradeStep${stepNumber}`).classList.remove("hidden");
+  
+  // Focus on the first input in the step
+  setTimeout(() => {
+    const firstInput = $(`#newTradeStep${stepNumber}`).querySelector('input, select, textarea');
+    if (firstInput) {
+      firstInput.focus();
+    }
+  }, 100);
+}
+
+function initNewTradeNavigation() {
+  // Step 1 navigation
+  $("#newTradeNext1").onclick = () => {
+    if (validateNewTradeStep(1)) {
+      newTradeCurrentStep = 2;
+      showNewTradeStep(2);
+    }
+  };
+  
+  // Step 2 navigation
+  $("#newTradeBack2").onclick = () => {
+    newTradeCurrentStep = 1;
+    showNewTradeStep(1);
+  };
+  $("#newTradeNext2").onclick = () => {
+    if (validateNewTradeStep(2)) {
+      newTradeCurrentStep = 3;
+      showNewTradeStep(3);
+    }
+  };
+  
+  // Step 3 navigation
+  $("#newTradeBack3").onclick = () => {
+    newTradeCurrentStep = 2;
+    showNewTradeStep(2);
+  };
+  $("#newTradeNext3").onclick = () => {
+    if (validateNewTradeStep(3)) {
+      newTradeCurrentStep = 4;
+      showNewTradeStep(4);
+    }
+  };
+  
+  // Step 4 navigation
+  $("#newTradeBack4").onclick = () => {
+    newTradeCurrentStep = 3;
+    showNewTradeStep(3);
+  };
+  $("#newTradeNext4").onclick = () => {
+    if (validateNewTradeStep(4)) {
+      newTradeCurrentStep = 5;
+      showNewTradeStep(5);
+    }
+  };
+  
+  // Step 5 navigation
+  $("#newTradeBack5").onclick = () => {
+    newTradeCurrentStep = 4;
+    showNewTradeStep(4);
+  };
+  $("#newTradeSave").onclick = () => {
+    if (validateNewTradeStep(5)) {
+      saveNewTrade();
+    }
+  };
+}
+
+function validateNewTradeStep(stepNumber) {
+  switch(stepNumber) {
+    case 1:
+      const symbol = $("#newTradeSymbol").value.trim();
+      if (!symbol) {
+        alert("Please enter a trading pair (e.g., EURUSD)");
+        $("#newTradeSymbol").focus();
+        return false;
+      }
+      return true;
+      
+    case 2:
+      const side = $("#newTradeSide").value;
+      if (!side) {
+        alert("Please select a trade direction");
+        $("#newTradeSide").focus();
+        return false;
+      }
+      return true;
+      
+    case 3:
+      const quantity = $("#newTradeQuantity").value.trim();
+      const price = $("#newTradePrice").value.trim();
+      if (!quantity || !price) {
+        alert("Please enter both quantity and price");
+        if (!quantity) $("#newTradeQuantity").focus();
+        else $("#newTradePrice").focus();
+        return false;
+      }
+      return true;
+      
+    case 4:
+    case 5:
+      // These steps are optional
+      return true;
+      
+    default:
+      return true;
+  }
+}
+
+function saveNewTrade() {
+  // Create a new entry object
+  const entry = {
+    id: uid(),
+    date: new Date().toISOString().slice(0,10),
+    symbol: $("#newTradeSymbol").value.trim().toUpperCase(),
+    side: $("#newTradeSide").value,
+    tradingSession: $("#newTradeSession").value || "",
+    quantity: Number($("#newTradeQuantity").value) || null,
+    price: Number($("#newTradePrice").value) || null,
+    fees: 0,
+    pnl: Number($("#newTradePnl").value) || null,
+    account: "",
+    ruleId: (()=>{ 
+      const selectedRules = Array.from(document.querySelectorAll('#newTradeSelectedRules .rule-tag')).map(tag => tag.dataset.ruleId);
+      return selectedRules.filter(id => id).join(",");
+    })(),
+    ruleTitle: (()=>{ 
+      const selectedRules = Array.from(document.querySelectorAll('#newTradeSelectedRules .rule-tag')).map(tag => tag.dataset.ruleId);
+      const ruleTitles = selectedRules.map(id => {
+        const r = state.rules.find(r => r.id === id);
+        return r?.title || "";
+      }).filter(title => title !== "");
+      return ruleTitles.join(", ");
+    })(),
+    stopLossMsg: $("#newTradeStopLoss").value || "",
+    targetPointMsg: $("#newTradeTarget").value || "",
+    notes: $("#newTradeNotes").value || ""
+  };
+  
+  // Add to entries
+  state.entries = [entry, ...state.entries];
+  
+  // Save to localStorage
+  saveEntries();
+  
+  // Hide the new trade steps screen
+  hideNewTradeSteps();
+  
+  // Update all displays
+  renderAll();
+  
+  // Show success message
+  setTimeout(() => {
+    alert("Trade saved successfully!");
+  }, 100);
 }
 function submitEntry(e){
   e.preventDefault();
@@ -3291,6 +3585,8 @@ function renderAll(){
   
   console.log("renderAll completed");
 }
+
+
 function initModals(){
   $("#entryForm").onsubmit = submitEntry;
   $("#entryClose").onclick = ()=>$("#entryDialog").close();
@@ -4165,6 +4461,9 @@ document.addEventListener('DOMContentLoaded', function() {
   document.addEventListener('click', function(e) {
     if (!e.target.closest('.multi-select-container')) {
       hideRulesDropdown();
+    }
+    if (!e.target.closest('#newTradeRulesMultiSelect')) {
+      hideNewTradeRulesDropdown();
     }
   });
   

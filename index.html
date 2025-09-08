@@ -88,6 +88,194 @@
     </div>
   </div>
 
+  <!-- New Trade Steps Screen -->
+  <div id="newTradeSteps" class="new-trade-steps hidden">
+    <!-- Back Button -->
+    <button id="newTradeBackToApp" class="new-trade-back-to-app">
+      <span class="material-icons">arrow_back</span>
+      <span>Back</span>
+    </button>
+    
+    <div class="new-trade-card">
+      <div class="new-trade-content">
+        <!-- Step 1: Pair Selection -->
+        <div class="new-trade-step" id="newTradeStep1">
+          <h2>Which Pair you are taking trade in?</h2>
+          <p class="new-trade-description">Be wise in every step!</p>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeSymbol">Pair</label>
+            <div class="new-trade-input-wrapper">
+              <input 
+                id="newTradeSymbol" 
+                type="text" 
+                placeholder="E.g., EURUSD"
+                required
+              >
+            </div>
+          </div>
+          
+          <div class="new-trade-actions">
+            <button id="newTradeNext1" class="new-trade-next-btn">Next</button>
+          </div>
+        </div>
+
+        <!-- Step 2: Trade Direction -->
+        <div class="new-trade-step hidden" id="newTradeStep2">
+          <h2>What's your trade direction?</h2>
+          <p class="new-trade-description">Choose whether you're going long or short.</p>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeSide">Side</label>
+            <div class="new-trade-input-wrapper">
+              <select id="newTradeSide">
+                <option value="Buy">Buy (Long)</option>
+                <option value="Sell">Sell (Short)</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="new-trade-actions">
+            <button id="newTradeBack2" class="new-trade-back-btn">Back</button>
+            <button id="newTradeNext2" class="new-trade-next-btn">Next</button>
+          </div>
+        </div>
+
+        <!-- Step 3: Trade Details -->
+        <div class="new-trade-step hidden" id="newTradeStep3">
+          <h2>Enter your trade details</h2>
+          <p class="new-trade-description">Fill in the essential trade information.</p>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeQuantity">Quantity</label>
+            <div class="new-trade-input-wrapper">
+              <input 
+                id="newTradeQuantity" 
+                type="number" 
+                step="any" 
+                placeholder="e.g., 1000"
+                required
+              >
+            </div>
+          </div>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradePrice">Price</label>
+            <div class="new-trade-input-wrapper">
+              <input 
+                id="newTradePrice" 
+                type="number" 
+                step="any" 
+                placeholder="e.g., 1.2421"
+                required
+              >
+            </div>
+          </div>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeSession">Trading Session</label>
+            <div class="new-trade-input-wrapper">
+              <select id="newTradeSession">
+                <option value="">Select Session</option>
+                <option value="Sydney">Sydney</option>
+                <option value="Tokyo">Tokyo</option>
+                <option value="London">London</option>
+                <option value="New York">New York</option>
+              </select>
+            </div>
+          </div>
+          
+          <div class="new-trade-actions">
+            <button id="newTradeBack3" class="new-trade-back-btn">Back</button>
+            <button id="newTradeNext3" class="new-trade-next-btn">Next</button>
+          </div>
+        </div>
+
+        <!-- Step 4: Risk Management -->
+        <div class="new-trade-step hidden" id="newTradeStep4">
+          <h2>Set your risk management</h2>
+          <p class="new-trade-description">Define your stop loss and take profit levels.</p>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeStopLoss">Stop Loss</label>
+            <div class="new-trade-input-wrapper">
+              <input 
+                id="newTradeStopLoss" 
+                type="text" 
+                placeholder="e.g., SL below swing low"
+              >
+            </div>
+          </div>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeTarget">Target Point</label>
+            <div class="new-trade-input-wrapper">
+              <input 
+                id="newTradeTarget" 
+                type="text" 
+                placeholder="e.g., TP at PDH / 2R"
+              >
+            </div>
+          </div>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradePnl">Realized P&L</label>
+            <div class="new-trade-input-wrapper">
+              <input 
+                id="newTradePnl" 
+                type="number" 
+                step="any" 
+                placeholder="e.g., 150.50"
+              >
+            </div>
+          </div>
+          
+          <div class="new-trade-actions">
+            <button id="newTradeBack4" class="new-trade-back-btn">Back</button>
+            <button id="newTradeNext4" class="new-trade-next-btn">Next</button>
+          </div>
+        </div>
+
+        <!-- Step 5: Rules and Notes -->
+        <div class="new-trade-step hidden" id="newTradeStep5">
+          <h2>Add rules and notes</h2>
+          <p class="new-trade-description">Apply trading rules and add any additional notes.</p>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeRules">Rules</label>
+            <div class="new-trade-input-wrapper">
+              <div class="multi-select-container">
+                <div class="multi-select-input" id="newTradeRulesMultiSelect">
+                  <div class="selected-rules" id="newTradeSelectedRules"></div>
+                  <input type="text" id="newTradeRulesSearch" placeholder="Search or select rules..." autocomplete="off">
+                  <div class="rules-dropdown" id="newTradeRulesDropdown">
+                    <div class="rules-list" id="newTradeRulesList"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div class="new-trade-input-container">
+            <label for="newTradeNotes">Notes</label>
+            <div class="new-trade-input-wrapper">
+              <textarea 
+                id="newTradeNotes" 
+                rows="4" 
+                placeholder="Add any additional notes about this trade..."
+              ></textarea>
+            </div>
+          </div>
+          
+          <div class="new-trade-actions">
+            <button id="newTradeBack5" class="new-trade-back-btn">Back</button>
+            <button id="newTradeSave" class="new-trade-save-btn">Save Trade</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- App -->
   <div id="app" class="app hidden">
     <header class="app-header">
@@ -938,6 +1126,7 @@
         <h3 id="entryTitle">New Entry</h3>
         <button type="button" id="entryClose" class="icon">✕</button>
       </div>
+      
       <input type="hidden" id="id">
       <div class="grid2">
         <div class="form-row">
