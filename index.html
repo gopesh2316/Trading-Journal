@@ -321,6 +321,12 @@
                   <span class="material-icons">auto_awesome</span>
                   <span>SVG Avatars</span>
                 </button>
+                <button class="user-dropdown-item" id="btnTimezone">
+                  <svg xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="#434343">
+                    <path d="M480-120q-74 0-139.5-28.5T226-226q-49-49-77.5-114.5T120-480q0-44 10-85.5t29-78q19-36.5 45.5-68T264-768l272 272-56 56-216-216q-30 36-47 80.5T200-480q0 116 82 198t198 82q116 0 198-82t82-198q0-107-68.5-184.5T520-756v76h-80v-160h40q74 0 139.5 28.5T734-734q49 49 77.5 114.5T840-480q0 74-28.5 139.5T734-226q-49 49-114.5 77.5T480-120ZM280-440q-17 0-28.5-11.5T240-480q0-17 11.5-28.5T280-520q17 0 28.5 11.5T320-480q0 17-11.5 28.5T280-440Zm200 200q-17 0-28.5-11.5T440-280q0-17 11.5-28.5T480-320q17 0 28.5 11.5T520-280q0 17-11.5 28.5T480-240Zm200-200q-17 0-28.5-11.5T640-480q0-17 11.5-28.5T680-520q17 0 28.5 11.5T720-480q0 17-11.5 28.5T680-440Z"/>
+                  </svg>
+                  <span>Timezone</span>
+                </button>
                 <button class="user-dropdown-item" id="btnDarkMode">
                   <span class="material-icons">dark_mode</span>
                   <span>Dark Mode</span>
@@ -1277,6 +1283,74 @@
     </div>
   </div>
 
-  <script src="./script.js" defer></script>
+  <!-- Timezone Selection Modal -->
+  <div id="timezoneModal" class="timezone-modal hidden">
+    <div class="timezone-modal-content">
+      <div class="timezone-modal-header">
+        <h3 class="timezone-modal-title">Select Timezone</h3>
+        <button class="timezone-modal-close" id="timezoneModalClose">
+          <span class="material-icons">close</span>
+        </button>
+      </div>
+      
+      <div class="timezone-search-container">
+        <input 
+          type="text" 
+          id="timezoneSearch" 
+          class="timezone-search-input" 
+          placeholder="Search timezones..."
+          autocomplete="off"
+        >
+      </div>
+      
+      <div class="timezone-list-container">
+        <ul class="timezone-list" id="timezoneList">
+          <!-- Timezone items will be populated by JavaScript -->
+        </ul>
+      </div>
+      
+      <div class="timezone-modal-footer">
+        <button class="timezone-cancel-btn" id="timezoneCancel">Cancel</button>
+        <button class="timezone-apply-btn" id="timezoneApply" disabled>Apply</button>
+      </div>
+    </div>
+  </div>
+
+    <!-- Include timezone utilities -->
+    <script src="./timezone-utilities.js" type="module"></script>
+    <script src="./timezone-handler.js" type="module"></script>
+    <script src="./script.js" defer></script>
+    
+    <!-- Make timezone utilities available globally -->
+    <script type="module">
+      import { 
+        isValidIanaTZ, 
+        normalizeZone, 
+        formatNowInSafe, 
+        isWeekendInZone, 
+        SUPPORTED_ZONES,
+        getAllIanaZones,
+        gmtOffsetLabel,
+        buildZoneOptions
+      } from './timezone-utilities.js';
+      import { isMarketOpen, MARKETS } from './timezone-handler.js';
+      
+      // Make utilities available globally
+      window.TimezoneUtils = {
+        isValidIanaTZ,
+        normalizeZone,
+        formatNowInSafe,
+        isWeekendInZone,
+        SUPPORTED_ZONES,
+        getAllIanaZones,
+        gmtOffsetLabel,
+        buildZoneOptions
+      };
+      
+      window.TimezoneHandler = {
+        isMarketOpen,
+        MARKETS
+      };
+    </script>
 </body>
 </html>

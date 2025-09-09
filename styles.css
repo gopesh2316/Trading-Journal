@@ -154,6 +154,23 @@ body{
   color:var(--primary);
 }
 
+.user-dropdown-item svg{
+  font-size:16px;
+  width:16px;
+  min-width:16px;
+  color:var(--muted);
+  transition:color 0s ease;
+  margin-right:6px;
+  line-height:1;
+  align-items:center;
+  margin-top: 2px;
+  margin-right: 9px;
+}
+
+.user-dropdown-item:hover svg{
+  color:var(--primary);
+}
+
 .user-dropdown-item span{
   flex:none;
 }
@@ -2522,8 +2539,9 @@ body{
 }
 
 .dark-mode .app-header {
-  background: #1f1f1f;
+  background: #1f1f1fc7;
   border-bottom-color: var(--border);
+  backdrop-filter: blur(20px);
 }
 
 .dark-mode .card,
@@ -4648,6 +4666,458 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
 .dark-mode .new-trade-save-btn:focus {
   outline: none;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.2);
+}
+
+/* Timezone Selection Modal Styles */
+.timezone-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  backdrop-filter: blur(4px);
+}
+
+.timezone-modal.hidden {
+  display: none;
+}
+
+.timezone-modal-content {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  width: 90%;
+  max-width: 500px;
+  max-height: 80vh;
+  overflow: hidden;
+  animation: timezoneModalSlideIn 0.3s ease-out;
+}
+
+@keyframes timezoneModalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.timezone-modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+}
+
+.timezone-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.timezone-modal-close {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+}
+
+.timezone-modal-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.timezone-search-container {
+  padding: 16px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.timezone-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #a7a7a7;
+  border-radius: 6px;
+  font-size: 14px;
+  background: #ffffff;
+  color: #111827;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.timezone-search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.timezone-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.timezone-list-container {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0px 0;
+}
+
+.timezone-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.timezone-item {
+  display: flex;
+  align-items: center;
+  padding: 12px 24px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border: none;
+  background: none;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  color: #374151;
+}
+
+.timezone-item:hover {
+  background: #f3f4f6;
+}
+
+.timezone-item.selected {
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 500;
+}
+
+.timezone-item-icon {
+  margin-right: 17px;
+  color: #6b7280;
+  font-size: 16px;
+  width: 16px;
+  text-align: center;
+}
+
+.timezone-item.selected .timezone-item-icon {
+  color: #1d4ed8;
+}
+
+.timezone-item-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timezone-item-name {
+  font-weight: 500;
+  color: #111827;
+  font-size: 14px;
+}
+
+.timezone-item.selected .timezone-item-name {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.timezone-item-offset {
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 400;
+}
+
+.timezone-item.selected .timezone-item-offset {
+  color: #1d4ed8;
+}
+
+.timezone-item-check {
+  margin-left: 12px;
+  color: #10b981;
+  font-size: 16px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.timezone-item.selected .timezone-item-check {
+  opacity: 1;
+}
+
+.timezone-region-header {
+  padding: 16px 24px 16px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #000000;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  background: #ffffff57;
+  border-bottom: 1px solid #e5e7eb;
+  margin: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(17px);
+}
+
+.dark-mode .timezone-region-header {
+  background: #2e2e2e52;
+  border-bottom-color: #2e2e2e;
+  color: #9ca3af;
+  backdrop-filter: blur(17px);
+}
+
+.timezone-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.timezone-cancel-btn {
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timezone-cancel-btn:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.timezone-apply-btn {
+  background: #3b82f6;
+  color: #ffffff;
+  border: 1px solid #3b82f6;
+  border-radius: 6px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.timezone-apply-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+.timezone-apply-btn:disabled {
+  background: #c7c7c7;
+  border-color: #9ca3af;
+  cursor: not-allowed;
+}
+
+/* Dark mode styles for timezone modal */
+.dark-mode .timezone-modal-content {
+  background: #1f1f1f;
+  border-color: #2e2e2e;
+}
+
+.dark-mode .timezone-modal-header {
+  background: #2e2e2e;
+  border-bottom-color: #2e2e2e;
+}
+
+.dark-mode .timezone-modal-title {
+  color: #e5e7eb;
+}
+
+.dark-mode .timezone-modal-close {
+  color: #9ca3af;
+}
+
+.dark-mode .timezone-modal-close:hover {
+  background: #404040;
+  color: #d1d5db;
+}
+
+.dark-mode .timezone-search-container {
+  border-bottom-color: #2e2e2e;
+}
+
+.dark-mode .timezone-search-input {
+  background: #2e2e2e;
+  border-color: #2e2e2e;
+  color: #e5e7eb;
+}
+
+.dark-mode .timezone-search-input:focus {
+  border-color: #60a5fa;
+  background: #2e2e2e;
+}
+
+.dark-mode .timezone-search-input::placeholder {
+  color: #6b7280;
+}
+
+.dark-mode .timezone-item {
+  color: #d1d5db;
+}
+
+.dark-mode .timezone-item:hover {
+  background: #2e2e2e;
+}
+
+.dark-mode .timezone-item.selected {
+  background: #001b4d;
+  color: #60a5fa;
+}
+
+/* Time Display and Market Status Styles */
+.greeting {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-height: 32px;
+}
+
+.greeting-text {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.time-display {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  background: var(--background-secondary);
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+
+.market-status {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.market-open {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.market-closed {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.dark-mode .time-display {
+  background: #2e2e2e;
+  color: #e5e5e5;
+}
+
+.dark-mode .market-open {
+  background: none;
+  color: #4ade80;
+  text-transform: capitalize;
+  font-weight: 700;
+  margin-left: -8px;
+}
+
+.dark-mode .market-closed {
+  background: none;
+  color: var(--red);
+  text-transform: capitalize;
+  font-weight: 700;
+  margin-left: -8px;
+}
+
+.dark-mode .timezone-item-icon {
+  color: #9ca3af;
+}
+
+.dark-mode .timezone-item.selected .timezone-item-icon {
+  color: #60a5fa;
+}
+
+.dark-mode .timezone-item-name {
+  color: #e5e7eb;
+}
+
+.dark-mode .timezone-item.selected .timezone-item-name {
+  color: #60a5fa;
+}
+
+.dark-mode .timezone-item-offset {
+  color: #9ca3af;
+}
+
+.dark-mode .timezone-item.selected .timezone-item-offset {
+  color: #60a5fa;
+}
+
+.dark-mode .timezone-modal-footer {
+  border-top-color: #2e2e2e;
+}
+
+.dark-mode .timezone-cancel-btn {
+  background: #2e2e2e;
+  color: #e5e7eb;
+  border-color: #404040;
+}
+
+.dark-mode .timezone-cancel-btn:hover {
+  background: #404040;
+  border-color: #6b7280;
+}
+
+.dark-mode .timezone-apply-btn {
+  background: #3b82f6;
+  border-color: #3b82f6;
+}
+
+.dark-mode .timezone-apply-btn:hover {
+  background: #2563eb;
+  border-color: #2563eb;
+}
+
+/* Responsive design for timezone modal */
+@media (max-width: 600px) {
+  .timezone-modal-content {
+    width: 95%;
+    max-height: 90vh;
+  }
+  
+  .timezone-modal-header,
+  .timezone-search-container,
+  .timezone-modal-footer {
+    padding: 16px 20px;
+  }
+  
+  .timezone-item {
+    padding: 10px 20px;
+  }
 }
 
 

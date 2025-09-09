@@ -1,0 +1,49 @@
+{
+  "name": "robust-timezone-handler",
+  "version": "1.0.0",
+  "description": "Robust timezone handling for trading applications with support for both Vanilla Intl.DateTimeFormat and Luxon implementations",
+  "main": "timezone-handler.js",
+  "type": "module",
+  "scripts": {
+    "start": "python -m http.server 8000",
+    "dev": "python -m http.server 8000",
+    "test": "node test-timezone-handler.js"
+  },
+  "keywords": [
+    "timezone",
+    "trading",
+    "market-hours",
+    "luxon",
+    "intl",
+    "datetime",
+    "react",
+    "javascript"
+  ],
+  "author": "Trading Journal Team",
+  "license": "MIT",
+  "dependencies": {
+    "luxon": "^3.4.4"
+  },
+  "devDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "peerDependencies": {
+    "luxon": "^3.4.4"
+  },
+  "files": [
+    "timezone-handler.js",
+    "TimezoneDisplay.jsx",
+    "timezone-display.css",
+    "timezone-example.html",
+    "README.md"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/robust-timezone-handler.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-org/robust-timezone-handler/issues"
+  },
+  "homepage": "https://github.com/your-org/robust-timezone-handler#readme"
+}

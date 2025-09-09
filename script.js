@@ -293,6 +293,7 @@ function showAuth(){
   $("#auth").classList.remove("hidden");
   $("#onboarding").classList.add("hidden");
   $("#app").classList.add("hidden");
+  stopClockUpdate();
 }
 function showOnboarding(){
   $("#auth").classList.add("hidden");
@@ -305,6 +306,7 @@ function showApp(){
   $("#onboarding").classList.add("hidden");
   $("#app").classList.remove("hidden");
   renderAll();
+  startClockUpdate();
 }
 function initAuth(){
   const btnLogin = $("#btnLogin");
@@ -388,6 +390,11 @@ function initHeader(){
   };
   $("#btnDarkMode").onclick = ()=>{
     toggleDarkMode();
+    $("#accountDropdown").classList.add("hidden");
+  };
+  
+  $("#btnTimezone").onclick = ()=>{
+    openTimezoneSelector();
     $("#accountDropdown").classList.add("hidden");
   };
 
@@ -688,6 +695,7 @@ function renderHeader(){
 }
 
 function renderGreeting(){
+  try {
   const name = state.user?.name || "";
   const currentHour = new Date().getHours();
   
@@ -703,7 +711,303 @@ function renderGreeting(){
   }
   
   const displayName = name || state.user?.email?.split('@')[0] || "User";
-  $("#greetingMessage").textContent = `${greeting}, ${displayName}`;
+    const timeDisplay = getCurrentTimeDisplay();
+    const marketStatus = getMarketStatus();
+    
+    console.log('Rendering greeting:', { greeting, displayName, timeDisplay, marketStatus });
+    
+    const greetingElement = $("#greetingMessage");
+    if (greetingElement) {
+      greetingElement.innerHTML = `
+        <span class="greeting-text">${greeting}, ${displayName}</span>
+        <span class="time-display">${timeDisplay}</span>
+        <span class="market-status ${marketStatus.isOpen ? 'market-open' : 'market-closed'}">⋅ ${marketStatus.text}</span>
+      `;
+    } else {
+      console.error('greetingMessage element not found');
+    }
+  } catch (error) {
+    console.error('Error in renderGreeting:', error);
+  }
+}
+
+// OLD TIMEZONE OFFSET FUNCTION REMOVED - Now using IANA timezones only
+
+// Convert timezone code to IANA identifier
+function getIANATimezone(timezoneCode) {
+  const timezoneMap = {
+    // UTC and GMT
+    'UTC': 'UTC',
+    'GMT': 'Europe/London',
+    
+    // North America
+    'EST': 'America/New_York',
+    'EDT': 'America/New_York',
+    'CST': 'America/Chicago',
+    'CDT': 'America/Chicago',
+    'MST': 'America/Denver',
+    'MDT': 'America/Denver',
+    'PST': 'America/Los_Angeles',
+    'PDT': 'America/Los_Angeles',
+    'AST': 'America/Puerto_Rico',
+    'ADT': 'America/Puerto_Rico',
+    'HST': 'Pacific/Honolulu',
+    'AKST': 'America/Anchorage',
+    'AKDT': 'America/Anchorage',
+    
+    // Europe
+    'BST': 'Europe/London',
+    'CET': 'Europe/Berlin',
+    'CEST': 'Europe/Berlin',
+    'EET': 'Europe/Athens',
+    'EEST': 'Europe/Athens',
+    'WET': 'Europe/Lisbon',
+    'WEST': 'Europe/Lisbon',
+    'MSK': 'Europe/Moscow',
+    'MSD': 'Europe/Moscow',
+    
+    // Asia
+    'IST': 'Asia/Kolkata',
+    'JST': 'Asia/Tokyo',
+    'KST': 'Asia/Seoul',
+    'CST_CN': 'Asia/Shanghai',
+    'HKT': 'Asia/Hong_Kong',
+    'SGT': 'Asia/Singapore',
+    'BKK': 'Asia/Bangkok',
+    'ICT': 'Asia/Bangkok',
+    'PHT': 'Asia/Manila',
+    'WIB': 'Asia/Jakarta',
+    'WITA': 'Asia/Makassar',
+    'WIT': 'Asia/Jayapura',
+    
+    // Australia and Pacific
+    'AEST': 'Australia/Sydney',
+    'AEDT': 'Australia/Sydney',
+    'ACST': 'Australia/Adelaide',
+    'ACDT': 'Australia/Adelaide',
+    'AWST': 'Australia/Perth',
+    'NZST': 'Pacific/Auckland',
+    'NZDT': 'Pacific/Auckland',
+    'FJT': 'Pacific/Fiji',
+    'NZT': 'Pacific/Auckland',
+    
+    // Africa
+    'CAT': 'Africa/Harare',
+    'EAT': 'Africa/Nairobi',
+    'WAT': 'Africa/Lagos',
+    'SAST': 'Africa/Johannesburg',
+    
+    // Middle East
+    'GST': 'Asia/Dubai',
+    'AST_SA': 'Asia/Riyadh',
+    'EET_EG': 'Africa/Cairo',
+    
+    // South America
+    'BRT': 'America/Sao_Paulo',
+    'BRST': 'America/Sao_Paulo',
+    'ART': 'America/Argentina/Buenos_Aires',
+    'CLT': 'America/Santiago',
+    'CLST': 'America/Santiago',
+    'COT': 'America/Bogota',
+    'PET': 'America/Lima',
+    'UYT': 'America/Montevideo',
+    'VET': 'America/Caracas',
+    
+    // Other common codes
+    'MSK_AZ': 'Europe/Moscow',
+    'CST_TX': 'America/Chicago',
+    'EST_FL': 'America/New_York',
+    'MST_AZ': 'America/Phoenix'
+  };
+  
+  // If not found in map, check if it's already an IANA identifier
+  if (timezoneMap[timezoneCode]) {
+    return timezoneMap[timezoneCode];
+  }
+  
+  // If it looks like an IANA identifier (contains '/'), return as is
+  if (timezoneCode.includes('/')) {
+    return timezoneCode;
+  }
+  
+  // Fallback to UTC for unknown codes
+  console.warn(`Unknown timezone code: ${timezoneCode}, falling back to UTC`);
+  return 'UTC';
+}
+
+// Clean timezone utilities - NO manual offset math
+function formatNowIn(tz, opts = { hour:'2-digit', minute:'2-digit', second:'2-digit' }) {
+  try {
+    // Validate timezone identifier
+    if (!tz || typeof tz !== 'string') {
+      console.warn('Invalid timezone identifier for formatNowIn:', tz);
+      return 'Invalid timezone';
+    }
+    
+    const result = new Intl.DateTimeFormat('en-GB', { timeZone: tz, ...opts }).format(Date.now());
+    
+    // Check if the result is valid
+    if (!result || result.includes('Invalid')) {
+      console.warn('Invalid timezone result for formatNowIn:', tz, result);
+      return 'Invalid timezone';
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error in formatNowIn for timezone:', tz, error);
+    return 'Error';
+  }
+}
+
+function isWeekendInZone(tz, t = Date.now()) {
+  try {
+    // Validate timezone identifier
+    if (!tz || typeof tz !== 'string') {
+      console.warn('Invalid timezone identifier for isWeekendInZone:', tz);
+      return false;
+    }
+    
+    const wd = new Intl.DateTimeFormat('en-US', { timeZone: tz, weekday: 'short' }).format(t);
+    
+    // Check if the result is valid
+    if (!wd || wd.includes('Invalid')) {
+      console.warn('Invalid timezone result for isWeekendInZone:', tz, wd);
+      return false;
+    }
+    
+    return wd === 'Sat' || wd === 'Sun';
+  } catch (error) {
+    console.error('Error in isWeekendInZone for timezone:', tz, error);
+    return false;
+  }
+}
+
+function getDetailedTimeInfo(tz) {
+  try {
+    const now = Date.now();
+    
+    // Validate timezone identifier
+    if (!tz || typeof tz !== 'string') {
+      throw new Error('Invalid timezone identifier');
+    }
+    
+    const timeFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    
+    const dateFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    const weekdayFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: tz,
+      weekday: 'long'
+    });
+    
+    // Test if the timezone is valid by trying to format
+    const testTime = timeFormatter.format(now);
+    if (!testTime || testTime.includes('Invalid')) {
+      throw new Error('Invalid timezone identifier: ' + tz);
+    }
+    
+    return {
+      time: timeFormatter.format(now),
+      date: dateFormatter.format(now),
+      weekday: weekdayFormatter.format(now)
+    };
+  } catch (error) {
+    console.error('Error in getDetailedTimeInfo for timezone:', tz, error);
+    
+    // Fallback to UTC
+    const now = Date.now();
+    const timeFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'UTC',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    });
+    
+    const dateFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'UTC',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+    
+    const weekdayFormatter = new Intl.DateTimeFormat('en-GB', {
+      timeZone: 'UTC',
+      weekday: 'long'
+    });
+    
+    return {
+      time: timeFormatter.format(now),
+      date: dateFormatter.format(now),
+      weekday: weekdayFormatter.format(now)
+    };
+  }
+}
+
+// Get current time display using safe timezone utilities
+function getCurrentTimeDisplay() {
+  try {
+    const timezoneCode = state.preferences?.timezone || 'UTC';
+    
+    // Use safe timezone utilities with error handling
+    const time = window.TimezoneUtils?.formatNowInSafe(timezoneCode);
+    
+    if (!time) {
+      return 'Time unavailable. Pick a valid time zone (e.g., \'Asia/Karachi\').';
+    }
+    
+    return time;
+  } catch (error) {
+    console.error('Error in getCurrentTimeDisplay:', error);
+    return 'Time unavailable. Pick a valid time zone (e.g., \'Asia/Karachi\').';
+  }
+}
+
+// Get market status using safe timezone utilities
+function getMarketStatus() {
+  try {
+    const timezoneCode = state.preferences?.timezone || 'UTC';
+    
+    // Use safe timezone utilities with error handling
+    const isWeekend = window.TimezoneUtils?.isWeekendInZone(timezoneCode);
+    
+    if (isWeekend === null) {
+      return {
+        isOpen: false,
+        text: 'Market Status Unavailable'
+      };
+    }
+    
+    if (isWeekend) {
+      return {
+        isOpen: false,
+        text: 'Market Closed'
+      };
+    }
+    
+    // For weekdays, market is always open (Monday to Friday)
+    return {
+      isOpen: true,
+      text: 'Market Open'
+    };
+  } catch (error) {
+    console.error('Error in getMarketStatus:', error);
+    return {
+      isOpen: false,
+      text: 'Market Status Unavailable'
+    };
+  }
 }
 function renderStats(){
   const rows = filteredEntries();
@@ -3277,6 +3581,339 @@ function updateCurrencySymbol(currencyCode) {
   window.currentCurrencySymbol = symbol;
 }
 
+/* ---------- Timezone Management ---------- */
+// Comprehensive list of world timezones
+const WORLD_TIMEZONES = [
+  // UTC and GMT
+  { code: 'UTC', name: 'UTC (Coordinated Universal Time)', offset: '+00:00', region: 'UTC' },
+  { code: 'GMT', name: 'Greenwich Mean Time', offset: '+00:00', region: 'UTC' },
+  
+  // North America
+  { code: 'EST', name: 'Eastern Time (US & Canada)', offset: '-05:00', region: 'North America' },
+  { code: 'EDT', name: 'Eastern Daylight Time (US & Canada)', offset: '-04:00', region: 'North America' },
+  { code: 'CST', name: 'Central Time (US & Canada)', offset: '-06:00', region: 'North America' },
+  { code: 'CDT', name: 'Central Daylight Time (US & Canada)', offset: '-05:00', region: 'North America' },
+  { code: 'MST', name: 'Mountain Time (US & Canada)', offset: '-07:00', region: 'North America' },
+  { code: 'MDT', name: 'Mountain Daylight Time (US & Canada)', offset: '-06:00', region: 'North America' },
+  { code: 'PST', name: 'Pacific Time (US & Canada)', offset: '-08:00', region: 'North America' },
+  { code: 'PDT', name: 'Pacific Daylight Time (US & Canada)', offset: '-07:00', region: 'North America' },
+  { code: 'AKST', name: 'Alaska Time', offset: '-09:00', region: 'North America' },
+  { code: 'AKDT', name: 'Alaska Daylight Time', offset: '-08:00', region: 'North America' },
+  { code: 'HST', name: 'Hawaii Time', offset: '-10:00', region: 'North America' },
+  { code: 'HADT', name: 'Hawaii-Aleutian Daylight Time', offset: '-09:00', region: 'North America' },
+  
+  // Europe
+  { code: 'CET', name: 'Central European Time', offset: '+01:00', region: 'Europe' },
+  { code: 'CEST', name: 'Central European Summer Time', offset: '+02:00', region: 'Europe' },
+  { code: 'EET', name: 'Eastern European Time', offset: '+02:00', region: 'Europe' },
+  { code: 'EEST', name: 'Eastern European Summer Time', offset: '+03:00', region: 'Europe' },
+  { code: 'WET', name: 'Western European Time', offset: '+00:00', region: 'Europe' },
+  { code: 'WEST', name: 'Western European Summer Time', offset: '+01:00', region: 'Europe' },
+  { code: 'BST', name: 'British Summer Time', offset: '+01:00', region: 'Europe' },
+  { code: 'MSK', name: 'Moscow Time', offset: '+03:00', region: 'Europe' },
+  
+  // Asia
+  { code: 'IST', name: 'India Standard Time', offset: '+05:30', region: 'Asia' },
+  { code: 'JST', name: 'Japan Standard Time', offset: '+09:00', region: 'Asia' },
+  { code: 'KST', name: 'Korea Standard Time', offset: '+09:00', region: 'Asia' },
+  { code: 'CST_CN', name: 'China Standard Time', offset: '+08:00', region: 'Asia' },
+  { code: 'HKT', name: 'Hong Kong Time', offset: '+08:00', region: 'Asia' },
+  { code: 'SGT', name: 'Singapore Time', offset: '+08:00', region: 'Asia' },
+  { code: 'PHT', name: 'Philippine Time', offset: '+08:00', region: 'Asia' },
+  { code: 'ICT', name: 'Indochina Time', offset: '+07:00', region: 'Asia' },
+  { code: 'BKK', name: 'Bangkok Time', offset: '+07:00', region: 'Asia' },
+  { code: 'WIB', name: 'Western Indonesia Time', offset: '+07:00', region: 'Asia' },
+  { code: 'WITA', name: 'Central Indonesia Time', offset: '+08:00', region: 'Asia' },
+  { code: 'WIT', name: 'Eastern Indonesia Time', offset: '+09:00', region: 'Asia' },
+  { code: 'PKT', name: 'Pakistan Standard Time', offset: '+05:00', region: 'Asia' },
+  { code: 'BDT', name: 'Bangladesh Standard Time', offset: '+06:00', region: 'Asia' },
+  { code: 'NPT', name: 'Nepal Time', offset: '+05:45', region: 'Asia' },
+  { code: 'LKT', name: 'Sri Lanka Time', offset: '+05:30', region: 'Asia' },
+  { code: 'MVT', name: 'Maldives Time', offset: '+05:00', region: 'Asia' },
+  { code: 'UZT', name: 'Uzbekistan Time', offset: '+05:00', region: 'Asia' },
+  { code: 'KGT', name: 'Kyrgyzstan Time', offset: '+06:00', region: 'Asia' },
+  { code: 'TJT', name: 'Tajikistan Time', offset: '+05:00', region: 'Asia' },
+  { code: 'TMT', name: 'Turkmenistan Time', offset: '+05:00', region: 'Asia' },
+  { code: 'AFT', name: 'Afghanistan Time', offset: '+04:30', region: 'Asia' },
+  { code: 'IRST', name: 'Iran Standard Time', offset: '+03:30', region: 'Asia' },
+  { code: 'GST', name: 'Gulf Standard Time', offset: '+04:00', region: 'Asia' },
+  { code: 'MSD', name: 'Moscow Daylight Time', offset: '+04:00', region: 'Asia' },
+  { code: 'YEKT', name: 'Yekaterinburg Time', offset: '+05:00', region: 'Asia' },
+  { code: 'OMST', name: 'Omsk Time', offset: '+06:00', region: 'Asia' },
+  { code: 'NOVT', name: 'Novosibirsk Time', offset: '+07:00', region: 'Asia' },
+  { code: 'KRAT', name: 'Krasnoyarsk Time', offset: '+07:00', region: 'Asia' },
+  { code: 'IRKT', name: 'Irkutsk Time', offset: '+08:00', region: 'Asia' },
+  { code: 'YAKT', name: 'Yakutsk Time', offset: '+09:00', region: 'Asia' },
+  { code: 'VLAT', name: 'Vladivostok Time', offset: '+10:00', region: 'Asia' },
+  { code: 'MAGT', name: 'Magadan Time', offset: '+11:00', region: 'Asia' },
+  { code: 'PETT', name: 'Kamchatka Time', offset: '+12:00', region: 'Asia' },
+  
+  // Australia and Oceania
+  { code: 'AEST', name: 'Australian Eastern Time', offset: '+10:00', region: 'Australia' },
+  { code: 'AEDT', name: 'Australian Eastern Daylight Time', offset: '+11:00', region: 'Australia' },
+  { code: 'ACST', name: 'Australian Central Time', offset: '+09:30', region: 'Australia' },
+  { code: 'ACDT', name: 'Australian Central Daylight Time', offset: '+10:30', region: 'Australia' },
+  { code: 'AWST', name: 'Australian Western Time', offset: '+08:00', region: 'Australia' },
+  { code: 'NZST', name: 'New Zealand Standard Time', offset: '+12:00', region: 'Oceania' },
+  { code: 'NZDT', name: 'New Zealand Daylight Time', offset: '+13:00', region: 'Oceania' },
+  { code: 'FJT', name: 'Fiji Time', offset: '+12:00', region: 'Oceania' },
+  { code: 'TOT', name: 'Tonga Time', offset: '+13:00', region: 'Oceania' },
+  { code: 'CHAST', name: 'Chatham Standard Time', offset: '+12:45', region: 'Oceania' },
+  { code: 'CHADT', name: 'Chatham Daylight Time', offset: '+13:45', region: 'Oceania' },
+  
+  // Africa
+  { code: 'WAT', name: 'West Africa Time', offset: '+01:00', region: 'Africa' },
+  { code: 'CAT', name: 'Central Africa Time', offset: '+02:00', region: 'Africa' },
+  { code: 'EAT', name: 'East Africa Time', offset: '+03:00', region: 'Africa' },
+  { code: 'SAST', name: 'South Africa Standard Time', offset: '+02:00', region: 'Africa' },
+  { code: 'EET_AF', name: 'Eastern European Time (Africa)', offset: '+02:00', region: 'Africa' },
+  { code: 'MSK_AF', name: 'Moscow Time (Africa)', offset: '+03:00', region: 'Africa' },
+  
+  // South America
+  { code: 'BRT', name: 'Brasília Time', offset: '-03:00', region: 'South America' },
+  { code: 'BRST', name: 'Brasília Summer Time', offset: '-02:00', region: 'South America' },
+  { code: 'ART', name: 'Argentina Time', offset: '-03:00', region: 'South America' },
+  { code: 'CLT', name: 'Chile Time', offset: '-04:00', region: 'South America' },
+  { code: 'CLST', name: 'Chile Summer Time', offset: '-03:00', region: 'South America' },
+  { code: 'COT', name: 'Colombia Time', offset: '-05:00', region: 'South America' },
+  { code: 'ECT', name: 'Ecuador Time', offset: '-05:00', region: 'South America' },
+  { code: 'PET', name: 'Peru Time', offset: '-05:00', region: 'South America' },
+  { code: 'VET', name: 'Venezuela Time', offset: '-04:00', region: 'South America' },
+  { code: 'UYT', name: 'Uruguay Time', offset: '-03:00', region: 'South America' },
+  { code: 'PYT', name: 'Paraguay Time', offset: '-04:00', region: 'South America' },
+  { code: 'BOT', name: 'Bolivia Time', offset: '-04:00', region: 'South America' },
+  { code: 'GFT', name: 'French Guiana Time', offset: '-03:00', region: 'South America' },
+  { code: 'SRT', name: 'Suriname Time', offset: '-03:00', region: 'South America' },
+  { code: 'GST_SUR', name: 'Guyana Time', offset: '-04:00', region: 'South America' },
+  
+  // Middle East
+  { code: 'AST', name: 'Arabia Standard Time', offset: '+03:00', region: 'Middle East' },
+  { code: 'EET_ME', name: 'Eastern European Time (Middle East)', offset: '+02:00', region: 'Middle East' },
+  { code: 'EEST_ME', name: 'Eastern European Summer Time (Middle East)', offset: '+03:00', region: 'Middle East' },
+  { code: 'IDT', name: 'Israel Daylight Time', offset: '+03:00', region: 'Middle East' },
+  { code: 'EET_ISR', name: 'Israel Standard Time', offset: '+02:00', region: 'Middle East' },
+  { code: 'TRT', name: 'Turkey Time', offset: '+03:00', region: 'Middle East' },
+  { code: 'EET_TR', name: 'Turkey Standard Time', offset: '+02:00', region: 'Middle East' },
+  
+  // Atlantic
+  { code: 'AT', name: 'Atlantic Time', offset: '-04:00', region: 'Atlantic' },
+  { code: 'ADT', name: 'Atlantic Daylight Time', offset: '-03:00', region: 'Atlantic' },
+  { code: 'AZOT', name: 'Azores Time', offset: '-01:00', region: 'Atlantic' },
+  { code: 'AZOST', name: 'Azores Summer Time', offset: '+00:00', region: 'Atlantic' },
+  { code: 'CVT', name: 'Cape Verde Time', offset: '-01:00', region: 'Atlantic' },
+  { code: 'EGT', name: 'East Greenland Time', offset: '-01:00', region: 'Atlantic' },
+  { code: 'WGT', name: 'West Greenland Time', offset: '-03:00', region: 'Atlantic' },
+  { code: 'FNT', name: 'Fernando de Noronha Time', offset: '-02:00', region: 'Atlantic' },
+  { code: 'GST_ATL', name: 'South Georgia Time', offset: '-02:00', region: 'Atlantic' },
+  
+  // Pacific
+  { code: 'HST_PAC', name: 'Hawaii Time (Pacific)', offset: '-10:00', region: 'Pacific' },
+  { code: 'AKST_PAC', name: 'Alaska Time (Pacific)', offset: '-09:00', region: 'Pacific' },
+  { code: 'PST_PAC', name: 'Pacific Time (Pacific)', offset: '-08:00', region: 'Pacific' },
+  { code: 'MST_PAC', name: 'Mountain Time (Pacific)', offset: '-07:00', region: 'Pacific' },
+  { code: 'CST_PAC', name: 'Central Time (Pacific)', offset: '-06:00', region: 'Pacific' },
+  { code: 'EST_PAC', name: 'Eastern Time (Pacific)', offset: '-05:00', region: 'Pacific' },
+  { code: 'CHST', name: 'Chamorro Standard Time', offset: '+10:00', region: 'Pacific' },
+  { code: 'MART', name: 'Marquesas Time', offset: '-09:30', region: 'Pacific' },
+  { code: 'GAMT', name: 'Gambier Time', offset: '-09:00', region: 'Pacific' },
+  { code: 'TAHT', name: 'Tahiti Time', offset: '-10:00', region: 'Pacific' },
+  { code: 'HST_HAW', name: 'Hawaii Time (Hawaii)', offset: '-10:00', region: 'Pacific' },
+  { code: 'AKST_AK', name: 'Alaska Time (Alaska)', offset: '-09:00', region: 'Pacific' },
+  { code: 'PST_CA', name: 'Pacific Time (California)', offset: '-08:00', region: 'Pacific' },
+  { code: 'MST_AZ', name: 'Mountain Time (Arizona)', offset: '-07:00', region: 'Pacific' },
+  { code: 'CST_TX', name: 'Central Time (Texas)', offset: '-06:00', region: 'Pacific' },
+  { code: 'EST_FL', name: 'Eastern Time (Florida)', offset: '-05:00', region: 'Pacific' }
+];
+
+function openTimezoneSelector() {
+  try {
+    console.log('Opening timezone selector...');
+    
+    // Show the timezone modal
+    const modal = $("#timezoneModal");
+    if (modal) {
+      modal.classList.remove("hidden");
+      console.log('Modal shown');
+    } else {
+      console.error('Timezone modal not found');
+      return;
+    }
+    
+    // Initialize timezone list
+    initializeTimezoneList();
+    console.log('Timezone list initialized');
+    
+    // Set up event listeners
+    setupTimezoneModalEvents();
+    console.log('Event listeners set up');
+  } catch (error) {
+    console.error('Error opening timezone selector:', error);
+  }
+}
+
+// Initialize the timezone list with all world timezones
+function initializeTimezoneList() {
+  try {
+    const timezoneList = $("#timezoneList");
+    if (!timezoneList) {
+      console.error('Timezone list element not found');
+      return;
+    }
+    
+    const currentTimezone = state.preferences.timezone || 'UTC';
+    
+    // Clear existing content
+    timezoneList.innerHTML = '';
+    
+    // Use buildZoneOptions from timezone utilities
+    const zoneOptions = window.TimezoneUtils?.buildZoneOptions() || [];
+    
+    // Group zones by region for better organization
+    const groupedZones = {};
+    zoneOptions.forEach(zone => {
+      if (!groupedZones[zone.region]) {
+        groupedZones[zone.region] = [];
+      }
+      groupedZones[zone.region].push(zone);
+    });
+    
+    // Render timezones by region
+    Object.keys(groupedZones).sort().forEach(region => {
+      const regionZones = groupedZones[region];
+      
+      // Add region header
+      const regionHeader = document.createElement('div');
+      regionHeader.className = 'timezone-region-header';
+      regionHeader.textContent = region;
+      timezoneList.appendChild(regionHeader);
+      
+      // Add timezones for this region
+      regionZones.forEach(timezone => {
+        const timezoneItem = document.createElement('li');
+        timezoneItem.className = `timezone-item ${timezone.value === currentTimezone ? 'selected' : ''}`;
+        timezoneItem.dataset.timezone = timezone.value;
+        
+        timezoneItem.innerHTML = `
+          <span class="timezone-item-icon">
+            <span class="material-icons">schedule</span>
+          </span>
+          <div class="timezone-item-content">
+            <div class="timezone-item-name">${timezone.label}</div>
+            <div class="timezone-item-offset">${timezone.sublabel}</div>
+          </div>
+          <span class="timezone-item-check">✓</span>
+        `;
+        
+        timezoneList.appendChild(timezoneItem);
+      });
+    });
+    
+  } catch (error) {
+    console.error('Error initializing timezone list:', error);
+  }
+}
+
+// Set up event listeners for the timezone modal
+function setupTimezoneModalEvents() {
+  // Prevent duplicate event listeners
+  if (window.timezoneModalEventsSetup) {
+    return;
+  }
+  window.timezoneModalEventsSetup = true;
+  
+  const modal = $("#timezoneModal");
+  const searchInput = $("#timezoneSearch");
+  const timezoneList = $("#timezoneList");
+  const closeBtn = $("#timezoneModalClose");
+  const cancelBtn = $("#timezoneCancel");
+  const applyBtn = $("#timezoneApply");
+  
+  let selectedTimezone = state.preferences.timezone || 'UTC';
+  
+  // Search functionality
+  searchInput.addEventListener('input', (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const timezoneItems = timezoneList.querySelectorAll('.timezone-item');
+    
+    timezoneItems.forEach(item => {
+      const name = item.querySelector('.timezone-item-name').textContent.toLowerCase();
+      const code = item.querySelector('.timezone-item-offset').textContent.toLowerCase();
+      
+      if (name.includes(searchTerm) || code.includes(searchTerm)) {
+        item.style.display = 'flex';
+      } else {
+        item.style.display = 'none';
+      }
+    });
+  });
+  
+  // Timezone selection
+  timezoneList.addEventListener('click', (e) => {
+    const timezoneItem = e.target.closest('.timezone-item');
+    if (!timezoneItem) return;
+    
+    // Remove previous selection
+    timezoneList.querySelectorAll('.timezone-item').forEach(item => {
+      item.classList.remove('selected');
+    });
+    
+    // Add selection to clicked item
+    timezoneItem.classList.add('selected');
+    selectedTimezone = timezoneItem.dataset.timezone;
+    
+    // Enable apply button
+    applyBtn.disabled = false;
+  });
+  
+  // Close modal
+  const closeModal = () => {
+    modal.classList.add('hidden');
+    searchInput.value = '';
+    // Reset selection to current timezone
+    selectedTimezone = state.preferences.timezone || 'UTC';
+    applyBtn.disabled = true;
+  };
+  
+  closeBtn.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  
+  // Apply selection
+  applyBtn.addEventListener('click', () => {
+    selectTimezone(selectedTimezone);
+    closeModal();
+  });
+  
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+  
+  // Close on Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+      closeModal();
+    }
+  });
+}
+
+function selectTimezone(timezoneCode) {
+  console.log(`Selecting timezone: ${timezoneCode}`);
+  console.log(`Previous timezone: ${state.preferences?.timezone}`);
+  
+  state.preferences.timezone = timezoneCode;
+  savePreferences();
+  
+  console.log(`New timezone saved: ${state.preferences.timezone}`);
+
+  // Update the greeting display with new timezone
+  renderGreeting();
+
+  // Show success message
+  showToast(`Timezone changed to ${timezoneCode}`);
+}
+
 /* ---------- Dark Mode ---------- */
 function toggleDarkMode() {
   state.preferences.darkMode = !state.preferences.darkMode;
@@ -3584,6 +4221,28 @@ function renderAll(){
   }
   
   console.log("renderAll completed");
+}
+
+// Real-time clock update
+let clockInterval = null;
+
+function startClockUpdate() {
+  // Clear existing interval if any
+  if (clockInterval) {
+    clearInterval(clockInterval);
+  }
+  
+  // Update every second
+  clockInterval = setInterval(() => {
+    renderGreeting();
+  }, 1000);
+}
+
+function stopClockUpdate() {
+  if (clockInterval) {
+    clearInterval(clockInterval);
+    clockInterval = null;
+  }
 }
 
 
@@ -4479,3 +5138,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 });
+
+// ============================================================================
+// ACCEPTANCE CHECKS
+// ============================================================================
+
+// Quick acceptance checks (log PASS/FAIL)
+console.log('[CHECK] Karachi valid:', window.TimezoneUtils?.isValidIanaTZ('Asia/Karachi') ? 'PASS' : 'FAIL');
+console.log('[CHECK] Normalize "Pakistan utc +5:00" →', window.TimezoneUtils?.normalizeZone('Pakistan utc +5:00')); // expect Asia/Karachi
+console.log('[CHECK] Format Karachi →', window.TimezoneUtils?.formatNowInSafe('Asia/Karachi') ?? 'FAIL');
+console.log('[CHECK] Reject UTC+5 →', window.TimezoneUtils?.formatNowInSafe('UTC+5') === null ? 'PASS' : 'FAIL');
