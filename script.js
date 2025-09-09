@@ -2802,6 +2802,12 @@ function showNewTradeSteps() {
   // Initialize back button
   initNewTradeBackButton();
   
+  // Display active trading session
+  displayActiveTradingSession();
+  
+  // Initialize numerical input validation
+  initNumericalInputValidation();
+  
   // Focus on the first input
   setTimeout(() => {
     $("#newTradeSymbol").focus();
@@ -2811,6 +2817,156 @@ function showNewTradeSteps() {
 function hideNewTradeSteps() {
   $("#newTradeSteps").classList.add("hidden");
 }
+
+/**
+ * Display active trading session as simple text
+ */
+function displayActiveTradingSession() {
+  try {
+    // Get active trading sessions
+    const activeSessions = window.TimezoneUtils?.getActiveTradingSessions() || [];
+    
+    const now = new Date();
+    const utcTime = now.toISOString();
+    const utcHour = now.getUTCHours();
+    
+    console.log('[AUTO-SESSION] Current UTC time:', utcTime);
+    console.log('[AUTO-SESSION] Current UTC hour:', utcHour);
+    console.log('[AUTO-SESSION] Active sessions:', activeSessions);
+    
+    const sessionDisplay = document.getElementById('tradingSessionDisplay');
+    const sessionText = sessionDisplay?.querySelector('.session-text');
+    
+    if (!sessionText) {
+      console.error('[AUTO-SESSION] Session display element not found');
+      return;
+    }
+    
+    if (activeSessions.length === 0) {
+      sessionText.textContent = 'No active sessions';
+      console.log('[AUTO-SESSION] No active sessions found');
+      return;
+    }
+    
+    // Display active session(s) as simple text with "(auto selected)"
+    if (activeSessions.length === 1) {
+      sessionText.textContent = `${activeSessions[0]} (auto selected)`;
+    } else {
+      // Multiple sessions - show them separated by comma
+      sessionText.textContent = `${activeSessions.join(', ')} (auto selected)`;
+    }
+    
+    console.log('[AUTO-SESSION] Displaying sessions:', activeSessions);
+    
+  } catch (error) {
+    console.error('[AUTO-SESSION] Error displaying sessions:', error);
+    const sessionText = document.querySelector('#tradingSessionDisplay .session-text');
+    if (sessionText) {
+      sessionText.textContent = 'Error loading session';
+    }
+  }
+}
+
+
+/**
+ * Initialize numerical input validation for Stop Loss and Target Point fields
+ */
+function initNumericalInputValidation() {
+  const stopLossInput = document.getElementById('newTradeStopLoss');
+  const targetInput = document.getElementById('newTradeTarget');
+  
+  if (stopLossInput) {
+    // Prevent non-numerical input
+    stopLossInput.addEventListener('keypress', function(e) {
+      // Allow: backspace, delete, tab, escape, enter, decimal point
+      if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+          // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+          (e.keyCode === 65 && e.ctrlKey === true) ||
+          (e.keyCode === 67 && e.ctrlKey === true) ||
+          (e.keyCode === 86 && e.ctrlKey === true) ||
+          (e.keyCode === 88 && e.ctrlKey === true) ||
+          // Allow: home, end, left, right, down, up
+          (e.keyCode >= 35 && e.keyCode <= 40)) {
+        return;
+      }
+      // Ensure that it is a number and stop the keypress
+      if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+      }
+    });
+    
+    // Prevent pasting non-numerical content
+    stopLossInput.addEventListener('paste', function(e) {
+      const paste = (e.clipboardData || window.clipboardData).getData('text');
+      if (!/^\d*\.?\d*$/.test(paste)) {
+        e.preventDefault();
+      }
+    });
+  }
+  
+  if (targetInput) {
+    // Prevent non-numerical input
+    targetInput.addEventListener('keypress', function(e) {
+      // Allow: backspace, delete, tab, escape, enter, decimal point
+      if ([46, 8, 9, 27, 13, 110, 190].indexOf(e.keyCode) !== -1 ||
+          // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+          (e.keyCode === 65 && e.ctrlKey === true) ||
+          (e.keyCode === 67 && e.ctrlKey === true) ||
+          (e.keyCode === 86 && e.ctrlKey === true) ||
+          (e.keyCode === 88 && e.ctrlKey === true) ||
+          // Allow: home, end, left, right, down, up
+          (e.keyCode >= 35 && e.keyCode <= 40)) {
+        return;
+      }
+      // Ensure that it is a number and stop the keypress
+      if ((e.shiftKey || (e.keyCode < 48 || e.keyCode > 57)) && (e.keyCode < 96 || e.keyCode > 105)) {
+        e.preventDefault();
+      }
+    });
+    
+    // Prevent pasting non-numerical content
+    targetInput.addEventListener('paste', function(e) {
+      const paste = (e.clipboardData || window.clipboardData).getData('text');
+      if (!/^\d*\.?\d*$/.test(paste)) {
+        e.preventDefault();
+      }
+    });
+  }
+}
+
+/**
+ * Test function to verify session detection logic
+ * Call this in browser console to test different times
+ */
+function testSessionDetection() {
+  console.log('=== TRADING SESSION DETECTION TEST ===');
+  
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  console.log('Current UTC hour:', utcHour);
+  
+  // Test each session's time range
+  const sessions = window.TimezoneUtils?.TRADING_SESSIONS || {};
+  Object.entries(sessions).forEach(([key, session]) => {
+    const { start, end, name } = session;
+    let isActive = false;
+    
+    if (start > end) {
+      // Session crosses midnight
+      isActive = utcHour >= start || utcHour < end;
+    } else {
+      // Normal session within same day
+      isActive = utcHour >= start && utcHour < end;
+    }
+    
+    console.log(`${name}: ${start}:00 - ${end}:00 UTC | Active: ${isActive}`);
+  });
+  
+  const activeSessions = window.TimezoneUtils?.getActiveTradingSessions() || [];
+  console.log('Active sessions:', activeSessions);
+  console.log('=====================================');
+}
+
 
 function initNewTradeBackButton() {
   $("#newTradeBackToApp").onclick = () => {
@@ -3042,7 +3198,7 @@ function saveNewTrade() {
     date: new Date().toISOString().slice(0,10),
     symbol: $("#newTradeSymbol").value.trim().toUpperCase(),
     side: $("#newTradeSide").value,
-    tradingSession: $("#newTradeSession").value || "",
+    tradingSession: document.querySelector('#tradingSessionDisplay .session-text')?.textContent || "",
     quantity: Number($("#newTradeQuantity").value) || null,
     price: Number($("#newTradePrice").value) || null,
     fees: 0,

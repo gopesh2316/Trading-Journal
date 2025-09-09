@@ -153,7 +153,7 @@
                 id="newTradeQuantity" 
                 type="number" 
                 step="any" 
-                placeholder="e.g., 1000"
+                placeholder="e.g., 5"
                 required
               >
             </div>
@@ -173,15 +173,11 @@
           </div>
           
           <div class="new-trade-input-container">
-            <label for="newTradeSession">Trading Session</label>
+            <label>Trading Session</label>
             <div class="new-trade-input-wrapper">
-              <select id="newTradeSession">
-                <option value="">Select Session</option>
-                <option value="Sydney">Sydney</option>
-                <option value="Tokyo">Tokyo</option>
-                <option value="London">London</option>
-                <option value="New York">New York</option>
-              </select>
+              <div class="trading-session-display" id="tradingSessionDisplay">
+                <span class="session-text">Loading...</span>
+              </div>
             </div>
           </div>
           
@@ -201,8 +197,9 @@
             <div class="new-trade-input-wrapper">
               <input 
                 id="newTradeStopLoss" 
-                type="text" 
-                placeholder="e.g., SL below swing low"
+                type="number" 
+                step="any"
+                placeholder="e.g., 1.2050"
               >
             </div>
           </div>
@@ -212,14 +209,15 @@
             <div class="new-trade-input-wrapper">
               <input 
                 id="newTradeTarget" 
-                type="text" 
-                placeholder="e.g., TP at PDH / 2R"
+                type="number" 
+                step="any"
+                placeholder="e.g., 1.2150"
               >
             </div>
           </div>
           
           <div class="new-trade-input-container">
-            <label for="newTradePnl">Realized P&L</label>
+            <label for="newTradePnl">Expected Profit Amount</label>
             <div class="new-trade-input-wrapper">
               <input 
                 id="newTradePnl" 
@@ -1170,7 +1168,7 @@
             <option value="New York">New York</option>
           </select>
         </div>
-        <div class="form-row"><label>Quantity</label><input id="quantity" type="number" step="any" placeholder="e.g., 1000"></div>
+        <div class="form-row"><label>Quantity</label><input id="quantity" type="number" step="any" placeholder="e.g., 5"></div>
         <div class="form-row"><label>Price</label><input id="price" type="number" step="any" placeholder="e.g., 1.2421"></div>
         <div class="form-row"><label>Realized P&L</label><input id="pnl" type="number" step="any" placeholder="e.g., 150.50"></div>
         <div class="form-row"><label>Stop Loss</label><input id="stopLossMsg" placeholder="e.g., SL below swing low"></div>
@@ -1323,15 +1321,18 @@
     
     <!-- Make timezone utilities available globally -->
     <script type="module">
-      import { 
-        isValidIanaTZ, 
-        normalizeZone, 
-        formatNowInSafe, 
-        isWeekendInZone, 
+      import {
+        isValidIanaTZ,
+        normalizeZone,
+        formatNowInSafe,
+        isWeekendInZone,
         SUPPORTED_ZONES,
         getAllIanaZones,
         gmtOffsetLabel,
-        buildZoneOptions
+        buildZoneOptions,
+        getActiveTradingSessions,
+        getTradingSessionInfo,
+        TRADING_SESSIONS
       } from './timezone-utilities.js';
       import { isMarketOpen, MARKETS } from './timezone-handler.js';
       
@@ -1344,7 +1345,10 @@
         SUPPORTED_ZONES,
         getAllIanaZones,
         gmtOffsetLabel,
-        buildZoneOptions
+        buildZoneOptions,
+        getActiveTradingSessions,
+        getTradingSessionInfo,
+        TRADING_SESSIONS
       };
       
       window.TimezoneHandler = {

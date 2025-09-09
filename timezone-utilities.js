@@ -250,3 +250,80 @@ export function zonedTodayAtUTC(tz, hour, minute, base = Date.now()) {
   const y = +parts.year, m = +parts.month, d = +parts.day;
   return Date.UTC(y, m - 1, d, hour, minute, 0, 0);
 }
+
+// Trading session detection based on UTC times
+export const TRADING_SESSIONS = {
+  Sydney: { start: 21, end: 6, name: 'Sydney' }, // 9PM to 6AM UTC
+  Tokyo: { start: 0, end: 9, name: 'Tokyo' },   // 12AM to 9AM UTC
+  London: { start: 7, end: 16, name: 'London' }, // 7AM to 4PM UTC
+  'New York': { start: 12, end: 21, name: 'New York' } // 12PM to 9PM UTC
+};
+
+/**
+ * Get active trading sessions based on current UTC time
+ * @returns {Array} Array of active session names
+ */
+export function getActiveTradingSessions() {
+  const now = new Date();
+  const utcHour = now.getUTCHours();
+  const activeSessions = [];
+  
+  Object.entries(TRADING_SESSIONS).forEach(([key, session]) => {
+    const { start, end, name } = session;
+    
+    // Handle sessions that cross midnight (like Sydney: 21-6)
+    if (start > end) {
+      // Session crosses midnight
+      if (utcHour >= start || utcHour < end) {
+        activeSessions.push(name);
+      }
+    } else {
+      // Normal session within same day
+      if (utcHour >= start && utcHour < end) {
+        activeSessions.push(name);
+      }
+    }
+  });
+  
+  return activeSessions;
+}
+
+/**
+ * Get trading session info for a specific timezone
+ * @param {string} timezone - IANA timezone identifier
+ * @returns {Object} Session info with active sessions and local time
+ */
+export function getTradingSessionInfo(timezone) {
+  if (!isValidIanaTZ(timezone)) {
+    return { activeSessions: [], localTime: null, error: 'Invalid timezone' };
+  }
+  
+  const activeSessions = getActiveTradingSessions();
+  const localTime = formatNowInSafe(timezone);
+  
+  return {
+    activeSessions,
+    localTime,
+    timezone,
+    utcTime: new Date().toISOString()
+  };
+}
+
+// Export functions for global access
+if (typeof window !== 'undefined') {
+  window.TimezoneUtils = {
+    isValidIanaTZ,
+    SUPPORTED_ZONES,
+    ALIAS_MAP,
+    normalizeZone,
+    formatNowInSafe,
+    isWeekendInZone,
+    zonedTodayAtUTC,
+    getAllIanaZones,
+    gmtOffsetLabel,
+    buildZoneOptions,
+    getActiveTradingSessions,
+    getTradingSessionInfo,
+    TRADING_SESSIONS
+  };
+}
