@@ -112,6 +112,7 @@ const demoEntries = [
 let state = {
   user: null,
   entries: [],
+  liveTrades: [],
   rules: [],
   filters: { search:"", side:"ALL", session:"", start:"", end:"", sort:"date_desc" },
   activeView: "dashboard",
@@ -129,6 +130,7 @@ let state = {
 function loadAll(){
   try{ state.user = JSON.parse(localStorage.getItem(USER_KEY) || "null"); }catch{ state.user=null; }
   try{ state.entries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || demoEntries; }catch{ state.entries = demoEntries; }
+  try{ state.liveTrades = JSON.parse(localStorage.getItem("liveTrades") || "[]"); }catch{ state.liveTrades = []; }
   try{ state.rules = JSON.parse(localStorage.getItem(RULES_KEY) || "[]"); }catch{ state.rules=[]; }
   try{ state.preferences = { ...state.preferences, ...JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") }; }catch{ /* Use defaults */ }
   try{ 
@@ -266,6 +268,14 @@ function saveEntries(){
     console.log("Entries saved to localStorage:", state.entries.length, "entries");
   } catch(error) {
     console.error("Error saving entries:", error);
+  }
+}
+function saveLiveTrades(){ 
+  try{ 
+    localStorage.setItem("liveTrades", JSON.stringify(state.liveTrades)); 
+    console.log("Live trades saved to localStorage:", state.liveTrades.length, "trades");
+  } catch(error) {
+    console.error("Error saving live trades:", error);
   }
 }
 function saveRules(){ try{ localStorage.setItem(RULES_KEY, JSON.stringify(state.rules)); }catch{} }
@@ -1822,11 +1832,17 @@ function renderRulesDonutChart() {
   const radius = 90;
   const innerRadius = 60;
 
-  // Count rules usage
+  // Count rules usage - split combined rules into individual rules
   const ruleCounts = {};
   state.entries.forEach(entry => {
     if (entry.ruleTitle) {
-      ruleCounts[entry.ruleTitle] = (ruleCounts[entry.ruleTitle] || 0) + 1;
+      // Split rules by comma and trim whitespace
+      const individualRules = entry.ruleTitle.split(',').map(rule => rule.trim()).filter(rule => rule !== '');
+      
+      // Count each individual rule
+      individualRules.forEach(rule => {
+        ruleCounts[rule] = (ruleCounts[rule] || 0) + 1;
+      });
     }
   });
 
@@ -1993,11 +2009,17 @@ document.addEventListener('click', (e) => {
 
 
 function getRulesData() {
-  // Count rules usage
+  // Count rules usage - split combined rules into individual rules
   const ruleCounts = {};
   state.entries.forEach(entry => {
     if (entry.ruleTitle) {
-      ruleCounts[entry.ruleTitle] = (ruleCounts[entry.ruleTitle] || 0) + 1;
+      // Split rules by comma and trim whitespace
+      const individualRules = entry.ruleTitle.split(',').map(rule => rule.trim()).filter(rule => rule !== '');
+      
+      // Count each individual rule
+      individualRules.forEach(rule => {
+        ruleCounts[rule] = (ruleCounts[rule] || 0) + 1;
+      });
     }
   });
 
@@ -2793,6 +2815,9 @@ function showNewTradeSteps() {
   // Show the new trade steps screen
   $("#newTradeSteps").classList.remove("hidden");
   
+  // Prevent body scroll
+  document.body.classList.add("trading-steps-open");
+  
   // Initialize navigation
   initNewTradeNavigation();
   
@@ -2816,6 +2841,8 @@ function showNewTradeSteps() {
 
 function hideNewTradeSteps() {
   $("#newTradeSteps").classList.add("hidden");
+  // Restore body scroll
+  document.body.classList.remove("trading-steps-open");
 }
 
 /**
@@ -3076,17 +3103,28 @@ function removeNewTradeRuleTag(ruleId) {
 }
 
 function showNewTradeStep(stepNumber) {
-  // Hide all steps
+  // Hide all steps (both regular and wide)
   $$(".new-trade-step").forEach(step => {
+    step.classList.add("hidden");
+  });
+  $$(".new-trade-step-wide").forEach(step => {
     step.classList.add("hidden");
   });
   
   // Show the current step
   $(`#newTradeStep${stepNumber}`).classList.remove("hidden");
   
+  // Update card width for step 5 (wide layout)
+  const card = $(".new-trade-card");
+  if (stepNumber === 5) {
+    card.style.width = "min(1200px, 95vw)";
+  } else {
+    card.style.width = "min(400px, 90vw)";
+  }
+  
   // Focus on the first input in the step
   setTimeout(() => {
-    const firstInput = $(`#newTradeStep${stepNumber}`).querySelector('input, select, textarea');
+    const firstInput = $(`#newTradeStep${stepNumber}`).querySelector('input, select, textarea, [contenteditable]');
     if (firstInput) {
       firstInput.focus();
     }
@@ -3094,6 +3132,9 @@ function showNewTradeStep(stepNumber) {
 }
 
 function initNewTradeNavigation() {
+  // Initialize Step 5 specific functionality
+  initStep5Functionality();
+  
   // Step 1 navigation
   $("#newTradeNext1").onclick = () => {
     if (validateNewTradeStep(1)) {
@@ -3192,8 +3233,8 @@ function validateNewTradeStep(stepNumber) {
 }
 
 function saveNewTrade() {
-  // Create a new entry object
-  const entry = {
+  // Create a new live trade object
+  const liveTrade = {
     id: uid(),
     date: new Date().toISOString().slice(0,10),
     symbol: $("#newTradeSymbol").value.trim().toUpperCase(),
@@ -3218,14 +3259,16 @@ function saveNewTrade() {
     })(),
     stopLossMsg: $("#newTradeStopLoss").value || "",
     targetPointMsg: $("#newTradeTarget").value || "",
-    notes: $("#newTradeNotes").value || ""
+    notes: $("#newTradeNotesEditor") ? $("#newTradeNotesEditor").innerHTML : "",
+    status: "live", // Mark as live trade
+    startTime: new Date().toISOString()
   };
   
-  // Add to entries
-  state.entries = [entry, ...state.entries];
+  // Add to live trades instead of entries
+  state.liveTrades = [liveTrade, ...state.liveTrades];
   
   // Save to localStorage
-  saveEntries();
+  saveLiveTrades();
   
   // Hide the new trade steps screen
   hideNewTradeSteps();
@@ -3233,11 +3276,1220 @@ function saveNewTrade() {
   // Update all displays
   renderAll();
   
+  // Navigate to Live Trade page
+  showView("pre-trade");
+  
   // Show success message
   setTimeout(() => {
-    alert("Trade saved successfully!");
+    alert("Live trade started successfully!");
   }, 100);
 }
+
+/* ---------- Step 5 Functionality ---------- */
+function initStep5Functionality() {
+  // Initialize text editor toolbar
+  initNotesEditor();
+  
+  // Initialize image upload
+  initPrechartUpload();
+}
+
+function initNotesEditor() {
+  const editor = document.getElementById("newTradeNotesEditor");
+  const toolbar = document.querySelector(".notes-toolbar");
+  
+  if (!editor || !toolbar) {
+    console.error("Editor or toolbar not found!");
+    return;
+  }
+  
+  // Handle toolbar button clicks
+  toolbar.addEventListener("click", (e) => {
+    const btn = e.target.closest(".toolbar-btn");
+    if (!btn) return;
+    
+    e.preventDefault();
+    
+    const command = btn.dataset.command;
+    if (command) {
+      // Remove active state from all buttons
+      toolbar.querySelectorAll(".toolbar-btn").forEach(b => b.classList.remove("active"));
+      
+      // Add active state to clicked button
+      btn.classList.add("active");
+      
+      // Handle link command specially
+      if (command === "createLink") {
+        const selection = window.getSelection();
+        if (selection.toString().trim()) {
+          const url = prompt("Enter the URL:");
+          if (url) {
+            const range = selection.getRangeAt(0);
+            const link = document.createElement('a');
+            
+            // Ensure URL has proper protocol
+            let fullUrl = url;
+            if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('mailto:')) {
+              fullUrl = 'https://' + url;
+            }
+            
+            link.href = fullUrl;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.innerHTML = selection.toString();
+            range.deleteContents();
+            range.insertNode(link);
+            selection.removeAllRanges();
+          }
+        } else {
+          alert("Please select text to create a link");
+        }
+      } else {
+        // Execute other commands
+      document.execCommand(command, false, null);
+      }
+      
+      // Focus back to editor
+      editor.focus();
+    }
+  });
+  
+  // Handle clicks on links in the editor
+  editor.addEventListener("click", (e) => {
+    const link = e.target.closest("a");
+    if (link) {
+      e.preventDefault();
+      // Always open links in new tab
+      window.open(link.href, "_blank", "noopener,noreferrer");
+    }
+  });
+  
+  // Handle heading selection
+  const headingSelect = $("#headingSelect");
+  if (headingSelect) {
+    headingSelect.addEventListener("change", (e) => {
+      const value = e.target.value;
+      const selection = window.getSelection();
+      
+      const selectedText = selection.toString().trim();
+      
+      // More robust selection check
+      const isInEditor = selection.anchorNode && (
+        editor.contains(selection.anchorNode) || 
+        editor.contains(selection.focusNode) ||
+        selection.anchorNode === editor ||
+        selection.focusNode === editor
+      );
+      
+      if (selectedText && isInEditor) {
+        if (value) {
+          // Check if the selected text is already a heading
+          const range = selection.getRangeAt(0);
+          const container = range.commonAncestorContainer;
+          
+          // If the selection is already inside a heading, just change the tag
+          let existingHeading = null;
+          if (container.nodeType === Node.TEXT_NODE) {
+            existingHeading = container.parentElement;
+          } else {
+            existingHeading = container;
+          }
+          
+          // Check if we're already inside a heading element
+          while (existingHeading && existingHeading !== editor) {
+            if (existingHeading.tagName && existingHeading.tagName.match(/^H[1-6]$/)) {
+              // We're inside a heading, replace it
+              const newHeading = document.createElement(value);
+              newHeading.innerHTML = selectedText;
+              existingHeading.parentNode.replaceChild(newHeading, existingHeading);
+              selection.removeAllRanges();
+              editor.focus();
+              return;
+            }
+            existingHeading = existingHeading.parentElement;
+          }
+          
+          // Create new heading element for selected text
+          const headingElement = document.createElement(value);
+          headingElement.innerHTML = selectedText;
+          range.deleteContents();
+          range.insertNode(headingElement);
+          
+          // Clear selection and focus editor
+          selection.removeAllRanges();
+        } else {
+          // Convert back to normal text
+          const range = selection.getRangeAt(0);
+          const textNode = document.createTextNode(selectedText);
+          range.deleteContents();
+          range.insertNode(textNode);
+          
+          // Clear selection and focus editor
+          selection.removeAllRanges();
+        }
+      } else {
+        alert("Please select text in the editor to apply heading");
+      }
+      
+      editor.focus();
+    });
+  }
+  
+  
+  // Handle text alignment cycling button
+  const textAlignBtn = document.getElementById("textAlignBtn");
+  const textAlignIcon = document.getElementById("textAlignIcon");
+  
+  if (textAlignBtn && textAlignIcon) {
+    // Alignment states: left -> center -> right -> justify -> left (cycle)
+    const alignmentStates = [
+      { command: 'justifyLeft', icon: 'format_align_left', title: 'Align Left' },
+      { command: 'justifyCenter', icon: 'format_align_center', title: 'Align Center' },
+      { command: 'justifyRight', icon: 'format_align_right', title: 'Align Right' },
+      { command: 'justifyFull', icon: 'format_align_justify', title: 'Justify Text' }
+    ];
+    
+    let currentAlignmentIndex = 0;
+    
+    // Initialize alignment button
+    function updateAlignmentButton() {
+      const currentState = alignmentStates[currentAlignmentIndex];
+      textAlignIcon.textContent = currentState.icon;
+      textAlignBtn.title = currentState.title;
+      
+      // Check if current alignment is active and update button state
+      if (document.queryCommandState(currentState.command)) {
+        textAlignBtn.classList.add("active");
+      } else {
+        textAlignBtn.classList.remove("active");
+      }
+    }
+    
+    // Handle alignment button click
+    textAlignBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Cycle to next alignment
+      currentAlignmentIndex = (currentAlignmentIndex + 1) % alignmentStates.length;
+      const currentState = alignmentStates[currentAlignmentIndex];
+      
+      // Execute alignment command
+      document.execCommand(currentState.command, false, null);
+      
+      // Update button appearance
+      updateAlignmentButton();
+      
+      // Focus back to editor
+      editor.focus();
+    });
+    
+    // Update alignment button on selection change
+    function updateAlignmentOnSelection() {
+      // Check which alignment is currently active
+      for (let i = 0; i < alignmentStates.length; i++) {
+        if (document.queryCommandState(alignmentStates[i].command)) {
+          currentAlignmentIndex = i;
+          updateAlignmentButton();
+          break;
+        }
+      }
+    }
+    
+    // Listen for selection changes to update button state
+    document.addEventListener("selectionchange", updateAlignmentOnSelection);
+    
+    // Initialize button state
+    updateAlignmentButton();
+  }
+  
+  // Handle list cycling button
+  const listBtn = document.getElementById("listBtn");
+  const listIcon = document.getElementById("listIcon");
+  
+  if (listBtn && listIcon) {
+    // List states: default -> bullet -> numbered -> default (cycle)
+    const listStates = [
+      { command: 'none', icon: 'format_list_bulleted', title: 'Default Text' },
+      { command: 'insertUnorderedList', icon: 'format_list_bulleted', title: 'Bullet List' },
+      { command: 'insertOrderedList', icon: 'format_list_numbered', title: 'Numbered List' }
+    ];
+    
+    let currentListIndex = 0;
+    let clickCount = 0;
+    
+    // Initialize list button
+    function updateListButton() {
+      const currentState = listStates[currentListIndex];
+      listIcon.textContent = currentState.icon;
+      listBtn.title = currentState.title;
+      
+      // Check if current list type is active and update button state
+      if (currentState.command === 'none') {
+        // For default, check if no list is active
+        const hasUnorderedList = document.queryCommandState('insertUnorderedList');
+        const hasOrderedList = document.queryCommandState('insertOrderedList');
+        if (!hasUnorderedList && !hasOrderedList) {
+          listBtn.classList.add("active");
+        } else {
+          listBtn.classList.remove("active");
+        }
+      } else {
+        if (document.queryCommandState(currentState.command)) {
+          listBtn.classList.add("active");
+        } else {
+          listBtn.classList.remove("active");
+        }
+      }
+    }
+    
+    // Handle list button click
+    listBtn.addEventListener("click", (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      // Increment click count
+      clickCount++;
+      
+      // First, remove any existing list formatting
+      if (document.queryCommandState('insertUnorderedList')) {
+        document.execCommand('insertUnorderedList', false, null);
+      }
+      if (document.queryCommandState('insertOrderedList')) {
+        document.execCommand('insertOrderedList', false, null);
+      }
+      
+      // Apply formatting based on click count
+      if (clickCount === 1) {
+        // 1st click: Apply bullet list
+        document.execCommand('insertUnorderedList', false, null);
+        currentListIndex = 1;
+      } else if (clickCount === 2) {
+        // 2nd click: Apply numbered list
+        document.execCommand('insertOrderedList', false, null);
+        currentListIndex = 2;
+      } else if (clickCount === 3) {
+        // 3rd click: Back to default (no list)
+        currentListIndex = 0;
+        clickCount = 0; // Reset click count
+      }
+      
+      // Update button appearance
+      updateListButton();
+      
+      // Focus back to editor
+      editor.focus();
+    });
+    
+    // Update list button on selection change
+    function updateListOnSelection() {
+      // Check which list type is currently active
+      const hasUnorderedList = document.queryCommandState('insertUnorderedList');
+      const hasOrderedList = document.queryCommandState('insertOrderedList');
+      
+      if (hasUnorderedList) {
+        currentListIndex = 1; // Bullet list
+        clickCount = 1;
+      } else if (hasOrderedList) {
+        currentListIndex = 2; // Numbered list
+        clickCount = 2;
+      } else {
+        currentListIndex = 0; // Default text
+        clickCount = 0;
+      }
+      
+      updateListButton();
+    }
+    
+    // Listen for selection changes to update button state
+    document.addEventListener("selectionchange", updateListOnSelection);
+    
+    // Initialize button state
+    updateListButton();
+  }
+  
+  // Handle editor content changes
+  editor.addEventListener("input", () => {
+    // Update active states based on current selection
+    updateToolbarStates();
+  });
+  
+  // Handle selection changes - only show toolbar after selection is complete
+  document.addEventListener("selectionchange", () => {
+    updateToolbarStates();
+    // Don't show toolbar during selection, only after it's complete
+  });
+  
+  // Handle mouse up in editor for text selection - capture mouse coordinates
+  editor.addEventListener("mouseup", (e) => {
+    // Only show toolbar if there's actually selected text
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (selection.toString().trim()) {
+        showTooltipOnSelection(e.clientX, e.clientY);
+      }
+    }, 100); // Increased delay to ensure selection is complete
+  });
+  
+  // Handle key up events for selection - only if text is selected
+  editor.addEventListener("keyup", () => {
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (selection.toString().trim()) {
+        showTooltipOnSelection();
+      }
+    }, 100); // Increased delay to ensure selection is complete
+  });
+  
+  // Handle scroll events - toolbar will auto-reposition via interval
+  editor.addEventListener("scroll", () => {
+    // The continuous positioning will handle this automatically
+  });
+  
+  // Handle window resize - toolbar will auto-reposition via interval
+  window.addEventListener("resize", () => {
+    // The continuous positioning will handle this automatically
+  });
+  
+  // Handle input events to detect content changes
+  editor.addEventListener("input", () => {
+    // The continuous positioning will handle this automatically
+  });
+  
+  // Set up MutationObserver to detect DOM changes
+  const observer = new MutationObserver((mutations) => {
+    if (isToolbarVisible) {
+      // Check if any mutations affect the editor content
+      const hasContentChanges = mutations.some(mutation => 
+        mutation.type === 'childList' || 
+        mutation.type === 'characterData' ||
+        (mutation.type === 'attributes' && (
+          mutation.attributeName === 'style' ||
+          mutation.attributeName === 'class' ||
+          mutation.attributeName === 'contenteditable'
+        ))
+      );
+      
+      if (hasContentChanges) {
+        // Use requestAnimationFrame for smooth repositioning
+        requestAnimationFrame(() => {
+          positionToolbarAtMouseCoordinates();
+        });
+      }
+    }
+  });
+  
+  // Start observing the editor and its parent containers for changes
+  observer.observe(editor, {
+    childList: true,
+    subtree: true,
+    characterData: true,
+    attributes: true,
+    attributeFilter: ['style', 'class', 'contenteditable']
+  });
+  
+  // Also observe parent containers that might affect layout
+  const parentContainer = editor.closest('.step5-content');
+  if (parentContainer) {
+    observer.observe(parentContainer, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['style', 'class']
+    });
+  }
+  
+  // Hide toolbar when clicking outside
+  document.addEventListener("click", (e) => {
+    if (!editor.contains(e.target) && !toolbar.contains(e.target) && !colorPickerDropdown.contains(e.target)) {
+      hideToolbar();
+      colorPickerDropdown.classList.remove("show");
+    }
+  });
+}
+
+// Global variables for toolbar positioning
+let toolbarPositionInterval = null;
+let isToolbarVisible = false;
+let toolbarRepositionCallbacks = [];
+let lastMousePosition = { x: 0, y: 0 };
+
+function showTooltipOnSelection(mouseX = null, mouseY = null) {
+  const editor = $("#newTradeNotesEditor");
+  const toolbar = editor.parentElement.querySelector(".notes-toolbar");
+  
+  if (!editor || !toolbar) return;
+  
+  const selection = window.getSelection();
+  
+  // Check if there's a selection and it's within the editor
+  if (selection.toString().trim() && editor.contains(selection.anchorNode)) {
+    try {
+      // Store mouse position if provided
+      if (mouseX !== null && mouseY !== null) {
+        lastMousePosition.x = mouseX;
+        lastMousePosition.y = mouseY;
+      }
+      
+      // Clear any existing position tracking
+      if (toolbarPositionInterval) {
+        clearInterval(toolbarPositionInterval);
+      }
+      
+      // Show toolbar immediately
+      toolbar.style.display = "flex";
+      toolbar.classList.add("show");
+      isToolbarVisible = true;
+      
+      // Position toolbar immediately at mouse coordinates
+      positionToolbarAtMouseCoordinates();
+      
+      // Start continuous position tracking to ensure toolbar stays visible
+      toolbarPositionInterval = setInterval(() => {
+        if (isToolbarVisible) {
+          const currentSelection = window.getSelection();
+          if (currentSelection.toString().trim() && editor.contains(currentSelection.anchorNode)) {
+            // Keep toolbar at the same mouse position, but check if it's still visible
+            positionToolbarAtMouseCoordinates();
+          } else {
+            hideToolbar();
+          }
+        }
+      }, 100); // Check every 100ms
+      
+      // Set up comprehensive event listeners for repositioning
+      setupToolbarRepositionListeners();
+      
+    } catch (error) {
+      console.error("Error positioning toolbar:", error);
+      hideToolbar();
+    }
+  } else {
+    hideToolbar();
+  }
+}
+
+function positionToolbarAtMouseCoordinates() {
+  const editor = $("#newTradeNotesEditor");
+  const toolbar = editor.parentElement.querySelector(".notes-toolbar");
+  
+  if (!editor || !toolbar) return;
+  
+  try {
+    // Set toolbar to fixed positioning relative to viewport
+    toolbar.style.position = 'fixed';
+    toolbar.style.zIndex = '1000';
+    
+    // Get actual toolbar dimensions
+    const toolbarWidth = toolbar.offsetWidth;
+    const toolbarHeight = toolbar.offsetHeight;
+    
+    // Calculate position using absolute mouse coordinates (viewport-relative)
+    let left = lastMousePosition.x - (toolbarWidth / 2); // Center horizontally over mouse
+    let top = lastMousePosition.y - toolbarHeight - 15; // Show above mouse
+    
+    // Ensure toolbar doesn't overflow off-screen horizontally
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    if (left < 10) {
+      left = 10; // Keep 10px margin from left edge
+    } else if (left + toolbarWidth > viewportWidth - 10) {
+      left = viewportWidth - toolbarWidth - 10; // Keep 10px margin from right edge
+    }
+    
+    // If not enough space above mouse, show below mouse
+    if (top < 10) {
+      top = lastMousePosition.y + 15; // Show below mouse with 15px gap
+    }
+    
+    // Apply position with smooth transition
+    toolbar.style.transition = 'left 0.1s ease-out, top 0.1s ease-out';
+    toolbar.style.left = `${left}px`;
+    toolbar.style.top = `${top}px`;
+    
+    console.log("Toolbar positioned at fixed mouse coordinates:", {
+      mousePosition: { x: lastMousePosition.x, y: lastMousePosition.y },
+      toolbarPosition: { left, top },
+      viewportSize: { width: viewportWidth, height: viewportHeight },
+      toolbarSize: { width: toolbarWidth, height: toolbarHeight }
+    });
+    
+  } catch (error) {
+    console.error("Error in positionToolbarAtMouseCoordinates:", error);
+    hideToolbar();
+  }
+}
+
+function setupToolbarRepositionListeners() {
+  const editor = $("#newTradeNotesEditor");
+  
+  // Clear existing callbacks
+  toolbarRepositionCallbacks.forEach(callback => {
+    if (callback.element && callback.event && callback.handler) {
+      callback.element.removeEventListener(callback.event, callback.handler);
+    }
+  });
+  toolbarRepositionCallbacks = [];
+  
+  // Scroll events
+  const scrollHandler = () => {
+    if (isToolbarVisible) {
+      requestAnimationFrame(() => {
+        positionToolbarAtMouseCoordinates();
+      });
+    }
+  };
+  
+  // Window scroll
+  window.addEventListener('scroll', scrollHandler, { passive: true });
+  toolbarRepositionCallbacks.push({
+    element: window,
+    event: 'scroll',
+    handler: scrollHandler
+  });
+  
+  // Editor scroll
+  editor.addEventListener('scroll', scrollHandler, { passive: true });
+  toolbarRepositionCallbacks.push({
+    element: editor,
+    event: 'scroll',
+    handler: scrollHandler
+  });
+  
+  // Resize events
+  const resizeHandler = () => {
+    if (isToolbarVisible) {
+      setTimeout(() => {
+        positionToolbarAtMouseCoordinates();
+      }, 100);
+    }
+  };
+  
+  window.addEventListener('resize', resizeHandler);
+  toolbarRepositionCallbacks.push({
+    element: window,
+    event: 'resize',
+    handler: resizeHandler
+  });
+  
+  // Input events (for content changes)
+  const inputHandler = () => {
+    if (isToolbarVisible) {
+      requestAnimationFrame(() => {
+        positionToolbarAtMouseCoordinates();
+      });
+    }
+  };
+  
+  editor.addEventListener('input', inputHandler);
+  toolbarRepositionCallbacks.push({
+    element: editor,
+    event: 'input',
+    handler: inputHandler
+  });
+  
+  // Selection change events
+  const selectionChangeHandler = () => {
+    if (isToolbarVisible) {
+      requestAnimationFrame(() => {
+        positionToolbarAtMouseCoordinates();
+      });
+    }
+  };
+  
+  document.addEventListener('selectionchange', selectionChangeHandler);
+  toolbarRepositionCallbacks.push({
+    element: document,
+    event: 'selectionchange',
+    handler: selectionChangeHandler
+  });
+}
+
+function hideToolbar() {
+  const editor = $("#newTradeNotesEditor");
+  const toolbar = editor.parentElement.querySelector(".notes-toolbar");
+  const colorPickerDropdown = $("#colorPickerDropdown");
+  
+  if (toolbar) {
+    toolbar.classList.remove("show");
+    toolbar.style.display = "none";
+  }
+  
+  // Also hide the color picker dropdown when toolbar is hidden
+  if (colorPickerDropdown) {
+    colorPickerDropdown.classList.remove("show");
+  }
+  
+  isToolbarVisible = false;
+  
+  // Clear position tracking
+  if (toolbarPositionInterval) {
+    clearInterval(toolbarPositionInterval);
+    toolbarPositionInterval = null;
+  }
+  
+  // Remove all reposition listeners
+  toolbarRepositionCallbacks.forEach(callback => {
+    if (callback.element && callback.event && callback.handler) {
+      callback.element.removeEventListener(callback.event, callback.handler);
+    }
+  });
+  toolbarRepositionCallbacks = [];
+}
+
+function updateToolbarStates() {
+  const editor = $("#newTradeNotesEditor");
+  const toolbar = editor.parentElement.querySelector(".notes-toolbar");
+  
+  if (!editor || !toolbar) return;
+  
+  // Update button states based on current formatting
+  const commands = ["bold", "italic", "underline", "strikeThrough"];
+  commands.forEach(command => {
+    const btn = toolbar.querySelector(`[data-command="${command}"]`);
+    if (btn) {
+      if (document.queryCommandState(command)) {
+        btn.classList.add("active");
+      } else {
+        btn.classList.remove("active");
+      }
+    }
+  });
+}
+
+function initPrechartUpload() {
+  const fileInput = $("#prechartFileInput");
+  const addBtn = $("#addPrechartFiles");
+  const container = $(".prechart-container");
+  const imagesContainer = $("#prechartImages");
+  const placeholder = $("#prechartPlaceholder");
+  
+  if (!fileInput || !addBtn || !container) return;
+  
+  // Handle add files button click
+  addBtn.addEventListener("click", () => {
+    fileInput.click();
+  });
+  
+  // Handle file selection
+  fileInput.addEventListener("change", (e) => {
+    const files = Array.from(e.target.files);
+    const maxSize = 1 * 1024 * 1024; // 1MB in bytes
+    const rejectedFiles = [];
+    
+    files.forEach(file => {
+      if (file.type.startsWith("image/")) {
+        if (file.size <= maxSize) {
+        addPrechartImage(file);
+        } else {
+          rejectedFiles.push(file.name);
+        }
+      }
+    });
+    
+    // Show error message for rejected files
+    if (rejectedFiles.length > 0) {
+      const fileNames = rejectedFiles.join(", ");
+      alert(`The following files are too large (max 1MB): ${fileNames}`);
+    }
+    
+    // Reset input
+    fileInput.value = "";
+  });
+  
+  // Handle drag and drop
+  container.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    
+    if (isDarkMode) {
+      container.style.borderColor = "#60a5fa";
+      container.style.boxShadow = `
+        inset 0 0em 4em rgba(134, 134, 134, 0.4),
+        inset 0 0em 2em rgba(59, 130, 246, 0.2),
+        inset 0 0em 0.5em rgba(168, 85, 247, 0.1)
+      `;
+      container.style.animation = "gradientBorder 50s linear infinite";
+    } else {
+    container.style.borderColor = "#3b82f6";
+      container.style.boxShadow = `
+        inset 0 0em 4em rgba(63, 63, 63, 0.4),
+        inset 0 0em 2em rgba(59, 130, 246, 0.2),
+        inset 0 0em 0.5em rgba(168, 85, 247, 0.1)
+      `;
+      container.style.animation = "gradientBorder 40s linear infinite";
+    }
+  });
+  
+  container.addEventListener("dragleave", (e) => {
+    e.preventDefault();
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    
+    // Reset styles
+    container.style.boxShadow = "";
+    container.style.animation = "";
+    
+    if (isDarkMode) {
+      container.style.borderColor = "#434343";
+      container.style.background = "var(--surface)";
+    } else {
+    container.style.borderColor = "#d1d5db";
+    container.style.background = "#f9fafb";
+    }
+  });
+  
+  container.addEventListener("drop", (e) => {
+    e.preventDefault();
+    const isDarkMode = document.body.classList.contains('dark-mode');
+    
+    // Reset styles
+    container.style.boxShadow = "";
+    container.style.animation = "";
+    
+    if (isDarkMode) {
+      container.style.borderColor = "#434343";
+      container.style.background = "var(--surface)";
+    } else {
+    container.style.borderColor = "#d1d5db";
+    container.style.background = "#f9fafb";
+    }
+    
+    const files = Array.from(e.dataTransfer.files);
+    const maxSize = 1 * 1024 * 1024; // 1MB in bytes
+    const rejectedFiles = [];
+    
+    files.forEach(file => {
+      if (file.type.startsWith("image/")) {
+        if (file.size <= maxSize) {
+        addPrechartImage(file);
+        } else {
+          rejectedFiles.push(file.name);
+        }
+      }
+    });
+    
+    // Show error message for rejected files
+    if (rejectedFiles.length > 0) {
+      const fileNames = rejectedFiles.join(", ");
+      alert(`The following files are too large (max 1MB): ${fileNames}`);
+    }
+  });
+}
+
+function addPrechartImage(file) {
+  const imagesContainer = $("#prechartImages");
+  const container = $(".prechart-container");
+  const placeholder = $("#prechartPlaceholder");
+  
+  if (!imagesContainer || !container) return;
+  
+  // Create image element
+  const imageItem = document.createElement("div");
+  imageItem.className = "prechart-image-item";
+  
+  const img = document.createElement("img");
+  const removeBtn = document.createElement("button");
+  removeBtn.className = "remove-image";
+  removeBtn.innerHTML = "×";
+  
+  // Set up image
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    img.src = e.target.result;
+    img.style.cursor = "pointer"; // Add pointer cursor to indicate clickable
+    imageItem.appendChild(img);
+    imageItem.appendChild(removeBtn);
+    imagesContainer.appendChild(imageItem);
+    
+    // Hide placeholder and show images
+    if (placeholder) placeholder.style.display = "none";
+    container.classList.add("has-images");
+    
+    // Add click functionality to open image
+    img.addEventListener("click", (clickEvent) => {
+      clickEvent.stopPropagation();
+      console.log("Image clicked, opening modal...");
+      openImageModal(e.target.result);
+    });
+  };
+  reader.readAsDataURL(file);
+  
+  // Handle remove button
+  removeBtn.addEventListener("click", (e) => {
+    e.stopPropagation(); // Prevent event bubbling to image click
+    imageItem.remove();
+    
+    // Show placeholder if no images left
+    if (imagesContainer.children.length === 0) {
+      if (placeholder) placeholder.style.display = "flex";
+      container.classList.remove("has-images");
+    }
+  });
+}
+
+function openImageModal(imageSrc) {
+  console.log("openImageModal called with:", imageSrc);
+  // Create modal overlay
+  const modal = document.createElement("div");
+  modal.className = "image-modal-overlay";
+  modal.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    cursor: pointer;
+  `;
+  
+  // Create modal content
+  const modalContent = document.createElement("div");
+  modalContent.style.cssText = `
+    width: 100%;
+    height: 100%;
+    position: relative;
+    cursor: default;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  `;
+  
+  // Create image container
+  const imageContainer = document.createElement("div");
+  imageContainer.style.cssText = `
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: visible;
+  `;
+  
+  // Create image element
+  const modalImg = document.createElement("img");
+  modalImg.src = imageSrc;
+  modalImg.style.cssText = `
+    max-width: 60%;
+    max-height: 60%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease;
+    transform-origin: center;
+    cursor: grab;
+    user-select: none;
+  `;
+  
+  // Drag functionality
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let currentX = 0;
+  let currentY = 0;
+  
+  // Boundary constraints
+  const getBoundaryLimits = () => {
+    const imgRect = modalImg.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    
+    // Get the original image dimensions
+    const originalWidth = imgRect.width / currentZoom;
+    const originalHeight = imgRect.height / currentZoom;
+    
+    // Calculate scaled dimensions
+    const scaledWidth = originalWidth * currentZoom;
+    const scaledHeight = originalHeight * currentZoom;
+    
+    // Calculate maximum movement - ensure image doesn't go completely off-screen
+    const maxMoveX = Math.max(0, (scaledWidth - viewportWidth * 0.8) / 2);
+    const maxMoveY = Math.max(0, (scaledHeight - viewportHeight * 0.8) / 2);
+    
+    return { maxMoveX, maxMoveY };
+  };
+  
+  const constrainPosition = (x, y) => {
+    const { maxMoveX, maxMoveY } = getBoundaryLimits();
+    
+    return {
+      x: Math.max(-maxMoveX, Math.min(maxMoveX, x)),
+      y: Math.max(-maxMoveY, Math.min(maxMoveY, y))
+    };
+  };
+  
+  modalImg.addEventListener("mousedown", (e) => {
+    e.preventDefault();
+    isDragging = true;
+    startX = e.clientX;
+    startY = e.clientY;
+    modalImg.style.cursor = "grabbing";
+    modalImg.style.transition = "none";
+  });
+  
+  document.addEventListener("mousemove", (e) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    
+    const deltaX = e.clientX - startX;
+    const deltaY = e.clientY - startY;
+    
+    const newX = currentX + deltaX;
+    const newY = currentY + deltaY;
+    
+    const constrained = constrainPosition(newX, newY);
+    currentX = constrained.x;
+    currentY = constrained.y;
+    
+    startX = e.clientX;
+    startY = e.clientY;
+    
+    updateImageTransform();
+  });
+  
+  document.addEventListener("mouseup", () => {
+    if (isDragging) {
+      isDragging = false;
+      modalImg.style.cursor = "grab";
+      modalImg.style.transition = "transform 0.3s ease";
+    }
+  });
+  
+  // Touch events for mobile
+  modalImg.addEventListener("touchstart", (e) => {
+    e.preventDefault();
+    isDragging = true;
+    const touch = e.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    modalImg.style.transition = "none";
+  });
+  
+  document.addEventListener("touchmove", (e) => {
+    if (!isDragging) return;
+    
+    e.preventDefault();
+    const touch = e.touches[0];
+    
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    
+    const newX = currentX + deltaX;
+    const newY = currentY + deltaY;
+    
+    const constrained = constrainPosition(newX, newY);
+    currentX = constrained.x;
+    currentY = constrained.y;
+    
+    startX = touch.clientX;
+    startY = touch.clientY;
+    
+    updateImageTransform();
+  });
+  
+  document.addEventListener("touchend", () => {
+    if (isDragging) {
+      isDragging = false;
+      modalImg.style.transition = "transform 0.3s ease";
+    }
+  });
+  
+  const updateImageTransform = () => {
+    modalImg.style.transform = `scale(${currentZoom}) translate(${currentX / currentZoom}px, ${currentY / currentZoom}px)`;
+  };
+  
+  // Create zoom controls
+  const zoomControls = document.createElement("div");
+  zoomControls.style.cssText = `
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 13px;
+    background: #00000085;
+    border-radius: 50px;
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    z-index: 10001;
+  `;
+  
+  // Create zoom out button
+  const zoomOutBtn = document.createElement("button");
+  zoomOutBtn.innerHTML = "−";
+  zoomOutBtn.style.cssText = `
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  `;
+  
+  // Create zoom level display
+  const zoomLevel = document.createElement("span");
+  zoomLevel.style.cssText = `
+    color: white;
+    font-size: 16px;
+    font-weight: 600;
+    min-width: 60px;
+    text-align: center;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  `;
+  
+  // Create zoom in button
+  const zoomInBtn = document.createElement("button");
+  zoomInBtn.innerHTML = "+";
+  zoomInBtn.style.cssText = `
+    width: 45px;
+    height: 45px;
+    background: rgba(255, 255, 255, 0.3);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    font-size: 24px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  `;
+  
+  // Create close button
+  const closeBtn = document.createElement("button");
+  closeBtn.innerHTML = "×";
+  closeBtn.style.cssText = `
+       position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 40px;
+    height: 30px;
+    background: rgb(85 85 85 / 36%);
+    color: #ffffff;
+    border: none;
+    border-radius: 60px;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    z-index: 1;
+    padding: 18px 11px 22px 10px;
+    backdrop-filter: blur(20px);
+}
+  `;
+  
+  // Zoom functionality
+  let currentZoom = 1;
+  const minZoom = 0.5;
+  const maxZoom = 3;
+  
+  const updateZoom = () => {
+    updateImageTransform();
+    zoomLevel.textContent = `${Math.round(currentZoom * 100)}%`;
+  };
+  
+  zoomOutBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (currentZoom > minZoom) {
+      currentZoom -= 0.25;
+      updateZoom();
+    }
+  });
+  
+  zoomInBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (currentZoom < maxZoom) {
+      currentZoom += 0.25;
+      updateZoom();
+    }
+  });
+  
+  // Hover effects for zoom buttons
+  zoomOutBtn.addEventListener("mouseenter", () => {
+    zoomOutBtn.style.background = "rgba(255, 255, 255, 0.5)";
+    zoomOutBtn.style.transform = "scale(1.1)";
+  });
+  zoomOutBtn.addEventListener("mouseleave", () => {
+    zoomOutBtn.style.background = "rgba(255, 255, 255, 0.3)";
+    zoomOutBtn.style.transform = "scale(1)";
+  });
+  
+  zoomInBtn.addEventListener("mouseenter", () => {
+    zoomInBtn.style.background = "rgba(255, 255, 255, 0.5)";
+    zoomInBtn.style.transform = "scale(1.1)";
+  });
+  zoomInBtn.addEventListener("mouseleave", () => {
+    zoomInBtn.style.background = "rgba(255, 255, 255, 0.3)";
+    zoomInBtn.style.transform = "scale(1)";
+  });
+  
+  // Initialize zoom level
+  updateZoom();
+  
+  // Add buttons to zoom controls
+  zoomControls.appendChild(zoomOutBtn);
+  zoomControls.appendChild(zoomLevel);
+  zoomControls.appendChild(zoomInBtn);
+  
+  // Assemble modal
+  imageContainer.appendChild(modalImg);
+  imageContainer.appendChild(closeBtn);
+  modalContent.appendChild(imageContainer);
+  modal.appendChild(modalContent);
+  
+  // Add zoom controls directly to body (sticky positioning)
+  document.body.appendChild(zoomControls);
+  document.body.appendChild(modal);
+  
+  // Close modal functions
+  const closeModal = () => {
+    document.body.removeChild(modal);
+    document.body.removeChild(zoomControls);
+  };
+  
+  closeBtn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    closeModal();
+  });
+  
+  modal.addEventListener("click", (e) => {
+    if (e.target === modal) {
+      closeModal();
+    }
+  });
+  
+  // Close on Escape key
+  const handleKeyDown = (e) => {
+    if (e.key === "Escape") {
+      closeModal();
+      document.removeEventListener("keydown", handleKeyDown);
+    }
+  };
+  document.addEventListener("keydown", handleKeyDown);
+}
+
 function submitEntry(e){
   e.preventDefault();
   const id = $("#id").value;
@@ -4359,10 +5611,186 @@ function getFilteredEntriesByTimeRange() {
   });
 }
 
+/* ---------- Live Trades Rendering ---------- */
+function renderLiveTrades() {
+  const containers = document.querySelector('.live-trade-containers');
+  if (!containers) return;
+  
+  // Clear existing content
+  containers.innerHTML = '';
+  
+  if (state.liveTrades.length === 0) {
+    containers.innerHTML = `
+      <div class="live-trade-empty-state">
+        <div class="empty-state-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="url(#lightningGradient)" stroke="none"/>
+            <defs>
+              <linearGradient id="lightningGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#FFD700;stop-opacity:1" />
+                <stop offset="30%" style="stop-color:#FFA500;stop-opacity:1" />
+                <stop offset="70%" style="stop-color:#FF8C00;stop-opacity:1" />
+                <stop offset="100%" style="stop-color:#FF6347;stop-opacity:1" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <h3 class="empty-state-title">No Live Trades</h3>
+        <p class="empty-state-description">Start a new trade to see it appear here.</p>
+        <button class="empty-state-button" onclick="openNewEntry()">Start New Trade</button>
+      </div>
+    `;
+    return;
+  }
+  
+  // Generate live trade cards
+  state.liveTrades.forEach(trade => {
+    const card = createLiveTradeCard(trade);
+    containers.appendChild(card);
+  });
+}
+
+function createLiveTradeCard(trade) {
+  const card = document.createElement('div');
+  card.className = 'live-trade-card';
+  card.dataset.tradeId = trade.id;
+  card.dataset.tradeSide = trade.side;
+  
+  // Format date and time
+  const startDate = new Date(trade.startTime);
+  const formattedDate = startDate.toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric', 
+    year: 'numeric' 
+  });
+  const formattedTime = startDate.toLocaleTimeString('en-US', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  });
+  
+  // Show only the currency name without /USD
+  const currencyName = trade.symbol;
+  
+  // Determine trade direction icon - different icons for Buy vs Sell
+  const directionIcon = trade.side === 'Buy' ? 
+    // Upward-rightward arrow for Buy
+    '<path d="M440-320h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168Zm40 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>' :
+    // Downward-rightward arrow for Sell (rotated 90 degrees counter-clockwise)
+    '<path d="M440-320h80v-168l64 64 56-56-160-160-160 160 56 56 64-64v168Zm40 240q-83 0-156-31.5T197-197q-54-54-85.5-127T80-480q0-83 31.5-156T197-763q54-54 127-85.5T480-880q83 0 156 31.5T763-763q54 54 85.5 127T880-480q0 83-31.5 156T763-197q-54 54-127 85.5T480-80Zm0-80q134 0 227-93t93-227q0-134-93-227t-227-93q-134 0-227 93t-93 227q0 134 93 227t227 93Zm0-320Z"/>';
+  
+  const directionColor = trade.side === 'Buy' ? '#10b981' : '#ef4444';
+  
+  card.innerHTML = `
+    <div class="trade-card-header">
+      <div class="currency-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="currentColor">
+          <path d="M480-40q-112 0-206-51T120-227v107H40v-240h240v80h-99q48 72 126.5 116T480-120q75 0 140.5-28.5t114-77q48.5-48.5 77-114T840-480h80q0 91-34.5 171T791-169q-60 60-140 94.5T480-40Zm-36-160v-52q-47-11-76.5-40.5T324-370l66-26q12 41 37.5 61.5T486-314q33 0 56.5-15.5T566-378q0-29-24.5-47T454-466q-59-21-86.5-50T340-592q0-41 28.5-74.5T446-710v-50h70v50q36 3 65.5 29t40.5 61l-64 26q-8-23-26-38.5T482-648q-35 0-53.5 15T410-592q0 26 23 41t83 35q72 26 96 61t24 77q0 29-10 51t-26.5 37.5Q583-274 561-264.5T514-250v50h-70ZM40-480q0-91 34.5-171T169-791q60-60 140-94.5T480-920q112 0 206 51t154 136v-107h80v240H680v-80h99q-48-72-126.5-116T480-840q-75 0-140.5 28.5t-114 77q-48.5 48.5-77 114T120-480H40Z"/>
+        </svg>
+      </div>
+      <div class="currency-name">${currencyName}</div>
+    </div>
+    <div class="trade-date-section">
+      <div class="trade-date-label">Trade Started:</div>
+      <div class="trade-date-value">${formattedDate} - ${formattedTime}</div>
+      <div class="trade-direction">
+        <svg xmlns="http://www.w3.org/2000/svg" height="30px" viewBox="0 -960 960 960" width="30px" fill="${directionColor}">
+          ${directionIcon}
+        </svg>
+      </div>
+    </div>
+    
+    <div class="trade-details">
+      <div class="detail-row">
+        <span class="detail-label">Side:</span>
+        <span class="detail-value">${trade.side}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Quantity:</span>
+        <span class="detail-value">${trade.quantity || 'N/A'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Entry Price:</span>
+        <span class="detail-value">${trade.price || 'N/A'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Stop Loss:</span>
+        <span class="detail-value">${trade.stopLossMsg || 'N/A'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Take Profit:</span>
+        <span class="detail-value">${trade.targetPointMsg || 'N/A'}</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Trade Session:</span>
+        <span class="detail-value">${trade.tradingSession.replace(' (auto selected)', '') || 'N/A'}</span>
+      </div>
+    </div>
+    
+    ${trade.ruleTitle ? `
+    <div class="trade-rules-section">
+      <div class="rules-header">
+        <span class="rules-title">Rules Applied:</span>
+        <span class="rules-count">${trade.ruleTitle.split(',').length} Rules</span>
+      </div>
+      <div class="rules-list">
+        ${trade.ruleTitle.split(',').map(rule => `
+          <div class="rule-item">
+            <span class="rule-icon">✓</span>
+            <span class="rule-text">${rule.trim()}</span>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    ` : ''}
+    
+    <div class="trade-actions">
+      <button class="action-btn close-trade-btn" onclick="closeLiveTrade('${trade.id}')">
+        Close Trade
+      </button>
+    </div>
+  `;
+  
+  return card;
+}
+
+function closeLiveTrade(tradeId) {
+  const trade = state.liveTrades.find(t => t.id === tradeId);
+  if (!trade) return;
+  
+  // Move trade from live trades to entries
+  const completedTrade = {
+    ...trade,
+    status: 'completed',
+    endTime: new Date().toISOString(),
+    pnl: trade.pnl || 0 // Use existing PnL or default to 0
+  };
+  
+  // Remove from live trades
+  state.liveTrades = state.liveTrades.filter(t => t.id !== tradeId);
+  
+  // Add to entries
+  state.entries = [completedTrade, ...state.entries];
+  
+  // Save both
+  saveLiveTrades();
+  saveEntries();
+  
+  // Update displays
+  renderAll();
+  
+  alert('Trade closed successfully!');
+}
+
+function editLiveTrade(tradeId) {
+  // For now, just show an alert - you can implement full editing later
+  alert('Edit functionality coming soon!');
+}
+
 /* ---------- Mount ---------- */
 function renderAll(){
   console.log("renderAll called - updating all displays");
   console.log("Current entries count:", state.entries.length);
+  console.log("Current live trades count:", state.liveTrades.length);
   
   renderHeader();
   renderGreeting();
@@ -4371,6 +5799,7 @@ function renderAll(){
   renderRiskMetrics();
   renderTable();
   renderCharts();
+  renderLiveTrades();
   // Refresh trading calendar if it exists
   if (typeof renderTradingCalendar === 'function') {
     renderTradingCalendar();

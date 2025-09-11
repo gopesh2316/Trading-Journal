@@ -234,40 +234,106 @@
           </div>
         </div>
 
-        <!-- Step 5: Rules and Notes -->
-        <div class="new-trade-step hidden" id="newTradeStep5">
-          <h2>Add rules and notes</h2>
+        <!-- Step 5: Rules and Pre-notes (Wide Layout) -->
+        <div class="new-trade-step-wide hidden" id="newTradeStep5">
+          <h2>Add rules and pre-notes</h2>
           <p class="new-trade-description">Apply trading rules and add any additional notes.</p>
           
-          <div class="new-trade-input-container">
-            <label for="newTradeRules">Rules</label>
-            <div class="new-trade-input-wrapper">
-              <div class="multi-select-container">
-                <div class="multi-select-input" id="newTradeRulesMultiSelect">
-                  <div class="selected-rules" id="newTradeSelectedRules"></div>
-                  <input type="text" id="newTradeRulesSearch" placeholder="Search or select rules..." autocomplete="off">
-                  <div class="rules-dropdown" id="newTradeRulesDropdown">
-                    <div class="rules-list" id="newTradeRulesList"></div>
+          <div class="step5-content">
+            <!-- Left Column: Notes Section -->
+            <div class="step5-left-column">
+              <div class="notes-section">
+                <label class="section-label">Notes</label>
+                <div class="notes-toolbar">
+                  <!-- Heading Selection -->
+                  <div class="toolbar-group">
+                    <select class="heading-select" id="headingSelect">
+                      <option value="">Normal</option>
+                      <option value="h1">Heading 1</option>
+                      <option value="h2">Heading 2</option>
+                      <option value="h3">Heading 3</option>
+                    </select>
+                  </div>
+                  
+                  <!-- Text Formatting -->
+                  <div class="toolbar-group">
+                  <button type="button" class="toolbar-btn" data-command="bold" title="Bold">
+                    <span class="material-icons">format_bold</span>
+                  </button>
+                  <button type="button" class="toolbar-btn" data-command="italic" title="Italic">
+                    <span class="material-icons">format_italic</span>
+                  </button>
+                  <button type="button" class="toolbar-btn" data-command="underline" title="Underline">
+                    <span class="material-icons">format_underlined</span>
+                  </button>
+                  <button type="button" class="toolbar-btn" data-command="strikeThrough" title="Strikethrough">
+                    <span class="material-icons">format_strikethrough</span>
+                  </button>
+                  </div>
+                  
+                  
+                  <!-- Lists and Links -->
+                  <div class="toolbar-group">
+                  <button type="button" class="toolbar-btn" data-command="createLink" title="Link">
+                    <span class="material-icons">link</span>
+                  </button>
+                  <button type="button" class="toolbar-btn" id="listBtn" title="List">
+                    <span class="material-icons" id="listIcon">format_list_bulleted</span>
+                  </button>
+                  </div>
+                  
+                  <!-- Alignment -->
+                  <div class="toolbar-group">
+                  <button type="button" class="toolbar-btn" id="textAlignBtn" title="Text Alignment">
+                    <span class="material-icons" id="textAlignIcon">format_align_left</span>
+                  </button>
+                  </div>
+                </div>
+                
+                <div class="notes-editor" id="newTradeNotesEditor" contenteditable="true" data-placeholder="Add any additional notes about this trade..."></div>
+              </div>
+            </div>
+            
+            <!-- Right Column: Pre-chart Images and Rules -->
+            <div class="step5-right-column">
+              <!-- Pre-chart Images Section -->
+              <div class="prechart-section">
+                <label class="section-label">Pre-chart Images</label>
+                <div class="prechart-container">
+                  <div class="prechart-content">
+                  <div class="prechart-placeholder" id="prechartPlaceholder">
+                    <span class="material-icons">image</span>
+                      <p>Drag your images here or</p>
+                    </div>
+                  </div>
+                  <div class="prechart-images" id="prechartImages"></div>
+                  <button type="button" class="add-files-btn" id="addPrechartFiles">
+                    <span class="material-icons">add</span>
+                    Add files 
+                  </button>
+                  <input type="file" id="prechartFileInput" accept="image/*" multiple style="display: none;">
+                </div>
+              </div>
+              
+              <!-- Rules Section -->
+              <div class="rules-section">
+                <label class="section-label">Rules</label>
+                <div class="multi-select-container">
+                  <div class="multi-select-input" id="newTradeRulesMultiSelect">
+                    <div class="selected-rules" id="newTradeSelectedRules"></div>
+                    <input type="text" id="newTradeRulesSearch" placeholder="Search or select rules..." autocomplete="off">
+                    <div class="rules-dropdown" id="newTradeRulesDropdown">
+                      <div class="rules-list" id="newTradeRulesList"></div>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
           
-          <div class="new-trade-input-container">
-            <label for="newTradeNotes">Notes</label>
-            <div class="new-trade-input-wrapper">
-              <textarea 
-                id="newTradeNotes" 
-                rows="4" 
-                placeholder="Add any additional notes about this trade..."
-              ></textarea>
-            </div>
-          </div>
-          
           <div class="new-trade-actions">
             <button id="newTradeBack5" class="new-trade-back-btn">Back</button>
-            <button id="newTradeSave" class="new-trade-save-btn">Save Trade</button>
+            <button id="newTradeSave" class="new-trade-save-btn">Trade Now</button>
           </div>
         </div>
       </div>
