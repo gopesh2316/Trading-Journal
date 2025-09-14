@@ -43,26 +43,17 @@
 
   <!-- Onboarding Screen -->
   <div id="onboarding" class="onboarding hidden">
+    <!-- Back Button -->
+    <button id="onboardingBackToAuth" class="onboarding-back-to-auth">
+      <span class="material-icons">arrow_back</span>
+      <span>Back</span>
+    </button>
+    
     <div class="onboarding-card">
       <div class="onboarding-content">
         <div class="onboarding-step">
           <h2>What should be your Initial balance?</h2>
           <p class="onboarding-description">Set your starting trading balance to begin tracking your performance.</p>
-          
-          <div class="balance-input-container">
-            <label for="initialBalance">Initial Balance</label>
-            <div class="balance-input-wrapper">
-              <span class="currency-symbol">₹</span>
-              <input 
-                id="initialBalance" 
-                type="number" 
-                step="0.01" 
-                min="0" 
-                placeholder="10000.00"
-                required
-              >
-            </div>
-          </div>
           
           <div class="account-input-container">
             <label for="accountName">Account Name</label>
@@ -74,10 +65,58 @@
                 required
               >
             </div>
-            <div class="balance-help-text">
-              <span class="material-icons">info</span>
-              <span>This will be your starting balance for tracking P&L calculations</span>
+          </div>
+          
+          <div class="balance-input-container">
+            <label for="initialBalance">Initial Balance</label>
+            <div class="balance-input-wrapper">
+              <span class="currency-symbol">₹</span>
+              <input 
+                id="initialBalance" 
+                type="number" 
+                step="0.01" 
+                min="0" 
+                placeholder="10,000.00"
+                required
+              >
             </div>
+          </div>
+          
+          <div class="numeric-inputs-row">
+            <div class="numeric-input-container">
+              <label for="accountTarget">Account Target</label>
+              <div class="numeric-input-wrapper">
+                <span class="currency-symbol">₹</span>
+                <input 
+                  id="accountTarget" 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  placeholder="15,000"
+                  required
+                >
+              </div>
+            </div>
+            
+            <div class="numeric-input-container">
+              <label for="tillLoss">Till Loss</label>
+              <div class="numeric-input-wrapper">
+                <span class="currency-symbol">₹</span>
+                <input 
+                  id="tillLoss" 
+                  type="number" 
+                  step="0.01" 
+                  min="0" 
+                  placeholder="5,000"
+                  required
+                >
+              </div>
+            </div>
+          </div>
+          
+          <div class="balance-help-text">
+            <span class="material-icons">info</span>
+            <span>This will be your starting balance for tracking P&L calculations</span>
           </div>
           
           <div class="onboarding-actions">
@@ -336,6 +375,17 @@
             <button id="newTradeSave" class="new-trade-save-btn">Trade Now</button>
           </div>
         </div>
+
+        <!-- Step 6: Loading Page -->
+        <div class="new-trade-step hidden" id="newTradeStep6">
+          <div class="loading-page-content">
+            <h1 class="loading-main-heading">The trade is live!</h1>
+            <p class="loading-subheading" id="loadingSubheading">Focus. Every click counts.</p>
+            <div class="loading-spinner">
+              <div class="spinner"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -350,24 +400,19 @@
         </div>
         <div class="header-nav">
           <button class="nav-item active" data-view="dashboard">
-            <span class="nav-icon"><span class="material-icons">dashboard</span></span>
             <span class="nav-text">Dashboard</span>
           </button>
           <button class="nav-item" data-view="trade-log">
-            <span class="nav-icon"><span class="material-icons">table_rows</span></span>
             <span class="nav-text">Trade Log</span>
           </button>
           <button class="nav-item" data-view="pre-trade">
-            <span class="nav-icon"><span class="material-icons">gps_fixed</span></span>
             <span class="nav-text">Live Trade</span>
           </button>
           <button class="nav-item" data-view="records">
-            <span class="nav-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#6b7280">
-                <path d="M480-120q-151 0-255.5-46.5T120-280v-400q0-66 105.5-113T480-840q149 0 254.5 47T840-680v400q0 67-104.5 113.5T480-120Zm0-479q89 0 179-25.5T760-679q-11-29-100.5-55T480-760q-91 0-178.5 25.5T200-679q14 30 101.5 55T480-599Zm0 199q42 0 81-4t74.5-11.5q35.5-7.5 67-18.5t57.5-25v-120q-26 14-57.5 25t-67 18.5Q600-528 561-524t-81 4q-42 0-82-4t-75.5-11.5Q287-543 256-554t-56-25v120q25 14 56 25t66.5 18.5Q358-408 398-404t82 4Zm0 200q46 0 93.5-7t87.5-18.5q40-11.5 67-26t32-29.5v-98q-26 14-57.5 25t-67 18.5Q600-328 561-324t-81 4q-42 0-82-4t-75.5-11.5Q287-343 256-354t-56-25v99q5 15 31.5 29t66.5 25.5q40 11.5 88 18.5t94 7Z"/>
-              </svg>
-            </span>
             <span class="nav-text">Records</span>
+          </button>
+          <button class="nav-item" data-view="rules">
+            <span class="nav-text">Rules</span>
           </button>
         </div>
         <div class="row gap">
@@ -549,7 +594,9 @@
             </div>
             <div class="card">
               <div class="row between tiny"><span>Daily Net Cumulative P&L</span><span class="muted tiny">₹</span></div>
-              <svg id="cum" viewBox="0 0 320 180" class="chart"></svg>
+              <div class="chart-container-enhanced">
+                <svg id="cum" viewBox="10 48 375 149" class="chart"></svg>
+              </div>
             </div>
             <div class="net-daily-pnl-container" id="netDailyPnlContainer">
               <div class="chart-title">
@@ -560,7 +607,7 @@
                   </svg>
                 </div>
               </div>
-              <svg id="bars" viewBox="0 0 320 180" class="chart"></svg>
+              <svg id="bars" viewBox="0 0 311 182" class="chart"></svg>
             </div>
           </div>
 
@@ -665,6 +712,31 @@
                 </div>
               </div>
               <svg id="equityCurve" viewBox="0 0 500 180" class="chart"></svg>
+            </div>
+          </div>
+
+          <!-- Monthly P&L and Drawdown Charts -->
+          <div class="monthly-charts-grid">
+            <div class="card">
+              <div class="row between tiny">
+                <span>Monthly P&L</span>
+                <span class="muted tiny">Net Result</span>
+              </div>
+              <svg id="monthlyPnlChart" viewBox="-12 15 500 160" class="chart"></svg>
+            </div>
+            <div class="card">
+              <div class="row between tiny">
+                <span>Drawdown Curve</span>
+                <div class="row gap">
+                  <span id="maxDrawdown" class="drawdown-value">0%</span>
+                  <div class="info-icon-container">
+                    <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" height="16px" viewBox="0 -960 960 960" width="16px" fill="#e3e3e3">
+                      <path d="M200-200v-240h80v160h160v80H200Zm480-320v-160H520v-80h240v240h-80Z"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              <svg id="drawdownChart" viewBox="-8 10 480 180" class="chart"></svg>
             </div>
           </div>
 
@@ -1185,6 +1257,25 @@
             </div>
           </div>
         </section>
+
+        <!-- Rules -->
+        <section id="view-rules" class="view hidden">
+          <div class="rules-page-header">
+            <h2 class="rules-page-title">All Rules</h2>
+          </div>
+          
+          <div class="rules-list-container" id="rulesListContainer">
+            <!-- Rules will be populated by JavaScript -->
+            <div class="no-rules-message" id="noRulesMessage">
+              <div class="no-rules-icon">
+                <span class="material-icons">rule</span>
+              </div>
+              <h3>No Rules Added Yet</h3>
+              <p>Start by adding your first trading rule to keep track of your trading strategies.</p>
+              <button class="primary" onclick="openNewRule()">Add Your First Rule</button>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -1322,7 +1413,6 @@
       </div>
       <div class="form-row"><label>Rule Title</label><input id="ruleTitle" placeholder="e.g., Only trade with trend"></div>
       <div class="form-row"><label>Description</label><textarea id="ruleDesc" rows="4" placeholder="Describe the rule and rationale"></textarea></div>
-      <div class="form-row"><label>Tags (comma separated)</label><input id="ruleTags" placeholder="discipline, risk"></div>
       <div class="row end bordert gap">
         <button type="button" id="ruleCancel" class="outline">Cancel</button>
         <button type="submit" class="primary">Save rule</button>
@@ -1342,7 +1432,55 @@
         </button>
       </div>
       <div class="expanded-chart-content">
-        <svg id="expandedBars" viewBox="0 0 800 400" class="expanded-chart"></svg>
+        <div class="expanded-time-range-section">
+          <div class="expanded-metrics">
+            <div class="expanded-metric-item">
+              <span class="expanded-metric-label">Highest Profit:</span>
+              <span class="expanded-metric-value profit" id="expandedHighestProfit">$0</span>
+            </div>
+            <div class="expanded-metric-item">
+              <span class="expanded-metric-label">Highest Loss:</span>
+              <span class="expanded-metric-value loss" id="expandedHighestLoss">$0</span>
+            </div>
+            <div class="expanded-metric-item">
+              <span class="expanded-metric-label">Balance Change:</span>
+              <span class="expanded-metric-value" id="expandedBalanceChange">0%</span>
+            </div>
+          </div>
+          <div class="time-range-filter">
+            <button class="time-range-btn" id="expandedTimeRangeBtn">
+              <span id="expandedSelectedTimeRange">Last 30 days</span>
+              <span class="material-icons">expand_more</span>
+            </button>
+            <div class="time-range-dropdown hidden" id="expandedTimeRangeDropdown">
+              <div class="time-range-option" data-range="7">
+                <input type="checkbox" id="expandedRange7d">
+                <label for="expandedRange7d">Last 7 days</label>
+              </div>
+              <div class="time-range-option" data-range="14">
+                <input type="checkbox" id="expandedRange14d">
+                <label for="expandedRange14d">Last 14 days</label>
+              </div>
+              <div class="time-range-option" data-range="30">
+                <input type="checkbox" id="expandedRange30d" checked>
+                <label for="expandedRange30d">Last 30 days</label>
+              </div>
+              <div class="time-range-option" data-range="90">
+                <input type="checkbox" id="expandedRange90d">
+                <label for="expandedRange90d">Last 90 days</label>
+              </div>
+              <div class="time-range-option" data-range="180">
+                <input type="checkbox" id="expandedRange180d">
+                <label for="expandedRange180d">Last 6 months</label>
+              </div>
+              <div class="time-range-option" data-range="365">
+                <input type="checkbox" id="expandedRange365d">
+                <label for="expandedRange365d">Last year</label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <svg id="expandedBars" viewBox="0 25 815 430" class="expanded-chart"></svg>
       </div>
     </div>
   </div>

@@ -428,6 +428,41 @@ body{
 }
 
 .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px;margin-bottom:12px}
+
+/* Dashboard specific styles - force grid display */
+.dashboard-active .stats {
+  display: grid !important;
+}
+
+/* Rules page specific styles - hide stats */
+.rules-active .stats {
+  display: none !important;
+}
+
+/* Dashboard specific styles - force risk metrics display */
+.dashboard-active .risk-metrics {
+  display: block !important;
+}
+
+/* Rules page specific styles - hide risk metrics */
+.rules-active .risk-metrics {
+  display: none !important;
+}
+
+/* Dashboard specific styles - force greeting display */
+.dashboard-active .greeting {
+  display: block !important;
+}
+
+/* Rules page specific styles - hide greeting */
+.rules-active .greeting {
+  display: none !important;
+}
+
+/* Rules page specific styles - hide time range section */
+.rules-active .time-range-section {
+  display: none !important;
+}
 .stat{border:1px solid var(--border);border-radius:12px;background:#fff;padding:1rem;box-shadow:var(--shadow)}
 .stat .label{color:var(--muted);font-size:.85rem}
 .stat .value{font-weight:700;font-size:1.4rem;margin-top: 3px;}
@@ -470,6 +505,12 @@ body{
 
 .calendar-nav-btn:hover{
   background:#e5e7eb;
+  color:var(--text);
+}
+
+/* Dark mode compatibility for calendar-nav-btn:hover */
+.dark-mode .calendar-nav-btn:hover{
+  background:#3c3c3c;
   color:var(--text);
 }
 
@@ -637,6 +678,12 @@ body{
   transition:all 0.2s ease;
 }
 
+/* Dark mode compatibility for winning trade view button */
+.dark-mode .calendar-day.winning-trade .view-button{
+  background: #003a2a;
+  color: #00bb7d;
+}
+
 .calendar-day.winning-trade .view-button:hover{
   background:#b9ffd2;
 }
@@ -688,6 +735,11 @@ body{
   transition:all 0.2s ease;
 }
 
+/* Dark mode compatibility for losing trade view button */
+.dark-mode .calendar-day.losing-trade .view-button{
+  background: #2e000082;
+  color: #ff6868;
+}
 .calendar-day.losing-trade .view-button:hover{
   background:#ffd3d3;
 }
@@ -1062,8 +1114,62 @@ body{
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 20px 24px;
+  padding: 15px 24px;
   border-bottom: 1px solid #e5e7eb;
+}
+
+.expanded-time-range-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0px 0px 0px 8px;
+}
+
+.expanded-time-range-section .time-range-filter {
+  position: relative;
+}
+
+.expanded-metrics {
+  display: flex;
+  gap: 24px;
+  align-items: center;
+}
+
+.expanded-metric-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.expanded-metric-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.expanded-metric-value {
+  font-size: 15.5px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.expanded-metric-value.profit {
+  color: #007453;
+}
+
+.expanded-metric-value.loss {
+  color: #ff6666;
+  padding-top: 3px;
+}
+
+.dark-mode .expanded-metric-value.profit {
+  color: #00bb86;
+  padding-top: 3px;
+}
+
+.dark-mode .expanded-metric-value.loss {
+  color: #ff6666;
 }
 
 .expanded-chart-header h3 {
@@ -1373,7 +1479,7 @@ body{
 }
 
 .rules-legend-item:hover {
-  background: rgba(59, 130, 246, 0.1);
+  background:none;
 }
 
 .rules-legend-color {
@@ -1731,7 +1837,7 @@ body{
 }
 
 .donut-legend-item:hover {
-  background: rgba(139, 92, 246, 0.1);
+  background: none;
 }
 
 .donut-legend-color {
@@ -2558,12 +2664,342 @@ body{
 .account-input-wrapper:focus-within{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1);}
 .account-input-wrapper input{width:100%;border:2px solid gray;background:transparent;padding:18px 22px;font-size:25px;font-weight:500;color:#111827;outline:none; border-radius: 6px;}
 .account-input-wrapper input::placeholder{color:#9ca3af;}
-.balance-help-text{display:flex;align-items:center;gap:6px;margin-top:8px;color:#6b7280;font-size:13px;}
+.balance-help-text{display:flex;align-items:center;gap:6px;margin-top:-15px;color:#6b7280;font-size:13px;}
 .balance-help-text .material-icons{font-size:16px;}
 .onboarding-actions{margin-top:24px;text-align:center;}
 .onboarding-start-btn{border-radius:6px;padding:22px 18px 22px 18px;font-weight:600;border:1px solid transparent;cursor:pointer;font-size:17px;background:#000000;color:#ffffff;box-shadow:0px 1.5px 2px 0px rgba(225,229,237,.4);width:100%;transition:all 0.2s ease;}
 .onboarding-start-btn:hover{background:linear-gradient(45deg, #004bab, #002852ed);transform:translateY(0px);}
 .onboarding-start-btn:active{transform:translateY(0);}
+
+/* Horizontal layout for numeric inputs */
+.numeric-inputs-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.numeric-input-container {
+  flex: 1;
+  width: 50%;
+}
+
+.numeric-input-container label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #374151;
+  font-size: 14px;
+}
+
+.numeric-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0;
+  transition: all 0.2s ease;
+}
+
+.numeric-input-wrapper:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.numeric-input-wrapper .currency-symbol {
+  position: absolute;
+  left: 22px;
+  color: #6b7280;
+  font-weight: 500;
+  font-size: 27px;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.numeric-input-wrapper input {
+  width: 100%;
+  border: 2px solid gray;
+  background: transparent;
+  padding: 18px 12px 18px 41px;
+  font-size: 25px;
+  font-weight: 500;
+  color: #111827;
+  outline: none;
+  border-radius: 6px;
+}
+
+.numeric-input-wrapper input::placeholder {
+  color: #9ca3af;
+}
+
+/* Onboarding Back Button - Same design as trading steps back button */
+.onboarding-back-to-auth {
+  position: absolute;
+  top: 24px;
+  left: 24px;
+  background: #ffffff;
+  color: #374151;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  padding: 8px 13px 8px 10px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  z-index: 1001;
+}
+
+.onboarding-back-to-auth:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.onboarding-back-to-auth .material-icons {
+  font-size: 18px;
+}
+
+/* Dark mode support for onboarding back button */
+.dark-mode .onboarding-back-to-auth {
+  background: #ffffff;
+  color: #181818;
+  border-color: #b4b4b4;
+}
+
+.dark-mode .onboarding-back-to-auth:hover {
+  background: #ffffff;
+  border-color: #4b5563;
+}
+
+/* Rules Page Styles */
+.rules-page-header {
+  margin-bottom: 20px;
+}
+
+.rules-page-title {
+  font-size: 45px;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+  letter-spacing: -0.5px;
+  padding: 28px 0;
+}
+
+.rules-list-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.rule-item-display {
+  background: #ffffff00;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.2s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.rule-content {
+  flex: 1;
+}
+
+.rule-actions {
+  display: flex;
+  gap: 8px;
+  margin-left: 16px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.rule-action-btn {
+  background: none;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rule-action-btn:hover {
+  background: #f3f4f6;
+}
+
+.rule-action-btn svg {
+  width: 30px;
+  height: 30px;
+}
+
+.rule-item-display:hover {
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.rule-item-display:hover .rule-actions {
+  opacity: 1;
+}
+
+.rule-title {
+  font-size: 25px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 8px 0;
+  line-height: 1.4;
+}
+
+.rule-description {
+  font-size: 15px;
+  color: #6b7280;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.no-rules-message {
+  text-align: center;
+  padding: 60px 20px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.no-rules-icon {
+  margin-bottom: 16px;
+}
+
+.no-rules-icon .material-icons {
+  font-size: 48px;
+  color: #9ca3af;
+}
+
+.no-rules-message h3 {
+  font-size: 20px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 8px 0;
+}
+
+.no-rules-message p {
+  font-size: 14px;
+  color: #6b7280;
+  margin: 0 0 24px 0;
+  line-height: 1.5;
+}
+
+/* Dark mode styles for rules page */
+.dark-mode .rules-page-title {
+  color: #e5e7eb;
+  font-size: 45px;
+  font-weight: 600;
+  padding: 28px 0;
+}
+
+.dark-mode .rule-item-display {
+  background: none;
+  border-color: transparent;
+}
+
+.dark-mode .rule-action-btn:hover {
+  background: #232323;
+}
+
+.dark-mode .rule-action-btn svg {
+  fill: #d1d5db;
+}
+
+.dark-mode .rule-item-display:hover {
+  border-color: #3a3a3a;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+}
+
+.dark-mode .rule-item-display:hover .rule-actions {
+  opacity: 1;
+}
+
+/* Delete confirmation state */
+.rule-item-display.deleting {
+  background: linear-gradient(45deg, #ffcaca, #ffafaf29) !important;
+  border-color: #ffcaca;
+  animation: fadeInDelete 0.3s ease-in-out;
+  padding: 20px 20px 20px 29px;
+  display: flex;
+  align-content: stretch;
+  align-items: center;
+}
+
+.dark-mode .rule-item-display.deleting {
+  background: linear-gradient(45deg, #640000, #2a0000) !important;
+  border-color: #640000 !important;
+}
+
+@keyframes fadeInDelete {
+  from {
+    background: transparent;
+    border-color: transparent;
+  }
+  to {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+}
+
+.delete-confirmation-text {
+  font-size: 25px;
+  font-weight: 700;
+  color: #ef4444;
+  margin: 0 0 2px 0;
+  line-height: 1.4;
+  animation: fadeIn;
+}
+
+.dark-mode .delete-confirmation-text {
+  color: #f87171;
+}
+
+@keyframes fadeInText {
+  from {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.dark-mode .rule-title {
+  color: #f9fafb;
+}
+
+.dark-mode .rule-description {
+  color: #d1d5db;
+}
+
+.dark-mode .no-rules-message {
+  background: #1f2937;
+  border-color: #374151;
+}
+
+.dark-mode .no-rules-icon .material-icons {
+  color: #6b7280;
+}
+
+.dark-mode .no-rules-message h3 {
+  color: #f9fafb;
+}
+
+.dark-mode .no-rules-message p {
+  color: #d1d5db;
+}
 
 .dropdown-item{display:block;text-align:left;width:100%;padding:.6rem .8rem;border:0;background:#fff;cursor:pointer}
 .dropdown-item:hover{background:#f5f6f9}
@@ -2602,6 +3038,33 @@ body{
   background: var(--surface);
   border-color: var(--border);
   box-shadow: none !important;
+}
+
+/* Dark mode text colors for stats */
+.dark-mode .stat .value {
+  color: #ffffff;
+}
+
+.dark-mode .stat .label {
+  color: #d1d5db;
+}
+
+/* Dark mode specific colors for 1st stat container (Net P&L) */
+.dark-mode .stats .stat:nth-child(1) .value {
+  color: #00bb86 !Important; /* Default green for profits */
+}
+
+.dark-mode .stats .stat:nth-child(1) .value.negative {
+  color: #ff6666; /* Red for losses */
+}
+
+/* Dark mode specific colors for 5th stat container (Avg P&L) */
+.dark-mode .stats .stat:nth-child(5) .value {
+  color: #00bb86 !Important; /* Default green for profits */
+}
+
+.dark-mode .stats .stat:nth-child(5) .value.negative {
+  color: #ff6666; /* Red for losses */
 }
 
 .dark-mode .calendar-day {
@@ -3137,6 +3600,20 @@ body{
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
+/* Dark mode text colors for risk metrics - handled by JavaScript */
+
+.dark-mode .risk-metric-title {
+  color: var(--text);
+}
+
+.dark-mode .risk-metric-description {
+  color: var(--text);
+}
+
+.dark-mode .risk-metric-subtitle {
+  color: var(--muted);
+}
+
 /* Responsive design for risk metrics */
 @media(max-width: 1200px) {
   .risk-metrics-grid {
@@ -3187,6 +3664,58 @@ body{
 
 @media(max-width: 600px) {
   .analysis-grid .card {
+    padding: 16px;
+  }
+}
+
+/* Monthly Charts Grid Styles */
+.monthly-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+  margin: 13px 0;
+  height: 300px;
+}
+
+.monthly-charts-grid .card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px;
+  box-shadow: 0px 1.5px 2px 0px rgba(225,229,237,.4);
+
+}
+
+.drawdown-value {
+  color: #ef4444;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* Dark mode support for monthly charts */
+[data-theme="dark"] .monthly-charts-grid .card {
+  background: #1F1F1F;
+  border: 1px solid #2E2E2E;
+  box-shadow: 0px 1.5px 2px 0px rgba(0,0,0,.4);
+}
+
+/* Light mode support for monthly charts */
+[data-theme="light"] .monthly-charts-grid .card {
+  background: white;
+  border: 1px solid #E5E7EB;
+  box-shadow: 0px 1.5px 2px 0px rgba(225,229,237,.4);
+}
+
+/* Responsive design for monthly charts grid */
+@media(max-width: 1200px) {
+  .monthly-charts-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+}
+
+@media(max-width: 600px) {
+  .monthly-charts-grid .card {
     padding: 16px;
   }
 }
@@ -3989,7 +4518,7 @@ body{
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   border: 1px solid #e5e7eb;
   margin-bottom: 20px;
 }
@@ -4124,7 +4653,7 @@ body{
 .dark-mode .live-trade-card {
   background: #1f2937;
   border-color: #374151;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: none;
 }
 
 .dark-mode .empty-state-title {
@@ -4460,7 +4989,7 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
   cursor: pointer;
   padding: 0;
   margin-left: 4px;
-  font-size: 14px;
+  font-size: 21px;
   line-height: 1;
   opacity: 0.8;
 }
@@ -4504,24 +5033,41 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
 }
 
 .rules-dropdown {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
+  position: fixed;
   background: #ffffff;
   border: 2px solid #e5e7eb;
-  border-top: none;
-  border-radius: 0 0 12px 12px;
-  max-height: 240px;
+  border-radius: 12px;
+  max-height: 300px;
+  min-width: 280px;
   overflow-y: auto;
-  z-index: 1000;
+  z-index: 10000;
   display: none;
-  margin-top: 4px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 4px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.15), 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
-.rules-dropdown.show {
-  display: block;
+/* Special positioning for new trade rules dropdown - Centered Modal Style */
+#newTradeRulesDropdown {
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: #ffffff !important;
+  border: 2px solid #e5e7eb !important;
+  border-radius: 16px !important;
+  height: 500px !important;
+  width: 600px !important;
+  max-width: 90vw !important;
+  max-height: 80vh !important;
+  overflow: hidden !important;
+  z-index: 10000 !important;
+  display: none !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25), 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+  flex-direction: column !important;
+}
+
+.rules-dropdown.show,
+#newTradeRulesDropdown.show {
+  display: flex !important;
 }
 
 .rules-list {
@@ -4537,8 +5083,8 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
   align-items: center;
   gap: 12px;
   transition: background-color 0.2s ease;
-  border-radius: 8px;
-  margin: 2px 8px;
+  border-radius: 0px;
+  margin: 0;
 }
 
 .rule-option:hover {
@@ -4617,19 +5163,135 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
 .dark-mode .rules-dropdown {
   background: #1f2937;
   border-color: #374151;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3), 0 4px 8px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+/* Backdrop for centered popup */
+#newTradeRulesDropdown::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+/* Header for the rules popup */
+#newTradeRulesDropdown .rules-popup-header {
+  padding: 13px 20px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 12px 12px 0 0;
+  font-weight: 600;
+  font-size: 16px;
+  color: #374151;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#newTradeRulesDropdown .rules-popup-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: #6b7280;
+  transition: all 0.2s ease;
+}
+
+#newTradeRulesDropdown .rules-popup-close:hover {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+/* Header for the rules popup */
+#newTradeRulesDropdown .rules-popup-header {
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #f9fafb;
+  border-radius: 16px 16px 0 0;
+  font-weight: 600;
+  font-size: 18px;
+  color: #374151;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* Search section inside popup */
+#newTradeRulesDropdown .rules-popup-search {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #ffffff;
+  flex-shrink: 0;
+}
+
+#newTradeRulesDropdown .rules-popup-search-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 14px;
+  background: #ffffff;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+#newTradeRulesDropdown .rules-popup-search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#newTradeRulesDropdown .rules-popup-search-input::placeholder {
+  color: #9ca3af;
+}
+
+/* Rules list with scrollbar */
+#newTradeRulesDropdown .rules-list {
+  padding: 16px 24px;
+  overflow-y: auto;
+  flex: 1;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
+}
+
+#newTradeRulesDropdown .rules-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+#newTradeRulesDropdown .rules-list::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+#newTradeRulesDropdown .rules-list::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+  border: 1px solid #f1f5f9;
+}
+
+#newTradeRulesDropdown .rules-list::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .dark-mode .rule-option {
   color: #f9fafb;
+  padding: 18px 32px;
 }
 
 .dark-mode .rule-option:hover {
-  background: #374151;
+  background: #292929;
 }
 
 .dark-mode .rule-option.selected {
-  background: #1e40af;
+  background: #292929;
 }
 
 .dark-mode .rule-option-checkbox {
@@ -4656,6 +5318,62 @@ body:has(#view-pre-trade:not(.hidden)) .time-range-section {
   justify-content: center;
   overflow-x: hidden;
   overflow-y: auto;
+}
+
+/* Validation Error Styles */
+.new-trade-input-wrapper.error input,
+.new-trade-input-wrapper.error select,
+.new-trade-input-wrapper.error textarea {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  background-color: #fef2f2 !important;
+}
+
+.new-trade-input-wrapper.error input:focus,
+.new-trade-input-wrapper.error select:focus,
+.new-trade-input-wrapper.error textarea:focus {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Rules container validation error */
+#newTradeRulesMultiSelect.error {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  background-color: #fef2f2 !important;
+}
+
+#newTradeRulesMultiSelect.error:focus-within {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+/* Dark mode validation error styles */
+.dark-mode .new-trade-input-wrapper.error input,
+.dark-mode .new-trade-input-wrapper.error select,
+.dark-mode .new-trade-input-wrapper.error textarea {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1) !important;
+  background-color: #2d1b1b !important;
+}
+
+.dark-mode .new-trade-input-wrapper.error input:focus,
+.dark-mode .new-trade-input-wrapper.error select:focus,
+.dark-mode .new-trade-input-wrapper.error textarea:focus {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important;
+}
+
+/* Dark mode rules container validation error */
+.dark-mode #newTradeRulesMultiSelect.error {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.1) !important;
+  background-color: #2d1b1b !important;
+}
+
+.dark-mode #newTradeRulesMultiSelect.error:focus-within {
+  border-color: #f87171 !important;
+  box-shadow: 0 0 0 3px rgba(248, 113, 113, 0.2) !important;
 }
 
 /* Prevent body scroll when trading steps are open */
@@ -5457,7 +6175,7 @@ body.trading-steps-open {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
-  background: var(--background-secondary);
+  background: #EFEFEF;
   padding: 4px 8px;
   border-radius: 6px;
   white-space: nowrap;
@@ -5473,13 +6191,19 @@ body.trading-steps-open {
 }
 
 .market-open {
-  background: #dcfce7;
+  background: none;
   color: #166534;
+  text-transform: capitalize;
+  font-weight: 700;
+  margin-left: -10px;
 }
 
 .market-closed {
-  background: #fef2f2;
+  background: none;
   color: #dc2626;
+  text-transform: capitalize;
+  font-weight: 700;
+  margin-left: -10px;
 }
 
 .dark-mode .time-display {
@@ -6281,13 +7005,70 @@ html.dark-mode .toolbar-group {
     font-size: 28px;
     line-height: 32px;
   }
-  
-  .new-trade-input-wrapper input,
-  .new-trade-input-wrapper select,
-  .new-trade-input-wrapper textarea {
-    padding: 18px 20px;
-    font-size: 16px;
-  }
+}
+
+/* Dark mode styles for new trade rules popup */
+.dark-mode #newTradeRulesDropdown {
+  background: #1e1e1e !important;
+  border-color: #515151 !important;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.6), 0 10px 25px rgba(0, 0, 0, 0.4) !important;
+  width: 429px ! IMPORTANT;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-header {
+  background: #323232;
+  border-bottom-color: #656565;
+  color: #f9fafb;
+  padding: 14px 22px;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-close {
+  color: #9ca3af;
+  padding: 4px 6px 0px 6px;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-close:hover {
+  background: #4b5563;
+  color: #f9fafb;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-search {
+  background: #1e1e1e;
+  border-bottom-color: #383838;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-search-input {
+  background: #1e1e1e;
+  border: none;
+  color: #f9fafb;
+  font-size: 19px;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-search-input:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.dark-mode #newTradeRulesDropdown .rules-popup-search-input::placeholder {
+  color: #9ca3af;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-list {
+  scrollbar-color: #3b3b3b #1e1e1e;
+  padding: 0px;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-list::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-list::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-color: #1e293b;
+}
+
+.dark-mode #newTradeRulesDropdown .rules-list::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
 }
 
 /* Responsive design for Step 5 */
@@ -6337,6 +7118,261 @@ html.dark-mode .toolbar-group {
   
   .new-trade-step-wide::-webkit-scrollbar {
     display: none; /* WebKit browsers */
+  }
+}
+
+/* ============================================================================
+NEW TRADE STEPS - LOADING PAGE (STEP 6)
+============================================================================ */
+
+.loading-page-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  min-height: 400px;
+  padding: 40px 8px;
+  WIDTH: 100%;
+}
+
+.loading-main-heading {
+  font-size: 3.5rem;
+  font-weight: 800;
+  color: #1f2937;
+  margin-bottom: 20px;
+  animation: fadeInUp 0.8s ease-out;
+}
+
+.loading-subheading {
+  font-size: 1.2rem;
+  color: #1f2937;
+  margin: -8px 5px 31px 5px;
+  font-weight: 500;
+  max-width: 500px;
+  line-height: 1.6;
+  animation: fadeIn 0.8s ease-out;
+
+}
+
+.loading-spinner {
+  margin-top: 20px;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 4px solid #e5e7eb;
+  border-top: 4px solid #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Dark mode styles for loading page */
+.dark-mode .loading-main-heading {
+  color: #f9fafb !important;
+  FONT-SIZE: 3.5REM;
+
+}
+
+.dark-mode .loading-subheading {
+  color: #f9fafb !important;
+  margin: -8px 5px 31px 5px;
+}
+
+.dark-mode .spinner {
+  border-color: #2b2b2b;
+  border-top-color: white;
+}
+
+/* Loading countdown styles */
+.loading-countdown {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  color: black;
+  padding: 12px 18px;
+  border-radius: 10px;
+  font-weight: bold;
+  font-size: 20px;
+  z-index: 10000;
+  box-shadow: none;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+/* Dark mode countdown */
+.dark-mode .loading-countdown {
+  background: rgb(23 23 23);
+  color: #ffffff;
+  box-shadow: none;
+}
+
+/* Current trade gradient shadow effect */
+.current-trade-highlight {
+  position: relative;
+  animation: gradientShadowPulse 3s ease-out forwards;
+}
+
+/* Enhanced Chart Container Styles */
+.chart-container-enhanced {
+  position: relative;
+  width: 100%;
+  height: 200px;
+  overflow: visible;
+  margin-top: 10px;
+  padding: 0 10px; /* Add padding to prevent edge cutoff */
+}
+
+/* Chart axis text styling */
+.axis-text {
+  fill: var(--text) !important; /* Dynamic color based on theme */
+}
+
+.chart-enhanced {
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+/* Axis Labels Styling */
+.axis-label {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 11px;
+  fill: #374151;
+  font-weight: 600;
+  text-anchor: middle;
+}
+
+.y-axis-labels .axis-label {
+  text-anchor: end;
+  dominant-baseline: middle;
+}
+
+.x-axis-labels .axis-label {
+  text-anchor: middle;
+  dominant-baseline: hanging;
+}
+
+/* Grid Lines Styling */
+.grid-line {
+  stroke: #d1d5db;
+  stroke-width: 1;
+  stroke-dasharray: 3,3;
+  opacity: 0.8;
+}
+
+/* Axis Lines Styling */
+.axis-line {
+  stroke: #1f2937;
+  stroke-width: 2;
+}
+
+/* Dark Mode Styles for Enhanced Chart */
+.dark-mode .axis-label {
+  fill: #9ca3af;
+}
+
+.dark-mode .grid-line {
+  stroke: #4b5563;
+  opacity: 0.4;
+}
+
+.dark-mode .axis-line {
+  stroke: #6b7280;
+}
+
+/* Responsive Chart Styles */
+@media (max-width: 768px) {
+  .chart-container-enhanced {
+    height: 180px;
+  }
+  
+  .axis-label {
+    font-size: 9px;
+  }
+  
+  .y-axis-labels .axis-label {
+    font-size: 8px;
+  }
+  
+  .x-axis-labels .axis-label {
+    font-size: 8px;
+  }
+}
+
+@keyframes gradientShadowPulse {
+  0% {
+    box-shadow: 
+      0 0 0 0 rgba(59, 130, 246, 0.7),
+      0 0 0 0 rgba(147, 51, 234, 0.7),
+      0 0 0 0 rgba(236, 72, 153, 0.7);
+  }
+  25% {
+    box-shadow: 
+      0 0 20px 10px rgba(59, 130, 246, 0.5),
+      0 0 30px 15px rgba(147, 51, 234, 0.4),
+      0 0 40px 20px rgba(236, 72, 153, 0.3);
+  }
+  50% {
+    box-shadow: 
+      0 0 25px 12px rgba(59, 130, 246, 0.4),
+      0 0 35px 18px rgba(147, 51, 234, 0.3),
+      0 0 45px 25px rgba(236, 72, 153, 0.2);
+  }
+  75% {
+    box-shadow: 
+      0 0 15px 8px rgba(59, 130, 246, 0.3),
+      0 0 25px 12px rgba(147, 51, 234, 0.2),
+      0 0 35px 18px rgba(236, 72, 153, 0.1);
+  }
+  100% {
+    box-shadow: 
+      0 0 0 0 rgba(59, 130, 246, 0),
+      0 0 0 0 rgba(147, 51, 234, 0),
+      0 0 0 0 rgba(236, 72, 153, 0);
+  }
+}
+
+/* Responsive design for loading page */
+@media (max-width: 768px) {
+  .loading-main-heading {
+    font-size: 2rem;
+  }
+  
+  .loading-subheading {
+    font-size: 1rem;
+    padding: 0 20px;
+    margin: -8px 5px 31px 5px;
+  }
+  
+  .loading-countdown {
+    top: 15px;
+    right: 15px;
+    padding: 10px 15px;
+    font-size: 18px;
   }
 }
 

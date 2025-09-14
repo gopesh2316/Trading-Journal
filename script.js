@@ -348,6 +348,11 @@ function initAuth(){
 
 /* ---------- Onboarding ---------- */
 function initOnboarding(){
+  // Back button functionality
+  $("#onboardingBackToAuth").onclick = () => {
+    showApp();
+  };
+  
   $("#startTrading").onclick = () => {
     const initialBalance = parseFloat($("#initialBalance").value);
     const accountName = $("#accountName").value.trim();
@@ -438,7 +443,13 @@ function initNavigation(){
       state.activeView = v;
       $$(".view").forEach(el=>el.classList.add("hidden"));
       $("#view-"+v).classList.remove("hidden");
+      
+      // Special handling for rules view
+      if (v === "rules") {
+        renderRulesPage();
+      } else {
       renderAll();
+      }
     };
   });
 }
@@ -577,8 +588,17 @@ function byDateData(){
     m.set(k, (m.get(k)||0) + (e.pnl||0));
   }
   const rows = Array.from(m.entries()).sort((a,b)=>a[0].localeCompare(b[0]));
+  
+  // Filter to show only last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const filteredRows = rows.filter(([date]) => {
+    const entryDate = new Date(date);
+    return entryDate >= thirtyDaysAgo;
+  });
+  
   let cum=0;
-  return rows.map(([date,pnl])=>{ cum+=pnl; return {date, pnl, cum}; });
+  return filteredRows.map(([date,pnl])=>{ cum+=pnl; return {date, pnl, cum}; });
 }
 
 /* ---------- Risk Metrics Calculations ---------- */
@@ -646,34 +666,67 @@ function renderRiskMetrics() {
   const expectancyEl = $("#expectancy");
   const sharpeEl = $("#sharpeRatio");
   
-  // Risk:Reward Ratio - Green if >= 2, Yellow if >= 1, Red if < 1
+  // Check if dark mode is active
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  
+  // Dark mode - apply light colors for better visibility
+  if (isDarkMode) {
+    // Risk:Reward Ratio - Light Green if >= 2, Light Yellow if >= 1, Light Red if < 1
   if (metrics.riskRewardRatio >= 2) {
-    riskRewardEl.style.color = '#065f46';
+      riskRewardEl.style.color = '#10b981'; // Light green
   } else if (metrics.riskRewardRatio >= 1) {
-    riskRewardEl.style.color = '#92400e';
+      riskRewardEl.style.color = '#f59e0b'; // Light yellow
   } else {
-    riskRewardEl.style.color = '#9f1239';
+      riskRewardEl.style.color = '#ef4444'; // Light red
   }
   
-  // Position Sizing - Green if >= 80%, Yellow if >= 60%, Red if < 60%
+    // Position Sizing - Light Green if >= 80%, Light Yellow if >= 60%, Light Red if < 60%
   if (metrics.positionSizingEfficiency >= 80) {
-    positionSizingEl.style.color = '#065f46';
+      positionSizingEl.style.color = '#10b981'; // Light green
   } else if (metrics.positionSizingEfficiency >= 60) {
-    positionSizingEl.style.color = '#92400e';
+      positionSizingEl.style.color = '#f59e0b'; // Light yellow
   } else {
-    positionSizingEl.style.color = '#9f1239';
+      positionSizingEl.style.color = '#ef4444'; // Light red
   }
   
-  // Expectancy - Green if positive, Red if negative
-  expectancyEl.style.color = metrics.expectancy >= 0 ? '#065f46' : '#9f1239';
+    // Expectancy - Light Green if positive, Light Red if negative
+    expectancyEl.style.color = metrics.expectancy >= 0 ? '#10b981' : '#ef4444'; // Light green/red
   
-  // Sharpe Ratio - Green if >= 1, Yellow if >= 0.5, Red if < 0.5
+    // Sharpe Ratio - Light Green if >= 1, Light Yellow if >= 0.5, Light Red if < 0.5
   if (metrics.sharpeRatio >= 1) {
-    sharpeEl.style.color = '#065f46';
+      sharpeEl.style.color = '#10b981'; // Light green
   } else if (metrics.sharpeRatio >= 0.5) {
-    sharpeEl.style.color = '#92400e';
+      sharpeEl.style.color = '#f59e0b'; // Light yellow
   } else {
-    sharpeEl.style.color = '#9f1239';
+      sharpeEl.style.color = '#ef4444'; // Light red
+    }
+  } else {
+    // Light mode - apply original darker colors
+    if (metrics.riskRewardRatio >= 2) {
+      riskRewardEl.style.color = '#065f46'; // Original dark green
+    } else if (metrics.riskRewardRatio >= 1) {
+      riskRewardEl.style.color = '#92400e'; // Original dark yellow
+    } else {
+      riskRewardEl.style.color = '#9f1239'; // Original dark red
+    }
+    
+    if (metrics.positionSizingEfficiency >= 80) {
+      positionSizingEl.style.color = '#065f46'; // Original dark green
+    } else if (metrics.positionSizingEfficiency >= 60) {
+      positionSizingEl.style.color = '#92400e'; // Original dark yellow
+    } else {
+      positionSizingEl.style.color = '#9f1239'; // Original dark red
+    }
+    
+    expectancyEl.style.color = metrics.expectancy >= 0 ? '#065f46' : '#9f1239'; // Original dark green/red
+    
+    if (metrics.sharpeRatio >= 1) {
+      sharpeEl.style.color = '#065f46'; // Original dark green
+    } else if (metrics.sharpeRatio >= 0.5) {
+      sharpeEl.style.color = '#92400e'; // Original dark yellow
+    } else {
+      sharpeEl.style.color = '#9f1239'; // Original dark red
+    }
   }
 }
 /* ---------- Rendering ---------- */
@@ -1031,7 +1084,7 @@ function renderStats(){
   const profitPercentage = totalAmount > 0 ? Math.round((s.grossProfit / totalAmount) * 100) : 50;
   
   const items = [
-    {label:"Net P&L", value:formatCurrency(s.totalPnl), color: s.totalPnl >= 0 ? '#065f46' : '#9f1239'},
+    {label:"Net P&L", value:formatCurrency(s.totalPnl), color: s.totalPnl >= 0 ? '#065f46' : '#9f1239', isNegative: s.totalPnl < 0},
     {
       label:"Win rate", 
       value:`${Math.round(s.winRate)}%`, 
@@ -1045,7 +1098,7 @@ function renderStats(){
       isProfitFactor: true,
       profitPercentage: profitPercentage
     },
-    {label:"Avg P&L", value:formatCurrency(s.avgPnl), color: s.avgPnl >= 0 ? '#065f46' : '#9f1239'},
+    {label:"Avg P&L", value:formatCurrency(s.avgPnl), color: s.avgPnl >= 0 ? '#065f46' : '#9f1239', isNegative: s.avgPnl < 0},
     {label:"Wins / Losses", isWinsLosses: true, wins: s.wins, losses: s.losses},
   ];
   
@@ -1089,7 +1142,7 @@ function renderStats(){
     return `
       <div class="stat">
         <div class="label">${it.label}${it.sub ? ` <span class="tiny">(${it.sub})</span>` : ""}</div>
-        <div class="value"${it.color ? ` style="color:${it.color}"` : ''}>${it.value}</div>
+        <div class="value"${it.color ? ` style="color:${it.color}"` : ''}${it.isNegative ? ' class="negative"' : ''}>${it.value}</div>
       </div>
     `;
   }).join("");
@@ -1126,20 +1179,125 @@ function renderTable(){
 }
 function renderCharts(){
   const data = byDateData();
-  const width=320, height=180, pad=20;
+  const width=419, height=221, pad=25; // Increased width from 320 to 400
+  const leftMargin = 45; // Add space for Y-axis labels
+  
   // cumulative
   const xs = data.map((_,i)=>i);
   const ys = data.map(r=>r.cum);
   const minY = Math.min(0, ...ys), maxY = Math.max(1,...ys);
-  const xScale = (i)=> pad + (i*(width-pad*2))/Math.max(1,(xs.length-1));
-  const yScale = (v)=> height - pad - ((v - minY) * (height - pad*2)) / Math.max(1,(maxY - minY));
+  
+  // Add padding to Y-axis range for better visualization
+  const yRange = maxY - minY;
+  const yPadding = yRange * 0.1; // 10% padding
+  const adjustedMinY = minY - yPadding;
+  const adjustedMaxY = maxY + yPadding;
+  
+  const xScale = (i)=> leftMargin + (i*(width-leftMargin-pad))/Math.max(1,(xs.length-1));
+  const yScale = (v)=> height - pad - ((v - adjustedMinY) * (height - pad*2)) / Math.max(1,(adjustedMaxY - adjustedMinY));
   const line = data.map((r,i)=>`${xScale(i)},${yScale(r.cum)}`).join(" ");
-  const area = `M ${pad},${yScale(0)} L ${line} L ${pad + (width - pad*2)},${yScale(0)} Z`;
+  const area = `M ${leftMargin},${yScale(0)} L ${line} L ${leftMargin + (width-leftMargin-pad)},${yScale(0)} Z`;
+  
+  // Dynamic currency formatter
+  const formatCurrency = (value) => {
+    if (value === 0) return '₹0';
+    const absValue = Math.abs(value);
+    if (absValue >= 100000) {
+      return `${value < 0 ? '-' : ''}₹${(absValue / 100000).toFixed(1)}L`;
+    } else if (absValue >= 1000) {
+      return `${value < 0 ? '-' : ''}₹${(absValue / 1000).toFixed(1)}K`;
+    } else {
+      return `${value < 0 ? '-' : ''}₹${Math.round(absValue)}`;
+    }
+  };
+  
+  // Generate dynamic Y-axis labels
+  const yLabels = [];
+  const numLabels = 6;
+  const step = (adjustedMaxY - adjustedMinY) / (numLabels - 1);
+  
+  for (let i = 0; i < numLabels; i++) {
+    const value = adjustedMinY + (i * step);
+    const y = yScale(value);
+    const formattedValue = formatCurrency(value);
+    yLabels.push(`<text x="35" y="${y + 5}" font-family="Inter" font-size="11px" fill="#6b7280" class="axis-text" text-anchor="end">${formattedValue}</text>`);
+  }
+  
+  // Generate dynamic grid lines
+  const gridLines = [];
+  for (let i = 0; i < numLabels; i++) {
+    const value = adjustedMinY + (i * step);
+    const y = yScale(value);
+    // Stop grid lines before X-axis labels area (leave space for labels)
+    const gridEndX = width - pad - 0; // Stop 30px before the right edge to avoid X-axis labels
+    gridLines.push(`<line x1="${leftMargin}" y1="${y}" x2="${gridEndX}" y2="${y}" stroke="#b6b6b6" stroke-width="0.5" stroke-dasharray="2,2" opacity="0.6"></line>`);
+  }
+  // Check if dark mode is active for different colors
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  const fillColor = isDarkMode ? '#00815691' : '#b5ffe6'; // Dark green for dark mode, light green for light mode
+  const strokeColor = isDarkMode ? '#b6b6b6' : '#b6b6b6'; // Same stroke color for both modes as requested
+  const curveStrokeColor = '#00815691'; // Dark green for curve in both modes
+  
   $("#cum").innerHTML = `
-    <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="#86efac"/><stop offset="100%" stop-color="#fecaca"/></linearGradient></defs>
+    <defs><linearGradient id="g1" x1="0" x2="0" y1="0" y2="1"><stop offset="0%" stop-color="${fillColor}"/><stop offset="100%" stop-color="${fillColor}"/></linearGradient></defs>
+    
+    <!-- Dynamic Grid lines -->
+    <g class="grid-lines">
+      ${gridLines.join('')}
+    </g>
+    
+    <!-- Y-axis line -->
+    <line x1="${leftMargin}" y1="${height - pad}" x2="${leftMargin}" y2="10" stroke="${strokeColor}" stroke-width="1"></line>
+    
+    <!-- X-axis line -->
+    <line x1="${leftMargin}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" stroke="${strokeColor}" stroke-width="1"></line>
+    
+    <!-- Chart data -->
     <path d="${area}" fill="url(#g1)" opacity=".35"></path>
-    <polyline points="${line}" fill="none" stroke="#4b5563" stroke-width="2"></polyline>
-    <line x1="${pad}" x2="${width-pad}" y1="${height-pad}" y2="${height-pad}" stroke="#b1b1b1"></line>
+    <polyline points="${line}" fill="none" stroke="${curveStrokeColor}" stroke-width="1"></polyline>
+    
+    <!-- Dynamic Y-axis labels -->
+    <g class="y-axis-labels">
+      ${yLabels.join('')}
+    </g>
+    
+    <!-- X-axis labels (last 30 days - show 5 evenly spaced dates) -->
+    <g class="x-axis-labels">
+      ${(() => {
+        const xAxisLabels = [];
+        const numLabels = Math.min(5, data.length); // Show up to 5 labels
+        const step = Math.max(1, Math.floor((data.length - 1) / (numLabels - 1)));
+        
+        // Ensure labels stay within container bounds
+        const labelY = height - 5; // Position labels 5px from bottom of container
+        const minX = leftMargin + 20; // Minimum X position (20px from left margin)
+        const maxX = width - pad - 20; // Maximum X position (20px from right edge)
+        
+        for (let i = 0; i < data.length && xAxisLabels.length < numLabels; i += step) {
+          let x = xScale(i);
+          // Constrain X position to stay within bounds
+          x = Math.max(minX, Math.min(maxX, x));
+          
+          const date = new Date(data[i].date);
+          const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          xAxisLabels.push(`<text x="${x}" y="${labelY}" font-family="Inter" font-size="11px" fill="#9ca3af" class="axis-text" text-anchor="middle">${formattedDate}</text>`);
+        }
+        
+        // Always show the last date if not already included
+        if (data.length > 0 && xAxisLabels.length < numLabels) {
+          const lastIndex = data.length - 1;
+          let lastX = xScale(lastIndex);
+          // Constrain last X position to stay within bounds
+          lastX = Math.max(minX, Math.min(maxX, lastX));
+          
+          const lastDate = new Date(data[lastIndex].date);
+          const lastFormattedDate = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+          xAxisLabels.push(`<text x="${lastX}" y="${labelY}" font-family="Inter" font-size="11px" fill="#9ca3af" class="axis-text" text-anchor="middle">${lastFormattedDate}</text>`);
+        }
+        
+        return xAxisLabels.join('');
+      })()}
+    </g>
   `;
   
   // Render Net Daily P&L separately
@@ -1154,19 +1312,284 @@ function renderCharts(){
   renderRulesDonutChart();
   renderEquityCurve();
   renderTradingHeatmap();
+  
+  // Render new monthly charts
+  renderMonthlyPnlChart();
+  renderDrawdownChart();
+}
+
+function renderMonthlyPnlChart() {
+  // Monthly P&L Chart - Completely isolated function
+  const monthlyPnlData = state.entries;
+  
+  // Get current year
+  const monthlyPnlCurrentYear = new Date().getFullYear();
+  
+  // Initialize all 12 months for current year
+  const monthlyPnlMonthlyData = {};
+  for (let monthlyPnlMonth = 1; monthlyPnlMonth <= 12; monthlyPnlMonth++) {
+    const monthlyPnlMonthKey = `${monthlyPnlCurrentYear}-${String(monthlyPnlMonth).padStart(2, '0')}`;
+    monthlyPnlMonthlyData[monthlyPnlMonthKey] = 0;
+  }
+  
+  // Add actual trade data
+  monthlyPnlData.forEach(monthlyPnlTrade => {
+    const monthlyPnlDate = new Date(monthlyPnlTrade.date);
+    const monthlyPnlMonthKey = `${monthlyPnlDate.getFullYear()}-${String(monthlyPnlDate.getMonth() + 1).padStart(2, '0')}`;
+    if (monthlyPnlMonthlyData.hasOwnProperty(monthlyPnlMonthKey)) {
+      monthlyPnlMonthlyData[monthlyPnlMonthKey] += monthlyPnlTrade.pnl || 0;
+    }
+  });
+
+  // Convert to array and sort by month
+  const monthlyPnlArray = Object.entries(monthlyPnlMonthlyData)
+    .map(([monthlyPnlMonth, monthlyPnlPnl]) => ({ month: monthlyPnlMonth, pnl: monthlyPnlPnl }))
+    .sort((a, b) => a.month.localeCompare(b.month));
+
+  const monthlyPnlWidth = 490;
+  const monthlyPnlHeight = 200;
+  const monthlyPnlPadding = 30; // Reduced padding to maximize chart area
+  const monthlyPnlBarWidth = Math.max(18, (monthlyPnlWidth - monthlyPnlPadding * 2) / monthlyPnlArray.length - 3);
+  
+  const monthlyPnlMinPnl = Math.min(0, ...monthlyPnlArray.map(d => d.pnl));
+  const monthlyPnlMaxPnl = Math.max(0, ...monthlyPnlArray.map(d => d.pnl));
+  const monthlyPnlRange = monthlyPnlMaxPnl - monthlyPnlMinPnl;
+  
+  const monthlyPnlXScale = (i) => monthlyPnlPadding + 8 + (i * (monthlyPnlWidth - monthlyPnlPadding * 2)) / Math.max(1, monthlyPnlArray.length - 1);
+  const monthlyPnlYScale = (pnl) => {
+    if (monthlyPnlRange === 0) return monthlyPnlHeight / 2;
+    return monthlyPnlHeight - monthlyPnlPadding - ((pnl - monthlyPnlMinPnl) * (monthlyPnlHeight - monthlyPnlPadding * 2)) / monthlyPnlRange;
+  };
+
+  // Create bars
+  const monthlyPnlBars = monthlyPnlArray.map((monthlyPnlData, i) => {
+    const monthlyPnlX = monthlyPnlXScale(i) - monthlyPnlBarWidth / 2;
+    const monthlyPnlBarHeight = Math.abs(monthlyPnlData.pnl) * (monthlyPnlHeight - monthlyPnlPadding * 2) / Math.max(monthlyPnlRange, Math.abs(monthlyPnlData.pnl));
+    const monthlyPnlY = monthlyPnlData.pnl >= 0 ? monthlyPnlYScale(monthlyPnlData.pnl) : monthlyPnlYScale(0);
+    
+    const monthlyPnlFillColor = monthlyPnlData.pnl >= 0 ? "#10b981" : "#ef4444";
+    const monthlyPnlMonthName = new Date(monthlyPnlData.month + "-01").toLocaleDateString('en-US', { month: 'short' });
+    
+    return `
+      <rect x="${monthlyPnlX}" y="${monthlyPnlY}" width="${monthlyPnlBarWidth}" height="${monthlyPnlBarHeight}" fill="${monthlyPnlFillColor}" opacity="0.8">
+        <title>${monthlyPnlMonthName}: ${formatCurrency(monthlyPnlData.pnl)}</title>
+      </rect>
+      <text x="${monthlyPnlXScale(i) - 2}" y="${monthlyPnlHeight - 5}" font-family="Inter" font-size="11px" class="axis-text" text-anchor="middle">${monthlyPnlMonthName}</text>
+    `;
+  }).join('');
+
+  // Zero line
+  const monthlyPnlZeroLineY = monthlyPnlYScale(0);
+  const monthlyPnlZeroLine = `<line x1="${monthlyPnlPadding + 20}" y1="${monthlyPnlZeroLineY}" x2="${monthlyPnlWidth - monthlyPnlPadding + 20}" y2="${monthlyPnlZeroLineY}" stroke="#6b7280" stroke-width="1" opacity="0.5" stroke-dasharray="2,2"/>`;
+
+  // Generate Y-axis labels for P&L amounts
+  const monthlyPnlYLabels = [];
+  const monthlyPnlNumLabels = 6;
+  const monthlyPnlStep = monthlyPnlRange / (monthlyPnlNumLabels - 1);
+  
+  // Custom formatter for Monthly P&L chart (K format without decimals)
+  const formatMonthlyPnlAmount = (value) => {
+    if (value === 0) return '₹0';
+    const monthlyPnlAbsValue = Math.abs(value);
+    if (monthlyPnlAbsValue >= 1000) {
+      return `${value < 0 ? '-' : ''}₹${Math.round(monthlyPnlAbsValue / 1000)}K`;
+    } else {
+      return `${value < 0 ? '-' : ''}₹${Math.round(monthlyPnlAbsValue)}`;
+    }
+  };
+  
+  for (let i = 0; i < monthlyPnlNumLabels; i++) {
+    const monthlyPnlValue = monthlyPnlMinPnl + (i * monthlyPnlStep);
+    const monthlyPnlY = monthlyPnlYScale(monthlyPnlValue);
+    const monthlyPnlFormattedValue = formatMonthlyPnlAmount(monthlyPnlValue);
+    monthlyPnlYLabels.push(`<text x="15" y="${monthlyPnlY + 5}" font-family="Inter" font-size="11px" class="axis-text" text-anchor="end">${monthlyPnlFormattedValue}</text>`);
+  }
+
+  $("#monthlyPnlChart").innerHTML = `
+    <g class="monthly-pnl-bars">
+      ${monthlyPnlBars}
+    </g>
+    <g class="monthly-pnl-zero-line">
+      ${monthlyPnlZeroLine}
+    </g>
+    <g class="monthly-pnl-y-axis-labels">
+      ${monthlyPnlYLabels.join('')}
+    </g>
+  `;
+}
+
+function renderDrawdownChart() {
+  // Drawdown Chart - Completely isolated function
+  const drawdownData = state.entries;
+  if (drawdownData.length === 0) {
+    $("#drawdownChart").innerHTML = '<text x="250" y="100" font-family="Inter" font-size="14px" fill="#6b7280" text-anchor="middle">No data available</text>';
+    $("#maxDrawdown").textContent = "0%";
+    return;
+  }
+
+  // Filter data to show only last 7 days
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  
+  const filteredDrawdownData = drawdownData.filter(entry => {
+    const entryDate = new Date(entry.date);
+    return entryDate >= sevenDaysAgo;
+  });
+
+  // Calculate cumulative equity and drawdown
+  const drawdownSortedData = filteredDrawdownData.sort((a, b) => new Date(a.date) - new Date(b.date));
+  let drawdownCumulativeEquity = 0;
+  let drawdownPeakEquity = 0;
+  let drawdownMaxDrawdown = 0;
+  
+  const drawdownProcessedData = drawdownSortedData.map(drawdownTrade => {
+    drawdownCumulativeEquity += drawdownTrade.pnl || 0;
+    drawdownPeakEquity = Math.max(drawdownPeakEquity, drawdownCumulativeEquity);
+    const drawdownPercentage = drawdownPeakEquity > 0 ? ((drawdownCumulativeEquity - drawdownPeakEquity) / drawdownPeakEquity) * 100 : 0;
+    drawdownMaxDrawdown = Math.min(drawdownMaxDrawdown, drawdownPercentage);
+    
+    return {
+      date: drawdownTrade.date,
+      equity: drawdownCumulativeEquity,
+      drawdown: drawdownPercentage
+    };
+  });
+
+  const drawdownWidth = 490;
+  const drawdownHeight = 205;
+  const drawdownPadding = 30; // Reduced padding to maximize chart area
+  
+  const drawdownMinDrawdown = Math.min(0, ...drawdownProcessedData.map(d => d.drawdown));
+  const drawdownMaxDrawdownValue = Math.max(0, ...drawdownProcessedData.map(d => d.drawdown));
+  const drawdownRange = drawdownMaxDrawdownValue - drawdownMinDrawdown;
+  
+  const drawdownXScale = (i) => drawdownPadding + (i * (drawdownWidth - drawdownPadding * 2)) / Math.max(1, drawdownProcessedData.length - 1);
+  const drawdownYScale = (drawdown) => {
+    if (drawdownRange === 0) return drawdownHeight / 2;
+    return drawdownHeight - drawdownPadding - ((drawdown - drawdownMinDrawdown) * (drawdownHeight - drawdownPadding * 2)) / drawdownRange;
+  };
+
+  // Create area path - stretched to the right
+  const drawdownAreaPoints = drawdownProcessedData.map((d, i) => `${drawdownXScale(i)},${drawdownYScale(d.drawdown)}`).join(' L ');
+  const drawdownAreaPath = `M ${drawdownPadding},${drawdownYScale(0)} L ${drawdownAreaPoints} L ${drawdownWidth - 10},${drawdownYScale(0)} Z`;
+
+  // Zero line - positioned at the top since drawdown cannot go above 0%
+  const drawdownZeroLineY = drawdownPadding;
+  const drawdownZeroLine = `<line x1="${drawdownPadding}" y1="${drawdownZeroLineY}" x2="${drawdownWidth - drawdownPadding}" y2="${drawdownZeroLineY}" stroke="#6b7280" stroke-width="1" opacity="0.5" stroke-dasharray="2,2"/>`;
+
+  // Generate Y-axis labels for drawdown
+  const drawdownYLabels = [];
+  const drawdownNumLabels = 5;
+  const drawdownStep = drawdownRange / (drawdownNumLabels - 1);
+  
+  for (let i = 0; i < drawdownNumLabels; i++) {
+    const drawdownValue = drawdownMinDrawdown + (i * drawdownStep);
+    const drawdownY = drawdownYScale(drawdownValue);
+    const drawdownFormattedValue = `${drawdownValue.toFixed(1)}%`;
+    // Position Y-axis labels at their corresponding Y positions on the chart
+    drawdownYLabels.push(`<text x="15" y="${drawdownY + 5}" font-family="Inter" font-size="11px" class="axis-text" text-anchor="end">${drawdownFormattedValue}</text>`);
+  }
+
+  // Generate X-axis labels (dates) - show today and last 6 days
+  const drawdownXLabels = [];
+  const today = new Date();
+  const datesToShow = [];
+  
+  // Generate 7 dates: today and last 6 days
+  for (let i = 0; i < 7; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    datesToShow.unshift(date); // Add to beginning to get chronological order
+  }
+  
+  // Create labels for these dates, evenly spaced across the chart
+  for (let i = 0; i < datesToShow.length; i++) {
+    const drawdownX = drawdownPadding + (i * (drawdownWidth - drawdownPadding * 2)) / (datesToShow.length - 1);
+    const drawdownDateLabel = datesToShow[i].toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    drawdownXLabels.push(`<text x="${drawdownX}" y="${drawdownHeight - 5}" font-family="Inter" font-size="11px" class="axis-text" text-anchor="middle">${drawdownDateLabel}</text>`);
+  }
+
+  // Update max drawdown display (based on last 7 days)
+  $("#maxDrawdown").textContent = `${Math.abs(drawdownMaxDrawdown).toFixed(1)}%`;
+
+  $("#drawdownChart").innerHTML = `
+    <g class="drawdown-area">
+      <path d="${drawdownAreaPath}" fill="#ef4444" opacity="0.3"/>
+    </g>
+    <g class="drawdown-line">
+      <path d="M ${drawdownAreaPoints}" stroke="#ef4444" stroke-width="1" fill="none"/>
+    </g>
+    <g class="drawdown-zero-line">
+      ${drawdownZeroLine}
+    </g>
+    <g class="drawdown-y-axis-labels">
+      ${drawdownYLabels.join('')}
+    </g>
+    <g class="drawdown-x-axis-labels">
+      ${drawdownXLabels.join('')}
+    </g>
+  `;
 }
 
 function renderNetDailyPnlChart() {
-  const data = byDateData();
+  // Use all entries directly from localStorage to bypass any filters
+  let allEntries;
+  try {
+    allEntries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [];
+  } catch {
+    allEntries = state.entries; // Fallback to state.entries
+  }
   
-  // Filter data to show only last 1 month
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+  console.log('Raw entries from localStorage:', allEntries.length);
   
-  const monthlyData = data.filter(item => {
-    const itemDate = new Date(item.date);
-    return itemDate >= oneMonthAgo;
+  // Group by date and sum P&L for each day
+  const dateMap = new Map();
+  for (const entry of allEntries) {
+    const date = entry.date;
+    dateMap.set(date, (dateMap.get(date) || 0) + (entry.pnl || 0));
+  }
+  
+  // Convert to array and sort by date
+  const data = Array.from(dateMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, pnl]) => ({ date, pnl }));
+  
+  // Filter data to show only last 30 days
+  const thirtyDaysAgo = new Date();
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  
+  console.log('Net Daily P&L Debug:', {
+    totalEntries: allEntries.length,
+    totalDataPoints: data.length,
+    thirtyDaysAgo: thirtyDaysAgo.toISOString().split('T')[0],
+    dataRange: data.length > 0 ? `${data[0].date} to ${data[data.length-1].date}` : 'No data',
+    allDates: data.map(d => d.date)
   });
+  
+  let monthlyData = data.filter(item => {
+    const itemDate = new Date(item.date);
+    return itemDate >= thirtyDaysAgo;
+  });
+  
+  console.log('Filtered monthly data:', monthlyData.length, 'points');
+  
+  // If we don't have 30 days of data, show all available data
+  if (monthlyData.length < 5) {
+    console.log('Not enough 30-day data, showing all available data');
+    monthlyData = data;
+  }
+  
+  // Ensure today's date is included even if no trades
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const hasTodayData = monthlyData.some(item => item.date === todayStr);
+  
+  if (!hasTodayData) {
+    monthlyData.push({ date: todayStr, pnl: 0 });
+  }
+  
+  // Sort by date to ensure proper order
+  monthlyData.sort((a, b) => new Date(a.date) - new Date(b.date));
   
   const width = 345, height = 195, pad = 26;
   
@@ -1205,31 +1628,56 @@ function renderNetDailyPnlChart() {
     const value = minPnl + (i * (maxPnl - minPnl) / yAxisSteps);
     const y = yScale(value);
     const formattedValue = formatCurrencyAbbreviated(value);
-    yAxisLabels.push(`<text x="${pad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="var(--muted)">${formattedValue}</text>`);
+    yAxisLabels.push(`<text x="${pad - 8}" y="${y + 4}" text-anchor="end" font-size="10" class="axis-text">${formattedValue}</text>`);
   }
   
-  // X-axis labels for dates - Show exactly 3 evenly spaced labels
+  // X-axis labels for dates - Show today's date and 2 other evenly spaced labels
   const xAxisLabels = [];
-  const xAxisStep = Math.max(1, Math.floor(monthlyData.length / 3)); // Show 3 evenly spaced labels
   
-  // Add 3 evenly spaced labels
-  for (let i = 0; i < monthlyData.length && xAxisLabels.length < 3; i += xAxisStep) {
+  // Always show today's date (last item)
+  if (monthlyData.length > 0) {
+    const todayIndex = monthlyData.length - 1;
+    const todayX = xScale(todayIndex);
+    const todayDate = new Date(monthlyData[todayIndex].date);
+    const todayFormattedDate = todayDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    xAxisLabels.push(`<text x="${todayX}" y="${height - 8}" text-anchor="middle" font-size="9" class="axis-text">${todayFormattedDate}</text>`);
+  }
+  
+  // Add 2 more evenly spaced labels from the remaining data
+  if (monthlyData.length > 1) {
+    const remainingData = monthlyData.slice(0, -1); // Exclude today
+    const step = Math.max(1, Math.floor(remainingData.length / 2)); // Show 2 labels from remaining data
+    
+    for (let i = 0; i < remainingData.length && xAxisLabels.length < 3; i += step) {
     const x = xScale(i);
-    const date = new Date(monthlyData[i].date);
+      const date = new Date(remainingData[i].date);
     const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    xAxisLabels.push(`<text x="${x}" y="${height - 8}" text-anchor="middle" font-size="9" fill="var(--muted)">${formattedDate}</text>`);
+      xAxisLabels.push(`<text x="${x}" y="${height - 8}" text-anchor="middle" font-size="9" class="axis-text">${formattedDate}</text>`);
+    }
   }
   
   // Calculate X-axis line positions to align with bars
   const firstBarX = monthlyData.length > 0 ? xScale(0) - barW/2 : pad + 5;
   const lastBarX = monthlyData.length > 0 ? xScale(monthlyData.length - 1) + barW/2 : width - pad - 5;
   
-  $("#bars").innerHTML = `
+  // Clear and re-render the chart
+  const barsElement = $("#bars");
+  barsElement.innerHTML = '';
+  
+  barsElement.innerHTML = `
     <line x1="${firstBarX}" x2="${lastBarX}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>
     ${bars}
     ${yAxisLabels.join('')}
     ${xAxisLabels.join('')}
   `;
+  
+  console.log('Chart rendered with', monthlyData.length, 'data points');
+}
+
+// Force refresh Net Daily P&L chart
+function refreshNetDailyPnlChart() {
+  console.log('Manually refreshing Net Daily P&L chart...');
+  renderNetDailyPnlChart();
 }
 
 // Tooltip functions for Net Daily P&L chart
@@ -1237,12 +1685,13 @@ function showPnlTooltip(event, pnl, date) {
   // Remove existing tooltip
   hidePnlTooltip();
   
+  const isDarkMode = document.body.classList.contains('dark-mode');
   const tooltip = document.createElement('div');
   tooltip.id = 'pnlTooltip';
   tooltip.style.cssText = `
     position: fixed;
-    background: rgba(255, 255, 255, 0.7);
-    color: black;
+    background: ${isDarkMode ? 'rgba(31, 31, 31, 0.9)' : 'rgba(255, 255, 255, 0.9)'};
+    color: ${isDarkMode ? '#e5e7eb' : 'black'};
     padding: 8px 12px;
     border-radius: 6px;
     font-size: 12px;
@@ -1252,7 +1701,7 @@ function showPnlTooltip(event, pnl, date) {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     line-height: 1.4;
     backdrop-filter: blur(20px);
-    border: 1px solid white;
+    border: 1px solid ${isDarkMode ? '#374151' : 'white'};
   `;
   
   const formattedPnl = formatCurrency(pnl);
@@ -1265,7 +1714,7 @@ function showPnlTooltip(event, pnl, date) {
     <div style="color: ${Number(pnl) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
       ${formattedPnl}
     </div>
-    <div style="color:rgb(14, 14, 14); font-size: 11px;">
+    <div style="color: ${isDarkMode ? '#9ca3af' : 'rgb(14, 14, 14)'}; font-size: 11px;">
       ${formattedDate}
     </div>
   `;
@@ -1300,6 +1749,138 @@ function updatePnlTooltipPosition(event) {
   }
 }
 
+// Expanded chart specific tooltip functions
+function showExpandedPnlTooltip(event, pnl, date) {
+  // Remove existing tooltip
+  hideExpandedPnlTooltip();
+  
+  const tooltip = document.createElement('div');
+  tooltip.id = 'expandedPnlTooltip';
+  
+  // Check for dark mode
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  
+  tooltip.style.cssText = `
+    position: fixed;
+    background: ${isDarkMode ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.95)'};
+    color: ${isDarkMode ? 'white' : '#1f2937'};
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    pointer-events: none;
+    z-index: 10000;
+    box-shadow: ${isDarkMode ? '0 4px 12px rgba(0, 0, 0, 0.4)' : '0 4px 12px rgba(0, 0, 0, 0.15)'};
+    line-height: 1.4;
+    border: 1px solid ${isDarkMode ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'};
+    backdrop-filter: blur(20px);
+  `;
+  
+  const formattedPnl = formatCurrency(pnl);
+  const formattedDate = new Date(date).toLocaleDateString('en-US', { 
+    month: 'short', 
+    day: 'numeric' 
+  });
+  
+  tooltip.innerHTML = `
+    <div style="color: ${Number(pnl) >= 0 ? '#10b981' : '#ef4444'}; font-weight: 600;">
+      ${formattedPnl}
+    </div>
+    <div style="color: ${isDarkMode ? '#d1d5db' : '#6b7280'}; font-size: 11px;">
+      ${formattedDate}
+    </div>
+  `;
+  
+  document.body.appendChild(tooltip);
+  
+  // Position tooltip
+  const rect = tooltip.getBoundingClientRect();
+  const x = event.clientX - rect.width / 2;
+  const y = event.clientY - rect.height - 10;
+
+  tooltip.style.left = Math.max(10, Math.min(window.innerWidth - rect.width - 10, x)) + 'px';
+  tooltip.style.top = Math.max(10, y) + 'px';
+}
+
+function hideExpandedPnlTooltip() {
+  const tooltip = document.getElementById('expandedPnlTooltip');
+  if (tooltip) {
+    tooltip.remove();
+  }
+}
+
+function updateExpandedPnlTooltipPosition(event) {
+  const tooltip = document.getElementById('expandedPnlTooltip');
+  if (tooltip) {
+    const rect = tooltip.getBoundingClientRect();
+    const x = event.clientX - rect.width / 2;
+    const y = event.clientY - rect.height - 10;
+    tooltip.style.left = Math.max(10, Math.min(window.innerWidth - rect.width - 10, x)) + 'px';
+    tooltip.style.top = Math.max(10, y) + 'px';
+  }
+}
+
+// Bar highlighting functions for expanded chart
+function highlightBar(barIndex, hoverColor) {
+  const bars = document.querySelectorAll('#expandedBars .pnl-bar');
+  if (bars[barIndex]) {
+    bars[barIndex].style.fill = hoverColor;
+    bars[barIndex].style.opacity = '1';
+  }
+}
+
+function unhighlightBar(barIndex, baseColor) {
+  const bars = document.querySelectorAll('#expandedBars .pnl-bar');
+  if (bars[barIndex]) {
+    bars[barIndex].style.fill = baseColor;
+    bars[barIndex].style.opacity = '0.85';
+  }
+}
+
+// Line highlighting functions for expanded chart
+function highlightLines(barIndex, hoverColor) {
+  const leftLine = document.querySelector(`#expandedBars .bar-line-left[data-bar-index="${barIndex}"]`);
+  const rightLine = document.querySelector(`#expandedBars .bar-line-right[data-bar-index="${barIndex}"]`);
+  
+  if (leftLine) {
+    leftLine.style.stroke = hoverColor;
+    leftLine.style.opacity = '0.6';
+  }
+  if (rightLine) {
+    rightLine.style.stroke = hoverColor;
+    rightLine.style.opacity = '0.6';
+  }
+}
+
+function unhighlightLines(barIndex, baseColor) {
+  const leftLine = document.querySelector(`#expandedBars .bar-line-left[data-bar-index="${barIndex}"]`);
+  const rightLine = document.querySelector(`#expandedBars .bar-line-right[data-bar-index="${barIndex}"]`);
+  
+  if (leftLine) {
+    leftLine.style.stroke = baseColor;
+    leftLine.style.opacity = '0.3';
+  }
+  if (rightLine) {
+    rightLine.style.stroke = baseColor;
+    rightLine.style.opacity = '0.3';
+  }
+}
+
+// Fill area functions for expanded chart
+function showFillArea(barIndex) {
+  const fillArea = document.querySelector(`#expandedBars .bar-fill-area[data-bar-index="${barIndex}"]`);
+  if (fillArea) {
+    fillArea.style.opacity = '1';
+  }
+}
+
+function hideFillArea(barIndex) {
+  const fillArea = document.querySelector(`#expandedBars .bar-fill-area[data-bar-index="${barIndex}"]`);
+  if (fillArea) {
+    fillArea.style.opacity = '0';
+  }
+}
+
 // Expanded Net Daily P&L functionality
 function toggleExpandedNetDailyPnl() {
   const popup = document.getElementById('expandedNetDailyPnlPopup');
@@ -1310,10 +1891,65 @@ function toggleExpandedNetDailyPnl() {
   }
 }
 
+function initExpandedChartTimeRange() {
+  const timeRangeBtn = $("#expandedTimeRangeBtn");
+  const timeRangeDropdown = $("#expandedTimeRangeDropdown");
+  const selectedTimeRangeSpan = $("#expandedSelectedTimeRange");
+  
+  if (timeRangeBtn && timeRangeDropdown) {
+    // Toggle dropdown
+    timeRangeBtn.onclick = (e) => {
+      e.stopPropagation();
+      timeRangeDropdown.classList.toggle('hidden');
+      timeRangeBtn.classList.toggle('active');
+    };
+    
+    // Handle option selection
+    const options = timeRangeDropdown.querySelectorAll('.time-range-option');
+    options.forEach(option => {
+      option.onclick = (e) => {
+        e.stopPropagation();
+        const days = parseInt(option.dataset.range);
+        const label = option.querySelector('label').textContent;
+        
+        // Update selected option
+        options.forEach(opt => opt.querySelector('input').checked = false);
+        option.querySelector('input').checked = true;
+        
+        // Update button text
+        selectedTimeRangeSpan.textContent = label;
+        
+        // Close dropdown
+        timeRangeDropdown.classList.add('hidden');
+        timeRangeBtn.classList.remove('active');
+        
+        // Update chart
+        console.log("Time range changed to:", days, "days");
+        renderExpandedNetDailyPnlChart(days);
+      };
+    });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!timeRangeBtn.contains(e.target) && !timeRangeDropdown.contains(e.target)) {
+        timeRangeDropdown.classList.add('hidden');
+        timeRangeBtn.classList.remove('active');
+      }
+    });
+  }
+}
+
 function showExpandedNetDailyPnl() {
   const popup = document.getElementById('expandedNetDailyPnlPopup');
   popup.classList.remove('hidden');
-  renderExpandedNetDailyPnlChart();
+  
+  // Initialize time range selector
+  initExpandedChartTimeRange();
+  
+  // Get selected time range and render chart
+  const checkedOption = $("#expandedTimeRangeDropdown").querySelector('input[type="checkbox"]:checked');
+  const selectedDays = checkedOption ? parseInt(checkedOption.closest('.time-range-option').dataset.range) : 30;
+  renderExpandedNetDailyPnlChart(selectedDays);
 }
 
 function hideExpandedNetDailyPnl() {
@@ -1321,27 +1957,60 @@ function hideExpandedNetDailyPnl() {
   popup.classList.add('hidden');
 }
 
-function renderExpandedNetDailyPnlChart() {
-  const data = byDateData();
-  // Filter data to show only last 1 month
-  const oneMonthAgo = new Date();
-  oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-  const monthlyData = data.filter(item => {
-    const itemDate = new Date(item.date);
-    return itemDate >= oneMonthAgo;
-  });
-
-  const width = 800, height = 400, pad = 40; // Larger dimensions for expanded view
+function renderExpandedNetDailyPnlChart(days = 30) {
+  // Use all entries directly from localStorage to bypass any filters
+  let allEntries;
+  try {
+    allEntries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [];
+  } catch {
+    allEntries = state.entries; // Fallback to state.entries
+  }
   
-  // Calculate scales for expanded Net Daily P&L using monthlyData
-  const minPnl = Math.min(0, ...monthlyData.map(r=>r.pnl));
-  const maxPnl = Math.max(1, ...monthlyData.map(r=>r.pnl));
-  const xScale = (i)=> pad + 10 + (i*(width-pad*2-50))/Math.max(1,(monthlyData.length-1));
+  console.log('Raw entries from localStorage (expanded):', allEntries.length);
+  
+  // Group by date and sum P&L for each day
+  const dateMap = new Map();
+  for (const entry of allEntries) {
+    const date = entry.date;
+    dateMap.set(date, (dateMap.get(date) || 0) + (entry.pnl || 0));
+  }
+  
+  // Convert to array and sort by date
+  const data = Array.from(dateMap.entries())
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, pnl]) => ({ date, pnl }));
+  
+  // Filter data based on selected time range
+  const daysAgo = new Date();
+  daysAgo.setDate(daysAgo.getDate() - days);
+  const filteredData = data.filter(item => {
+    const itemDate = new Date(item.date);
+    return itemDate >= daysAgo;
+  });
+  
+  // Ensure today's date is included even if no trades
+  const today = new Date();
+  const todayStr = today.toISOString().split('T')[0];
+  const hasTodayData = filteredData.some(item => item.date === todayStr);
+  
+  if (!hasTodayData) {
+    filteredData.push({ date: todayStr, pnl: 0 });
+  }
+  
+  // Sort by date to ensure proper order
+  filteredData.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  const width = 815, height = 450, pad = 60, rightPad = 60, leftBarMargin = 33; // Increased left bar margin to move bars further right
+  
+  // Calculate scales for expanded Net Daily P&L using filteredData
+  const minPnl = Math.min(0, ...filteredData.map(r=>r.pnl));
+  const maxPnl = Math.max(1, ...filteredData.map(r=>r.pnl));
+  const xScale = (i)=> pad + leftBarMargin + (i*(width-pad-rightPad-leftBarMargin-10))/Math.max(1,(filteredData.length-1));
   const yScale = (v)=> height - pad - ((v - minPnl) * (height - pad*2)) / Math.max(1,(maxPnl - minPnl));
 
   // bars with hover effects for expanded view
-  const barW = Math.max(4, (width - pad*2) / Math.max(1, monthlyData.length*1.1));
-  const bars = monthlyData.map((r,i)=>{
+  const barW = Math.max(4, (width - pad - rightPad - leftBarMargin - 20) / Math.max(1, filteredData.length*1.1));
+  const bars = filteredData.map((r,i)=>{
     const x = xScale(i) - barW/2;
     const y0 = yScale(0);
     const y1 = yScale(r.pnl);
@@ -1354,10 +2023,7 @@ function renderExpandedNetDailyPnlChart() {
             class="pnl-bar"
             data-pnl="${r.pnl}"
             data-date="${r.date}"
-            style="cursor: pointer; transition: fill 0.2s ease, opacity 0.2s ease;"
-            onmouseover="this.style.fill='${hoverColor}'; this.style.opacity='1'; showPnlTooltip(event, '${r.pnl}', '${r.date}')"
-            onmousemove="updatePnlTooltipPosition(event)"
-            onmouseout="this.style.fill='${baseColor}'; this.style.opacity='.85'; hidePnlTooltip()"></rect>`;
+            style="transition: fill 0.2s ease, opacity 0.2s ease;"></rect>`;
   }).join("");
 
   // Y-axis labels for amounts (expanded view)
@@ -1367,34 +2033,152 @@ function renderExpandedNetDailyPnlChart() {
     const value = minPnl + (i * (maxPnl - minPnl) / yAxisSteps);
     const y = yScale(value);
     const formattedValue = formatCurrencyAbbreviated(value);
-    yAxisLabels.push(`<text x="${pad - 12}" y="${y + 4}" text-anchor="end" font-size="12" fill="var(--muted)">${formattedValue}</text>`);
+    yAxisLabels.push(`<text x="${pad - 12}" y="${y + 4}" text-anchor="end" font-size="12" class="axis-text">${formattedValue}</text>`);
   }
 
-  // X-axis labels for dates (expanded view)
+  // X-axis labels for dates (expanded view) - Dynamic based on time range
   const xAxisLabels = [];
-  const xAxisStep = Math.max(1, Math.floor(monthlyData.length / 10)); // More labels for expanded view
-  for (let i = 0; i < monthlyData.length; i += xAxisStep) {
-    const x = xScale(i);
-    const date = new Date(monthlyData[i].date);
-    const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    xAxisLabels.push(`<text x="${x}" y="${height - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">${formattedDate}</text>`);
+  let maxLabels, xAxisStep;
+  
+  // Determine max labels based on time range
+  if (days <= 7) {
+    maxLabels = filteredData.length; // Show all dates for 7 days
+    xAxisStep = 1;
+  } else if (days <= 14) {
+    maxLabels = 9; // Show 9 dates for 14 days
+    xAxisStep = Math.max(1, Math.floor(filteredData.length / (maxLabels - 1)));
+  } else {
+    maxLabels = 9; // Show 9 dates for 30+ days
+    xAxisStep = Math.max(1, Math.floor(filteredData.length / (maxLabels - 1)));
   }
   
-  // Add final date label if not already included
-  if (monthlyData.length > 0 && (monthlyData.length - 1) % xAxisStep !== 0) {
-    const lastIndex = monthlyData.length - 1;
-    const x = xScale(lastIndex);
-    const date = new Date(monthlyData[lastIndex].date);
+  // Always include the last date (current/today)
+  const lastIndex = filteredData.length - 1;
+  const lastX = xScale(lastIndex);
+  const lastDate = new Date(filteredData[lastIndex].date);
+  const lastFormattedDate = lastDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  xAxisLabels.push(`<text x="${lastX}" y="${height - 12}" text-anchor="middle" font-size="11" class="axis-text">${lastFormattedDate}</text>`);
+  
+  // Add other dates with calculated step
+  const usedIndices = new Set([lastIndex]); // Track used indices to avoid duplicates
+  
+  for (let i = 0; i < filteredData.length && xAxisLabels.length < maxLabels; i += xAxisStep) {
+    if (!usedIndices.has(i)) {
+    const x = xScale(i);
+      const date = new Date(filteredData[i].date);
     const formattedDate = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-    xAxisLabels.push(`<text x="${x}" y="${height - 12}" text-anchor="middle" font-size="11" fill="var(--muted)">${formattedDate}</text>`);
+      xAxisLabels.push(`<text x="${x}" y="${height - 12}" text-anchor="middle" font-size="11" class="axis-text">${formattedDate}</text>`);
+      usedIndices.add(i);
+    }
+  }
+  
+  // Sort labels by x position to ensure proper order
+  xAxisLabels.sort((a, b) => {
+    const aX = parseFloat(a.match(/x="([^"]+)"/)[1]);
+    const bX = parseFloat(b.match(/x="([^"]+)"/)[1]);
+    return aX - bX;
+  });
+
+  // Generate light vertical lines for each bar with hover areas
+  const hoverAreas = [];
+  const isDarkMode = document.body.classList.contains('dark-mode');
+  const lineColor = isDarkMode ? '#4b5563' : '#e5e7eb'; // Light gray for visibility
+  const hoverLineColor = isDarkMode ? '#6b7280' : '#d1d5db'; // Slightly darker on hover
+  
+  for (let i = 0; i < filteredData.length; i++) {
+    const barX = xScale(i) - barW/2; // Bar left position
+    const barRightX = barX + barW; // Bar right position
+    const hoverWidth = Math.max(barW, 20); // Minimum hover width for easy targeting
+    
+    // Create fill area below bars (initially hidden)
+    const barHeight = Math.abs(yScale(filteredData[i].pnl) - yScale(0));
+    const fillY = filteredData[i].pnl >= 0 ? yScale(0) : yScale(filteredData[i].pnl);
+    hoverAreas.push(`<rect x="${barX}" y="${fillY}" width="${barW}" height="${barHeight}" 
+                     fill="#f3f3f3b5" 
+                     opacity="0" 
+                     class="bar-fill-area" 
+                     data-bar-index="${i}"
+                     style="pointer-events: none;"></rect>`);
+    
+    // Create left edge vertical line (only within bar height)
+    const barTop = Math.min(yScale(filteredData[i].pnl), yScale(0));
+    const barBottom = Math.max(yScale(filteredData[i].pnl), yScale(0));
+    hoverAreas.push(`<line x1="${barX}" y1="${barTop}" x2="${barX}" y2="${barBottom}" stroke="${lineColor}" stroke-width="1" opacity="0.3" class="bar-line-left" data-bar-index="${i}"></line>`);
+    
+    // Create right edge vertical line (only within bar height)
+    hoverAreas.push(`<line x1="${barRightX}" y1="${barTop}" x2="${barRightX}" y2="${barBottom}" stroke="${lineColor}" stroke-width="1" opacity="0.3" class="bar-line-right" data-bar-index="${i}"></line>`);
+    
+    // Create invisible hover area that extends full height
+    hoverAreas.push(`<rect x="${barX - 5}" y="${pad}" width="${barW + 10}" height="${height - pad*2}" 
+                     fill="transparent" 
+                     style="cursor: pointer;"
+                     onmouseover="showExpandedPnlTooltip(event, '${filteredData[i].pnl}', '${filteredData[i].date}'); highlightBar(${i}, '${filteredData[i].pnl >= 0 ? '#059669' : '#dc2626'}'); highlightLines(${i}, '${hoverLineColor}'); showFillArea(${i})"
+                     onmousemove="updateExpandedPnlTooltipPosition(event)"
+                     onmouseout="hideExpandedPnlTooltip(); unhighlightBar(${i}, '${filteredData[i].pnl >= 0 ? '#10b981' : '#ef4444'}'); unhighlightLines(${i}, '${lineColor}'); hideFillArea(${i})"></rect>`);
   }
 
   $("#expandedBars").innerHTML = `
-    <line x1="${pad + 10}" x2="${width-pad-10}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>
+    <line x1="${pad + leftBarMargin + 20}" x2="${xScale(filteredData.length - 1) + barW/2}" y1="${yScale(0)}" y2="${yScale(0)}" stroke="#b1b1b1"></line>
     ${bars}
+    ${hoverAreas.join('')}
     ${yAxisLabels.join('')}
     ${xAxisLabels.join('')}
   `;
+  
+  // Update expanded metrics
+  updateExpandedMetrics(filteredData);
+}
+
+function updateExpandedMetrics(data) {
+  if (!data || data.length === 0) {
+    $("#expandedHighestProfit").textContent = "$0";
+    $("#expandedHighestLoss").textContent = "$0";
+    $("#expandedBalanceChange").textContent = "0%";
+    return;
+  }
+  
+  // Calculate highest profit and loss
+  const profits = data.map(d => d.pnl).filter(pnl => pnl > 0);
+  const losses = data.map(d => d.pnl).filter(pnl => pnl < 0);
+  
+  const highestProfit = profits.length > 0 ? Math.max(...profits) : 0;
+  const highestLoss = losses.length > 0 ? Math.min(...losses) : 0;
+  
+  // Calculate balance change percentage
+  const totalPnl = data.reduce((sum, d) => sum + d.pnl, 0);
+  
+  // Get initial balance from localStorage or use a default
+  let initialBalance = 10000; // Default fallback
+  try {
+    const accountData = JSON.parse(localStorage.getItem('accountData') || '{}');
+    initialBalance = accountData.initialBalance || 10000;
+  } catch (e) {
+    console.log('Using default initial balance');
+  }
+  
+  const balanceChangePercent = initialBalance > 0 ? (totalPnl / initialBalance) * 100 : 0;
+  
+  // Update UI
+  $("#expandedHighestProfit").textContent = formatCurrency(highestProfit);
+  $("#expandedHighestLoss").textContent = formatCurrency(highestLoss);
+  $("#expandedBalanceChange").textContent = `${balanceChangePercent >= 0 ? '+' : ''}${balanceChangePercent.toFixed(2)}%`;
+  
+  // Update colors based on values
+  const profitElement = $("#expandedHighestProfit");
+  const lossElement = $("#expandedHighestLoss");
+  const changeElement = $("#expandedBalanceChange");
+  
+  if (profitElement) {
+    profitElement.className = highestProfit > 0 ? "expanded-metric-value profit" : "expanded-metric-value";
+  }
+  
+  if (lossElement) {
+    lossElement.className = highestLoss < 0 ? "expanded-metric-value loss" : "expanded-metric-value";
+  }
+  
+  if (changeElement) {
+    changeElement.className = balanceChangePercent >= 0 ? "expanded-metric-value profit" : "expanded-metric-value loss";
+  }
 }
 
 function renderTradingScores() {
@@ -1755,8 +2539,16 @@ function renderSessionChart() {
     let wins = 0, losses = 0;
     
     state.entries.forEach(entry => {
-      // Use the actual trading session from the entry
-      if (entry.tradingSession === session.name) {
+      // More flexible session matching - handle various cases
+      const entrySession = entry.tradingSession || '';
+      const sessionName = session.name.toLowerCase();
+      const entrySessionLower = entrySession.toLowerCase();
+      
+      // Match exact session name or handle auto-detected sessions
+      if (entrySession === session.name || 
+          entrySessionLower === sessionName ||
+          entrySessionLower.includes(sessionName) ||
+          sessionName.includes(entrySessionLower)) {
         if ((entry.pnl || 0) > 0) wins++;
         else if ((entry.pnl || 0) < 0) losses++;
       }
@@ -1770,10 +2562,13 @@ function renderSessionChart() {
       winRate: wins + losses > 0 ? (wins / (wins + losses)) * 100 : 0,
       color: session.color
     };
-  });
+  }); // Show all sessions, even with 0 trades
 
   // Find max value for scaling (total trades for horizontal bars)
   const maxTrades = Math.max(...sessionData.map(d => d.total), 1);
+  
+  // If no trades at all, set a minimum scale for display
+  const scaleMaxTrades = maxTrades === 0 ? 1 : maxTrades;
   
   // Find the highest win rate to determine which session should be bold
   const maxWinRate = Math.max(...sessionData.map(d => d.winRate));
@@ -1790,8 +2585,8 @@ function renderSessionChart() {
     const y = startY + index * barSpacing;
     
     // Calculate bar widths based on wins and losses
-    const winWidth = (session.wins / maxTrades) * barMaxWidth;
-    const lossWidth = (session.losses / maxTrades) * barMaxWidth;
+    const winWidth = (session.wins / scaleMaxTrades) * barMaxWidth;
+    const lossWidth = (session.losses / scaleMaxTrades) * barMaxWidth;
     
     // Determine bar color intensity - only highest win rate gets deeper colors
     const isHighestWinRate = session.winRate === maxWinRate;
@@ -1799,8 +2594,10 @@ function renderSessionChart() {
     const lossColor = isHighestWinRate ? `rgba(239, 68, 68, 0.85)` : `rgba(239, 68, 68, 0.7)`; // Deep red only for highest win rate
     
     return `
+      <!-- Background bar for sessions with no trades -->
+      ${session.total === 0 ? `<rect x="${barStartX}" y="${y}" width="${barMaxWidth}" height="${barHeight}" fill="rgba(107, 114, 128, 0.1)" rx="2"></rect>` : ''}
       <!-- Loss bar (red) -->
-      <rect x="${barStartX}" y="${y}" width="${lossWidth}" height="${barHeight}" fill="${lossColor}" rx="0"></rect>
+      ${lossWidth > 0 ? `<rect x="${barStartX}" y="${y}" width="${lossWidth}" height="${barHeight}" fill="${lossColor}" rx="0"></rect>` : ''}
       <!-- Win bar (green) with custom border radius -->
       ${winWidth > 0 ? `
         <path d="M ${barStartX + lossWidth} ${y} 
@@ -1812,7 +2609,7 @@ function renderSessionChart() {
                  Z" fill="${winColor}"/>
       ` : ''}
       <!-- Session name with win rate positioned above the bar -->
-      <text x="${barStartX}" y="${y - 5}" font-size="11" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}" font-weight="${session.winRate === maxWinRate ? '800' : '500'}" font-family="Inter, sans-serif" style="font-weight: ${session.winRate === maxWinRate ? '800' : '500'} !important;">${session.name} (${Math.round(session.winRate)}%)</text>
+      <text x="${barStartX}" y="${y - 8}" font-size="11" fill="${getComputedStyle(document.documentElement).getPropertyValue('--text')}" font-weight="${session.winRate === maxWinRate && session.total > 0 ? '800' : '500'}" font-family="Inter, sans-serif" style="font-weight: ${session.winRate === maxWinRate && session.total > 0 ? '800' : '500'} !important;">${session.name} (${session.total > 0 ? Math.round(session.winRate) : 0}%)</text>
       <!-- Loss count positioned to the right of the loss bar -->
       ${session.losses > 0 ? `<text x="${barStartX + lossWidth - 8}" y="${y + 16}" text-anchor="end" font-size="10" fill="white" font-weight="600">${session.losses}</text>` : ''}
       <!-- Win count positioned to the right of the win bar -->
@@ -2352,7 +3149,7 @@ function renderEquityCurve() {
       yPos = y + 8; // Move zero label up slightly
     }
     
-    yLabels.push(`<text x="${xPos}" y="${yPos}" text-anchor="end" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
+    yLabels.push(`<text x="${xPos}" y="${yPos}" text-anchor="end" font-size="11" class="axis-text" font-family="Inter">${label}</text>`);
   }
 
   // Generate X-axis labels with month names below the line
@@ -2376,7 +3173,7 @@ function renderEquityCurve() {
         xOffset = 15; // Move first label to the right to avoid Y-axis overlap
       }
       
-      xLabels.push(`<text x="${x + xOffset}" y="${yPosition}" text-anchor="middle" font-size="11" fill="#6b7280" font-family="Inter">${label}</text>`);
+      xLabels.push(`<text x="${x + xOffset}" y="${yPosition}" text-anchor="middle" font-size="11" class="axis-text" font-family="Inter">${label}</text>`);
     }
   }
 
@@ -2798,19 +3595,47 @@ function bindRuleOptions(){
 
 /* ---------- New Trade Steps Functions ---------- */
 let newTradeCurrentStep = 1;
-const newTradeTotalSteps = 5;
+const newTradeTotalSteps = 6;
+
+// Motivational subheadings for loading page
+const motivationalSubheadings = [
+  "Focus. Every click counts.",
+  "Trade with caution, not emotion.",
+  "Discipline over impulse.",
+  "Plan the trade. Trade the plan.",
+  "One trade, full focus.",
+  "Stay sharp, stay steady.",
+  "Risk managed, mind calm.",
+  "Every position deserves attention.",
+  "Patience pays. Impulse costs.",
+  "The best edge is discipline."
+];
+
+let currentSubheadingIndex = 0;
 
 function showNewTradeSteps() {
+  // Clear any existing form data first
+  clearNewTradeFormData();
+  
   // Reset to first step
   newTradeCurrentStep = 1;
   
-  // Hide all steps
+  // Hide all steps (both regular and wide)
   $$(".new-trade-step").forEach(step => {
+    step.classList.add("hidden");
+  });
+  $$(".new-trade-step-wide").forEach(step => {
     step.classList.add("hidden");
   });
   
   // Show first step
   $("#newTradeStep1").classList.remove("hidden");
+  
+  // Reset card width to default
+  const card = $(".new-trade-card");
+  if (card) {
+    card.style.width = "min(400px, 90vw)";
+  }
   
   // Show the new trade steps screen
   $("#newTradeSteps").classList.remove("hidden");
@@ -2901,6 +3726,66 @@ function displayActiveTradingSession() {
 function initNumericalInputValidation() {
   const stopLossInput = document.getElementById('newTradeStopLoss');
   const targetInput = document.getElementById('newTradeTarget');
+  
+  // Add validation clearing for all required fields
+  const requiredFields = [
+    '#newTradeSymbol',
+    '#newTradeSide', 
+    '#newTradeQuantity',
+    '#newTradePrice',
+    '#newTradeStopLoss',
+    '#newTradeTarget',
+    '#newTradePnl'
+  ];
+  
+  requiredFields.forEach(fieldId => {
+    const field = $(fieldId);
+    if (field) {
+      // Clear validation error when user starts typing
+      field.addEventListener('input', function() {
+        const wrapper = this.closest('.new-trade-input-wrapper');
+        if (wrapper && wrapper.classList.contains('error')) {
+          wrapper.classList.remove('error');
+        }
+      });
+      
+      // Clear validation error when user focuses on the field
+      field.addEventListener('focus', function() {
+        const wrapper = this.closest('.new-trade-input-wrapper');
+        if (wrapper && wrapper.classList.contains('error')) {
+          wrapper.classList.remove('error');
+        }
+      });
+      
+      // For select elements, also listen to change event
+      if (field.tagName === 'SELECT') {
+        field.addEventListener('change', function() {
+          const wrapper = this.closest('.new-trade-input-wrapper');
+          if (wrapper && wrapper.classList.contains('error')) {
+            wrapper.classList.remove('error');
+          }
+        });
+      }
+    }
+  });
+  
+  // Add validation clearing for rules container
+  const rulesSearch = $("#newTradeRulesSearch");
+  if (rulesSearch) {
+    rulesSearch.addEventListener('focus', function() {
+      const rulesContainer = document.querySelector('#newTradeRulesMultiSelect');
+      if (rulesContainer && rulesContainer.classList.contains('error')) {
+        rulesContainer.classList.remove('error');
+      }
+    });
+    
+    rulesSearch.addEventListener('click', function() {
+      const rulesContainer = document.querySelector('#newTradeRulesMultiSelect');
+      if (rulesContainer && rulesContainer.classList.contains('error')) {
+        rulesContainer.classList.remove('error');
+      }
+    });
+  }
   
   if (stopLossInput) {
     // Prevent non-numerical input
@@ -2995,8 +3880,143 @@ function testSessionDetection() {
 }
 
 
+// Function to clear all new trade form data
+function clearNewTradeFormData() {
+  // Clear all input fields
+  const inputFields = [
+    '#newTradeSymbol',
+    '#newTradeSide',
+    '#newTradeQuantity', 
+    '#newTradePrice',
+    '#newTradeStopLoss',
+    '#newTradeTarget',
+    '#newTradePnl'
+  ];
+  
+  inputFields.forEach(fieldId => {
+    const field = $(fieldId);
+    if (field) {
+      field.value = '';
+    }
+  });
+  
+  // Clear notes editor
+  const notesEditor = $("#newTradeNotesEditor");
+  if (notesEditor) {
+    notesEditor.innerHTML = '';
+  }
+  
+  // Clear selected rules
+  const selectedRules = $("#newTradeSelectedRules");
+  if (selectedRules) {
+    selectedRules.innerHTML = '';
+  }
+  
+  // Clear pre-chart images
+  const prechartImages = $("#prechartImages");
+  if (prechartImages) {
+    prechartImages.innerHTML = '';
+  }
+  
+  // Reset pre-chart file input
+  const prechartFileInput = $("#prechartFileInput");
+  if (prechartFileInput) {
+    prechartFileInput.value = '';
+  }
+  
+  // Show pre-chart placeholder
+  const prechartPlaceholder = $("#prechartPlaceholder");
+  if (prechartPlaceholder) {
+    prechartPlaceholder.style.display = 'flex';
+  }
+}
+
+// Function to clear all new trade form data
+function clearNewTradeFormData() {
+  // Clear all input fields
+  const inputFields = [
+    '#newTradeSymbol',
+    '#newTradeSide',
+    '#newTradeQuantity', 
+    '#newTradePrice',
+    '#newTradeStopLoss',
+    '#newTradeTarget',
+    '#newTradePnl'
+  ];
+  
+  inputFields.forEach(fieldId => {
+    const field = $(fieldId);
+    if (field) {
+      field.value = '';
+    }
+  });
+  
+  // Clear notes editor
+  const notesEditor = $("#newTradeNotesEditor");
+  if (notesEditor) {
+    notesEditor.innerHTML = '';
+  }
+  
+  // Clear selected rules
+  const selectedRules = $("#newTradeSelectedRules");
+  if (selectedRules) {
+    selectedRules.innerHTML = '';
+  }
+  
+  // Clear pre-chart images
+  const prechartImages = $("#prechartImages");
+  if (prechartImages) {
+    prechartImages.innerHTML = '';
+  }
+  
+  // Reset pre-chart file input
+  const prechartFileInput = $("#prechartFileInput");
+  if (prechartFileInput) {
+    prechartFileInput.value = '';
+  }
+  
+  // Show pre-chart placeholder
+  const prechartPlaceholder = $("#prechartPlaceholder");
+  if (prechartPlaceholder) {
+    prechartPlaceholder.style.display = 'flex';
+  }
+  
+  // Clear any validation errors
+  clearValidationErrors();
+  
+  // Hide rules dropdown if it's open
+  hideNewTradeRulesDropdown();
+  
+  // Hide all steps to prevent merging
+  $$(".new-trade-step").forEach(step => {
+    step.classList.add("hidden");
+  });
+  $$(".new-trade-step-wide").forEach(step => {
+    step.classList.add("hidden");
+  });
+  
+  // Reset step counter
+  newTradeCurrentStep = 1;
+  
+  // Reset subheading index for next trade
+  // Note: We don't reset currentSubheadingIndex here to maintain rotation
+  
+  // Reset loading page active flag
+  window.loadingPageActive = false;
+  
+  // Remove any existing countdown
+  const countdownElement = document.getElementById('loadingCountdown');
+  if (countdownElement) {
+    countdownElement.remove();
+  }
+  
+  console.log('New trade form data cleared');
+}
+
 function initNewTradeBackButton() {
   $("#newTradeBackToApp").onclick = () => {
+    // Clear all form data before hiding
+    clearNewTradeFormData();
     hideNewTradeSteps();
   };
 }
@@ -3010,12 +4030,14 @@ function initNewTradeMultiSelect() {
   // Clear any existing event listeners
   rulesSearch.removeEventListener('input', handleNewTradeRulesSearch);
   rulesSearch.removeEventListener('focus', handleNewTradeRulesFocus);
+  rulesSearch.removeEventListener('click', handleNewTradeRulesClick);
   rulesDropdown.removeEventListener('click', handleNewTradeRulesDropdownClick);
   rulesSearch.removeEventListener('keydown', handleNewTradeRulesKeydown);
   
   // Add new event listeners
   rulesSearch.addEventListener('input', handleNewTradeRulesSearch);
   rulesSearch.addEventListener('focus', handleNewTradeRulesFocus);
+  rulesSearch.addEventListener('click', handleNewTradeRulesClick);
   rulesDropdown.addEventListener('click', handleNewTradeRulesDropdownClick);
   rulesSearch.addEventListener('keydown', handleNewTradeRulesKeydown);
   
@@ -3033,6 +4055,12 @@ function handleNewTradeRulesFocus() {
   showNewTradeRulesDropdown();
 }
 
+function handleNewTradeRulesClick(e) {
+  e.stopPropagation(); // Prevent event bubbling
+  renderNewTradeRulesList();
+  showNewTradeRulesDropdown();
+}
+
 function handleNewTradeRulesDropdownClick(e) {
   e.stopPropagation();
 }
@@ -3045,7 +4073,40 @@ function handleNewTradeRulesKeydown(e) {
 
 function renderNewTradeRulesList(searchTerm = '') {
   const rulesList = $("#newTradeRulesList");
-  if (!rulesList) return;
+  const dropdown = $("#newTradeRulesDropdown");
+  
+  if (!rulesList || !dropdown) return;
+  
+  // Add header if it doesn't exist
+  let header = dropdown.querySelector('.rules-popup-header');
+  if (!header) {
+    header = document.createElement('div');
+    header.className = 'rules-popup-header';
+    header.innerHTML = `
+      <span>Select Trading Rules</span>
+      <button class="rules-popup-close" onclick="hideNewTradeRulesDropdown()">
+        <span class="material-icons">close</span>
+      </button>
+    `;
+    dropdown.insertBefore(header, rulesList);
+  }
+  
+  // Add search section if it doesn't exist
+  let searchSection = dropdown.querySelector('.rules-popup-search');
+  if (!searchSection) {
+    searchSection = document.createElement('div');
+    searchSection.className = 'rules-popup-search';
+    searchSection.innerHTML = `
+      <input type="text" class="rules-popup-search-input" placeholder="Search rules..." autocomplete="off">
+    `;
+    dropdown.insertBefore(searchSection, rulesList);
+    
+    // Add search functionality
+    const searchInput = searchSection.querySelector('.rules-popup-search-input');
+    searchInput.addEventListener('input', (e) => {
+      renderNewTradeRulesList(e.target.value);
+    });
+  }
   
   rulesList.innerHTML = '';
   
@@ -3056,6 +4117,12 @@ function renderNewTradeRulesList(searchTerm = '') {
   filteredRules.forEach(rule => {
     const ruleOption = document.createElement('div');
     ruleOption.className = 'rule-option';
+    
+    const existingTag = $("#newTradeSelectedRules").querySelector(`[data-rule-id="${rule.id}"]`);
+    if (existingTag) {
+      ruleOption.classList.add('selected');
+    }
+    
     ruleOption.innerHTML = `
       <div class="rule-option-checkbox"></div>
       <span>${rule.title}</span>
@@ -3066,12 +4133,71 @@ function renderNewTradeRulesList(searchTerm = '') {
   });
 }
 
+
 function showNewTradeRulesDropdown() {
-  $("#newTradeRulesDropdown").classList.add('show');
+  const dropdown = $("#newTradeRulesDropdown");
+  const searchInput = $("#newTradeRulesSearch");
+  
+  if (!dropdown || !searchInput) {
+    console.log('Missing dropdown or search input');
+    return;
+  }
+  
+  // For centered popup, we don't need to calculate position
+  // The CSS handles centering with transform: translate(-50%, -50%)
+  dropdown.classList.add('show');
+  
+  // Force visibility
+  dropdown.style.display = 'flex';
+  dropdown.style.visibility = 'visible';
+  
+  // Add click-outside-to-close functionality with better event handling
+  const handleBackdropClick = (e) => {
+    // Don't close if clicking inside the popup or the searchbar
+    if (dropdown.contains(e.target) || searchInput.contains(e.target)) {
+      return;
+    }
+    
+    // Don't close if clicking on the multi-select container
+    const multiSelectContainer = e.target.closest('.multi-select-container');
+    if (multiSelectContainer) {
+      return;
+    }
+    
+    hideNewTradeRulesDropdown();
+  };
+  
+  // Store the handler reference for cleanup
+  dropdown._backdropClickHandler = handleBackdropClick;
+  
+  // Remove any existing event listener first
+  if (dropdown._existingHandler) {
+    document.removeEventListener('click', dropdown._existingHandler);
+  }
+  
+  // Add event listener after a delay to prevent immediate closing
+  setTimeout(() => {
+    document.addEventListener('click', handleBackdropClick);
+    dropdown._existingHandler = handleBackdropClick;
+  }, 200);
 }
 
 function hideNewTradeRulesDropdown() {
-  $("#newTradeRulesDropdown").classList.remove('show');
+  const dropdown = $("#newTradeRulesDropdown");
+  if (dropdown) {
+    dropdown.classList.remove('show');
+    dropdown.style.display = 'none';
+    dropdown.style.visibility = 'hidden';
+    
+    // Clean up any existing event listeners
+    if (dropdown._existingHandler) {
+      document.removeEventListener('click', dropdown._existingHandler);
+      dropdown._existingHandler = null;
+    }
+    if (dropdown._backdropClickHandler) {
+      dropdown._backdropClickHandler = null;
+    }
+  }
 }
 
 function toggleNewTradeRule(rule) {
@@ -3091,18 +4217,42 @@ function toggleNewTradeRule(rule) {
     selectedRules.appendChild(tag);
   }
   
-  renderNewTradeRulesList($("#newTradeRulesSearch").value);
+  // Clear validation error for rules container
+  const rulesContainer = document.querySelector('#newTradeRulesMultiSelect');
+  if (rulesContainer && rulesContainer.classList.contains('error')) {
+    rulesContainer.classList.remove('error');
+  }
+  
+  // Re-render the rules list to update checkboxes
+  const searchInput = $("#newTradeRulesDropdown").querySelector('.rules-popup-search-input');
+  renderNewTradeRulesList(searchInput?.value || '');
 }
 
 function removeNewTradeRuleTag(ruleId) {
   const tag = $("#newTradeSelectedRules").querySelector(`[data-rule-id="${ruleId}"]`);
   if (tag) {
     tag.remove();
+    
+    // Clear validation error for rules container if no rules are selected
+    const selectedRules = $("#newTradeSelectedRules");
+    const hasRules = selectedRules && selectedRules.children.length > 0;
+    
+    if (!hasRules) {
+      const rulesContainer = document.querySelector('#newTradeRulesMultiSelect');
+      if (rulesContainer && rulesContainer.classList.contains('error')) {
+        rulesContainer.classList.remove('error');
+      }
+    }
+    
+    // Re-render the rules list to update checkboxes
+    const searchInput = $("#newTradeRulesDropdown").querySelector('.rules-popup-search-input');
+    renderNewTradeRulesList(searchInput?.value || '');
   }
-  renderNewTradeRulesList($("#newTradeRulesSearch").value);
 }
 
 function showNewTradeStep(stepNumber) {
+  console.log(`Showing step ${stepNumber}`);
+  
   // Hide all steps (both regular and wide)
   $$(".new-trade-step").forEach(step => {
     step.classList.add("hidden");
@@ -3112,23 +4262,173 @@ function showNewTradeStep(stepNumber) {
   });
   
   // Show the current step
-  $(`#newTradeStep${stepNumber}`).classList.remove("hidden");
+  const stepElement = $(`#newTradeStep${stepNumber}`);
+  console.log(`Step element:`, stepElement);
+  if (stepElement) {
+    stepElement.classList.remove("hidden");
+    console.log(`Step ${stepNumber} shown`);
+  } else {
+    console.error(`Step element #newTradeStep${stepNumber} not found`);
+  }
   
   // Update card width for step 5 (wide layout)
   const card = $(".new-trade-card");
   if (stepNumber === 5) {
     card.style.width = "min(1200px, 95vw)";
+  } else if (stepNumber === 6) {
+    // Step 6 uses regular width but centered
+    card.style.width = "min(500px, 90vw)";
   } else {
     card.style.width = "min(400px, 90vw)";
   }
   
-  // Focus on the first input in the step
+  // Handle Step 6 (loading page) - just show the page, don't start timer yet
+  if (stepNumber === 6) {
+    console.log('Showing Step 6 loading page');
+    // Don't call showLoadingPage() here - it will be called when Trade Now is clicked
+  }
+  
+  // Focus on the first input in the step (except for loading page)
+  if (stepNumber !== 6) {
+    setTimeout(() => {
+      const firstInput = $(`#newTradeStep${stepNumber}`).querySelector('input, select, textarea, [contenteditable]');
+      if (firstInput) {
+        firstInput.focus();
+      }
+    }, 100);
+  }
+}
+
+// Function to show loading page with rotating subheadings
+function showLoadingPage() {
+  console.log('showLoadingPage called');
+  
+  // Prevent multiple calls
+  if (window.loadingPageActive) {
+    console.log('Loading page already active, ignoring call');
+    return;
+  }
+  window.loadingPageActive = true;
+  
+  const subheadingElement = $("#loadingSubheading");
+  console.log('Subheading element:', subheadingElement);
+  if (!subheadingElement) {
+    console.error('Loading subheading element not found');
+    window.loadingPageActive = false;
+    return;
+  }
+  
+  // Get current subheading and update index for next time
+  const currentSubheading = motivationalSubheadings[currentSubheadingIndex];
+  console.log('Current subheading:', currentSubheading);
+  subheadingElement.textContent = currentSubheading;
+  
+  // Update index for next trade (cycle through all subheadings)
+  currentSubheadingIndex = (currentSubheadingIndex + 1) % motivationalSubheadings.length;
+  
+  // Save the trade first (skip redirect since we'll handle it after timer)
+  console.log('Saving trade...');
+  saveNewTrade(true);
+  
+  // Add countdown display
+  const countdownElement = document.createElement('div');
+  countdownElement.id = 'loadingCountdown';
+  countdownElement.className = 'loading-countdown';
+  countdownElement.textContent = '5';
+  document.body.appendChild(countdownElement);
+  
+        // Countdown from 5 to 1
+        let countdown = 5;
+        const countdownInterval = setInterval(() => {
+          countdown--;
+          countdownElement.textContent = countdown.toString();
+          if (countdown <= 0) {
+            clearInterval(countdownInterval);
+            countdownElement.remove();
+          }
+        }, 1000);
+  
+  // After 5 minutes, redirect to LIVE TRADE section (temporary for UI testing)
+  console.log('Setting 5-minute timeout for redirect');
+  console.log('Current time:', new Date().toISOString());
+  
+  loadingPageTimeoutId = setTimeout(() => {
+    console.log('Timeout reached, redirecting to LIVE TRADE');
+    console.log('Time after timeout:', new Date().toISOString());
+    window.loadingPageActive = false;
+    hideNewTradeSteps();
+    showLiveTradeSection();
+    loadingPageTimeoutId = null; // Clear the ID after execution
+  }, 5000); // 5 minutes = 300,000 milliseconds
+}
+
+// Function to show LIVE TRADE section
+function showLiveTradeSection() {
+  console.log('showLiveTradeSection called');
+  
+  // Hide new trade steps
+  $("#newTradeSteps").classList.add("hidden");
+  
+  // Show app
+  $("#app").classList.remove("hidden");
+  
+  // Set Live Trade (pre-trade) as active
+  const liveTradeButton = document.querySelector('[data-view="pre-trade"]');
+  if (liveTradeButton) {
+    // Remove active class from all nav items
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.classList.remove('active');
+    });
+    // Add active class to Live Trade
+    liveTradeButton.classList.add('active');
+  }
+  
+  // Set the active view state
+  state.activeView = 'pre-trade';
+  
+  // Hide all views
+  $$(".view").forEach(el => el.classList.add("hidden"));
+  
+  // Show the pre-trade view (Live Trade section)
+  $("#view-pre-trade").classList.remove("hidden");
+  
+  // Update all displays
+  renderAll();
+  
+  // Add gradient shadow effect to the current trade for 3 seconds
   setTimeout(() => {
-    const firstInput = $(`#newTradeStep${stepNumber}`).querySelector('input, select, textarea, [contenteditable]');
-    if (firstInput) {
-      firstInput.focus();
-    }
-  }, 100);
+    highlightCurrentTrade();
+  }, 500); // Small delay to ensure the view is rendered
+  
+  console.log('Redirected to LIVE TRADE section');
+}
+
+// Function to highlight the current trade with gradient shadow
+function highlightCurrentTrade() {
+  console.log('highlightCurrentTrade called');
+  
+  // Find the most recent live trade card specifically
+  const liveTradeCards = document.querySelectorAll('.live-trade-card');
+  
+  if (liveTradeCards.length === 0) {
+    console.log('No live trade cards found');
+    return;
+  }
+  
+  // Get the most recent live trade card (first one in the list)
+  const currentTrade = liveTradeCards[0];
+  console.log('Found current live trade card:', currentTrade);
+  
+  // Add the gradient shadow effect class
+  currentTrade.classList.add('current-trade-highlight');
+  
+  // Remove the highlight class after 3 seconds
+  setTimeout(() => {
+    currentTrade.classList.remove('current-trade-highlight');
+    console.log('Gradient shadow effect removed from current live trade card');
+  }, 3000);
+  
+  console.log('Gradient shadow effect applied to current live trade card');
 }
 
 function initNewTradeNavigation() {
@@ -3185,19 +4485,51 @@ function initNewTradeNavigation() {
     showNewTradeStep(4);
   };
   $("#newTradeSave").onclick = () => {
+    console.log('Trade Now button clicked');
     if (validateNewTradeStep(5)) {
-      saveNewTrade();
+      console.log('Step 5 validation passed, going to Step 6');
+      // Go to Step 6 (loading page) and start the timer
+      newTradeCurrentStep = 6;
+      showNewTradeStep(6);
+      // Start the loading page timer after showing the step
+      setTimeout(() => {
+        showLoadingPage();
+      }, 100);
+    } else {
+      console.log('Step 5 validation failed');
     }
   };
 }
 
+// Helper function to clear validation errors
+function clearValidationErrors() {
+  const errorWrappers = document.querySelectorAll('.new-trade-input-wrapper.error');
+  errorWrappers.forEach(wrapper => {
+    wrapper.classList.remove('error');
+  });
+}
+
+// Helper function to show validation error
+function showValidationError(inputId) {
+  const input = $(inputId);
+  if (input) {
+    const wrapper = input.closest('.new-trade-input-wrapper');
+    if (wrapper) {
+      wrapper.classList.add('error');
+      input.focus();
+    }
+  }
+}
+
 function validateNewTradeStep(stepNumber) {
+  // Clear any existing validation errors
+  clearValidationErrors();
+  
   switch(stepNumber) {
     case 1:
       const symbol = $("#newTradeSymbol").value.trim();
       if (!symbol) {
-        alert("Please enter a trading pair (e.g., EURUSD)");
-        $("#newTradeSymbol").focus();
+        showValidationError('#newTradeSymbol');
         return false;
       }
       return true;
@@ -3205,8 +4537,7 @@ function validateNewTradeStep(stepNumber) {
     case 2:
       const side = $("#newTradeSide").value;
       if (!side) {
-        alert("Please select a trade direction");
-        $("#newTradeSide").focus();
+        showValidationError('#newTradeSide');
         return false;
       }
       return true;
@@ -3214,17 +4545,55 @@ function validateNewTradeStep(stepNumber) {
     case 3:
       const quantity = $("#newTradeQuantity").value.trim();
       const price = $("#newTradePrice").value.trim();
-      if (!quantity || !price) {
-        alert("Please enter both quantity and price");
-        if (!quantity) $("#newTradeQuantity").focus();
-        else $("#newTradePrice").focus();
-        return false;
+      let hasError = false;
+      
+      if (!quantity) {
+        showValidationError('#newTradeQuantity');
+        hasError = true;
       }
-      return true;
+      if (!price) {
+        showValidationError('#newTradePrice');
+        hasError = true;
+      }
+      
+      return !hasError;
       
     case 4:
+      // Risk management step - all fields required
+      const stopLoss = $("#newTradeStopLoss").value.trim();
+      const target = $("#newTradeTarget").value.trim();
+      const pnl = $("#newTradePnl").value.trim();
+      let step4HasError = false;
+      
+      if (!stopLoss) {
+        showValidationError('#newTradeStopLoss');
+        step4HasError = true;
+      }
+      if (!target) {
+        showValidationError('#newTradeTarget');
+        step4HasError = true;
+      }
+      if (!pnl) {
+        showValidationError('#newTradePnl');
+        step4HasError = true;
+      }
+      
+      return !step4HasError;
+      
     case 5:
-      // These steps are optional
+      // Step 5 - rules selection is now compulsory
+      const selectedRules = $("#newTradeSelectedRules");
+      const hasRules = selectedRules && selectedRules.children.length > 0;
+      
+      if (!hasRules) {
+        // Show validation for rules selection
+        const rulesContainer = document.querySelector('#newTradeRulesMultiSelect');
+        if (rulesContainer) {
+          rulesContainer.classList.add('error');
+        }
+        return false;
+      }
+      
       return true;
       
     default:
@@ -3232,7 +4601,7 @@ function validateNewTradeStep(stepNumber) {
   }
 }
 
-function saveNewTrade() {
+function saveNewTrade(skipRedirect = false) {
   // Create a new live trade object
   const liveTrade = {
     id: uid(),
@@ -3270,19 +4639,22 @@ function saveNewTrade() {
   // Save to localStorage
   saveLiveTrades();
   
-  // Hide the new trade steps screen
-  hideNewTradeSteps();
-  
-  // Update all displays
-  renderAll();
-  
-  // Navigate to Live Trade page
-  showView("pre-trade");
-  
-  // Show success message
-  setTimeout(() => {
-    alert("Live trade started successfully!");
-  }, 100);
+  // Only redirect if not skipping (i.e., not called from loading page)
+  if (!skipRedirect) {
+    // Hide the new trade steps screen
+    hideNewTradeSteps();
+    
+    // Update all displays
+    renderAll();
+    
+    // Navigate to Live Trade page
+    showView("pre-trade");
+    
+    // Show success message
+    setTimeout(() => {
+      alert("Live trade started successfully!");
+    }, 100);
+  }
 }
 
 /* ---------- Step 5 Functionality ---------- */
@@ -5419,23 +6791,44 @@ function showToast(message) {
 function openNewRule(){
   $("#ruleTitle").value = "";
   $("#ruleDesc").value = "";
-  $("#ruleTags").value = "";
   $("#ruleDialog").showModal();
 }
 function submitRule(e){
   e.preventDefault();
+  const editingRuleId = $("#ruleDialog").dataset.editingRuleId;
+  
   const rule = {
-    id: uid(),
+    id: editingRuleId || uid(),
     title: ($("#ruleTitle").value||"").trim(),
     description: ($("#ruleDesc").value||"").trim(),
-    tags: ($("#ruleTags").value||"").split(",").map(t=>t.trim()).filter(Boolean),
-    createdAt: new Date().toISOString()
+    tags: [], // Keep tags field for backward compatibility but always empty
+    createdAt: editingRuleId ? state.rules.find(r => r.id === editingRuleId)?.createdAt || new Date().toISOString() : new Date().toISOString()
   };
   if(!rule.title) return;
+  
+  if (editingRuleId) {
+    // Update existing rule
+    const ruleIndex = state.rules.findIndex(r => r.id === editingRuleId);
+    if (ruleIndex !== -1) {
+      state.rules[ruleIndex] = rule;
+    }
+  } else {
+    // Add new rule
   state.rules = [rule, ...state.rules];
+  }
+  
   saveRules();
   $("#ruleDialog").close();
+  
+  // Clear editing state
+  delete $("#ruleDialog").dataset.editingRuleId;
+  
+  // Re-render based on current view
+  if (state.activeView === 'rules') {
+    renderRulesPage();
+  } else {
   renderAll();
+  }
 }
 
 /* ---------- Account Selector ---------- */
@@ -5787,10 +7180,294 @@ function editLiveTrade(tradeId) {
 }
 
 /* ---------- Mount ---------- */
+function renderRulesPage(){
+  console.log("=== renderRulesPage START ===");
+  
+  const rulesContainer = $("#rulesListContainer");
+  const noRulesMessage = $("#noRulesMessage");
+  
+  console.log("rulesContainer found:", !!rulesContainer);
+  console.log("noRulesMessage found:", !!noRulesMessage);
+  
+  if (!rulesContainer) {
+    console.error("rulesContainer not found!");
+    return;
+  }
+  
+  console.log("state.rules before reload:", state.rules);
+  console.log("rules length before reload:", state.rules ? state.rules.length : 0);
+  
+  // Ensure rules are loaded from localStorage
+  try {
+    const rulesFromStorage = JSON.parse(localStorage.getItem(RULES_KEY) || "[]");
+    console.log("Rules from localStorage:", rulesFromStorage);
+    state.rules = rulesFromStorage;
+    console.log("state.rules after reload:", state.rules);
+    console.log("rules length after reload:", state.rules ? state.rules.length : 0);
+  } catch (e) {
+    console.error("Error loading rules from localStorage:", e);
+    state.rules = [];
+  }
+  
+  // Add rules-active class to body for CSS-based hiding
+  document.body.classList.add('rules-active');
+  document.body.classList.remove('dashboard-active');
+  
+  // Clear existing content
+  console.log("Clearing rulesContainer content...");
+  rulesContainer.innerHTML = '';
+  
+  if (state.rules && state.rules.length > 0) {
+    console.log("Rendering rules...");
+    
+    // Render each rule
+    state.rules.forEach((rule, index) => {
+      console.log(`Rendering rule ${index + 1}:`, rule);
+      const ruleElement = document.createElement('div');
+      ruleElement.className = 'rule-item-display';
+      ruleElement.innerHTML = `
+        <div class="rule-content">
+          <div class="rule-title">${index + 1}. ${rule.title || `Rule ${index + 1}`}</div>
+          <div class="rule-description">${rule.description || 'No description provided'}</div>
+        </div>
+        <div class="rule-actions">
+          <button class="rule-action-btn edit-rule-btn" data-rule-id="${rule.id}" title="Edit rule">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#434343">
+              <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+            </svg>
+          </button>
+          <button class="rule-action-btn delete-rule-btn" data-rule-id="${rule.id}" title="Delete rule">
+            <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#434343">
+              <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+            </svg>
+          </button>
+        </div>
+      `;
+      rulesContainer.appendChild(ruleElement);
+      console.log(`Rule ${index + 1} appended to container`);
+    });
+    console.log("Rules rendered successfully");
+    console.log("Final container children count:", rulesContainer.children.length);
+    
+    // Add event listeners for edit and delete buttons
+    const editButtons = rulesContainer.querySelectorAll('.edit-rule-btn');
+    const deleteButtons = rulesContainer.querySelectorAll('.delete-rule-btn');
+    
+    editButtons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const ruleId = btn.dataset.ruleId;
+        editRule(ruleId);
+      };
+    });
+    
+    deleteButtons.forEach(btn => {
+      btn.onclick = (e) => {
+        e.stopPropagation();
+        const ruleId = btn.dataset.ruleId;
+        deleteRule(ruleId);
+      };
+    });
+    
+    // Add a test element to verify the container is working
+    const testElement = document.createElement('div');
+    testElement.style.background = 'red';
+    testElement.style.color = 'white';
+    testElement.style.padding = '10px';
+    testElement.innerHTML = 'TEST: Rules container is working!';
+    rulesContainer.appendChild(testElement);
+    console.log("Test element added");
+  } else {
+    console.log("No rules found, showing no rules message");
+    // Recreate the no rules message if it doesn't exist
+    if (!noRulesMessage) {
+      console.log("Creating new noRulesMessage element");
+      const newNoRulesMessage = document.createElement('div');
+      newNoRulesMessage.className = 'no-rules-message';
+      newNoRulesMessage.id = 'noRulesMessage';
+      newNoRulesMessage.innerHTML = `
+        <div class="no-rules-icon">
+          <span class="material-icons">rule</span>
+        </div>
+        <h3>No Rules Added Yet</h3>
+        <p>Start by adding your first trading rule to keep track of your trading strategies.</p>
+        <button class="primary" onclick="openNewRule()">Add Your First Rule</button>
+      `;
+      rulesContainer.appendChild(newNoRulesMessage);
+    } else {
+      noRulesMessage.style.display = 'block';
+      rulesContainer.appendChild(noRulesMessage);
+    }
+  }
+  
+  console.log("=== renderRulesPage END ===");
+}
+
+function editRule(ruleId) {
+  console.log("Edit rule clicked:", ruleId);
+  const rule = state.rules.find(r => r.id === ruleId);
+  if (rule) {
+    // Populate the rule form with existing data
+    $("#ruleTitle").value = rule.title || '';
+    $("#ruleDesc").value = rule.description || '';
+    
+    // Open the rule dialog
+    $("#ruleDialog").showModal();
+    
+    // Store the rule ID for updating
+    $("#ruleDialog").dataset.editingRuleId = ruleId;
+  }
+}
+
+function deleteRule(ruleId) {
+  console.log("Delete rule clicked:", ruleId);
+  const rule = state.rules.find(r => r.id === ruleId);
+  if (rule) {
+    // Find the rule element and its components
+    const ruleElement = document.querySelector(`[data-rule-id="${ruleId}"]`).closest('.rule-item-display');
+    const ruleContent = ruleElement.querySelector('.rule-content');
+    const ruleTitle = ruleContent.querySelector('.rule-title');
+    const ruleDescription = ruleContent.querySelector('.rule-description');
+    const editBtn = ruleElement.querySelector('.edit-rule-btn');
+    const deleteBtn = ruleElement.querySelector('.delete-rule-btn');
+    
+    // Store original content for restoration
+    ruleElement.dataset.originalTitle = ruleTitle.innerHTML;
+    ruleElement.dataset.originalDescription = ruleDescription.innerHTML;
+    
+    // Add deleting class for styling
+    ruleElement.classList.add('deleting');
+    
+    // Replace title with confirmation text
+    ruleTitle.innerHTML = `Are you sure you want to delete "${rule.title || 'Untitled Rule'}"?`;
+    ruleTitle.className = 'delete-confirmation-text';
+    
+    // Hide description
+    ruleDescription.style.display = 'none';
+    
+    // Change edit icon to close icon
+    editBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#434343">
+        <path d="m256-200-56-56 224-224-224-224 56-56 224 224 224-224 56 56-224 224 224 224-56 56-224-224-224 224Z"/>
+      </svg>
+    `;
+    editBtn.title = 'Cancel';
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      cancelDelete(ruleId);
+    };
+    
+    // Change delete icon to check icon
+    deleteBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#434343">
+        <path d="M382-240 154-468l57-57 171 171 367-367 57 57-424 424Z"/>
+      </svg>
+    `;
+    deleteBtn.title = 'Confirm Delete';
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      confirmDelete(ruleId);
+    };
+  }
+}
+
+function cancelDelete(ruleId) {
+  console.log("Cancel delete clicked for rule:", ruleId);
+  const ruleElement = document.querySelector(`[data-rule-id="${ruleId}"]`).closest('.rule-item-display');
+  const ruleContent = ruleElement.querySelector('.rule-content');
+  
+  // Find the title element (it might have the delete-confirmation-text class)
+  const ruleTitle = ruleContent.querySelector('.delete-confirmation-text') || ruleContent.querySelector('.rule-title');
+  const ruleDescription = ruleContent.querySelector('.rule-description');
+  const editBtn = ruleElement.querySelector('.edit-rule-btn');
+  const deleteBtn = ruleElement.querySelector('.delete-rule-btn');
+  
+  console.log("Found elements:", { ruleTitle, ruleDescription, editBtn, deleteBtn });
+  
+  // Remove deleting class
+  ruleElement.classList.remove('deleting');
+  
+  // Restore original title
+  if (ruleTitle && ruleElement.dataset.originalTitle) {
+    ruleTitle.innerHTML = ruleElement.dataset.originalTitle;
+    ruleTitle.className = 'rule-title';
+    console.log("Restored title:", ruleElement.dataset.originalTitle);
+  }
+  
+  // Show description
+  if (ruleDescription) {
+    ruleDescription.style.display = 'block';
+    console.log("Showed description");
+  }
+  
+  // Restore edit icon
+  if (editBtn) {
+    editBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#434343">
+        <path d="M200-200h57l391-391-57-57-391 391v57Zm-80 80v-170l528-527q12-11 26.5-17t30.5-6q16 0 31 6t26 18l55 56q12 11 17.5 26t5.5 30q0 16-5.5 30.5T817-647L290-120H120Zm640-584-56-56 56 56Zm-141 85-28-29 57 57-29-28Z"/>
+      </svg>
+    `;
+    editBtn.title = 'Edit rule';
+    editBtn.onclick = (e) => {
+      e.stopPropagation();
+      editRule(ruleId);
+    };
+    console.log("Restored edit icon");
+  }
+  
+  // Restore delete icon
+  if (deleteBtn) {
+    deleteBtn.innerHTML = `
+      <svg xmlns="http://www.w3.org/2000/svg" height="24px" viewBox="0 -960 960 960" width="24px" fill="#434343">
+        <path d="M280-120q-33 0-56.5-23.5T200-200v-520h-40v-80h200v-40h240v40h200v80h-40v520q0 33-23.5 56.5T680-120H280Zm400-600H280v520h400v-520ZM360-280h80v-360h-80v360Zm160 0h80v-360h-80v360ZM280-720v520-520Z"/>
+      </svg>
+    `;
+    deleteBtn.title = 'Delete rule';
+    deleteBtn.onclick = (e) => {
+      e.stopPropagation();
+      deleteRule(ruleId);
+    };
+    console.log("Restored delete icon");
+  }
+  
+  // Clean up stored data
+  delete ruleElement.dataset.originalTitle;
+  delete ruleElement.dataset.originalDescription;
+  
+  console.log("Cancel delete completed");
+}
+
+function confirmDelete(ruleId) {
+  // Remove the rule from state
+  state.rules = state.rules.filter(r => r.id !== ruleId);
+  
+  // Save to localStorage
+  saveRules();
+  
+  // Re-render the rules page
+  renderRulesPage();
+  
+  console.log("Rule deleted successfully");
+}
+
+function restoreStatsAndRiskMetrics(){
+  // Add dashboard-active class to body for CSS-based showing
+  document.body.classList.add('dashboard-active');
+  document.body.classList.remove('rules-active');
+}
+
 function renderAll(){
   console.log("renderAll called - updating all displays");
   console.log("Current entries count:", state.entries.length);
   console.log("Current live trades count:", state.liveTrades.length);
+  
+  // Restore stats and risk metrics if they were hidden for rules page
+  restoreStatsAndRiskMetrics();
+  
+  // Use setTimeout to ensure restoration happens after DOM updates
+  setTimeout(() => {
+    restoreStatsAndRiskMetrics();
+  }, 10);
   
   renderHeader();
   renderGreeting();
@@ -6349,6 +8026,7 @@ function initTradingCalendar() {
     if (monthTrades.length === 0) {
       $(".monthly-days").textContent = "0 days";
       $(".monthly-value").textContent = "₹0";
+      $(".monthly-value").style.color = "#6b7280"; // Gray for zero values
       return;
     }
     
@@ -6358,6 +8036,16 @@ function initTradingCalendar() {
     
     $(".monthly-days").textContent = `${uniqueDays} day${uniqueDays !== 1 ? 's' : ''}`;
     $(".monthly-value").textContent = formatCurrency(totalPnl);
+    
+    // Set color based on P&L value
+    const monthlyValueElement = $(".monthly-value");
+    if (totalPnl < 0) {
+      monthlyValueElement.style.color = "#ef4444"; // Red for negative values
+    } else if (totalPnl > 0) {
+      monthlyValueElement.style.color = "#10b981"; // Green for positive values
+    } else {
+      monthlyValueElement.style.color = "#6b7280"; // Gray for zero values
+    }
   }
   
   function calculateWeeklyStats(year, month, weeksNeeded, firstDay, daysInMonth) {
@@ -6720,6 +8408,13 @@ document.addEventListener('DOMContentLoaded', function() {
   $("#rulesSearch").addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
       hideRulesDropdown();
+    }
+  });
+  
+  // Handle window resize to reposition dropdown if it's open
+  window.addEventListener('resize', function() {
+    if ($("#newTradeRulesDropdown").classList.contains('show')) {
+      showNewTradeRulesDropdown();
     }
   });
 });
