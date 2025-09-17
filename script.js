@@ -111,8 +111,8 @@ const demoEntries = [
 /* ---------- State ---------- */
 let state = {
   user: null,
-  entries: [],
-  liveTrades: [],
+  entries: [], // Global entries (for backward compatibility)
+  liveTrades: [], // Global live trades (for backward compatibility)
   rules: [],
   filters: { search:"", side:"ALL", session:"", start:"", end:"", sort:"date_desc" },
   activeView: "dashboard",
@@ -120,6 +120,12 @@ let state = {
   currentBalance: 0,
   accountName: "",
   deleteTarget: null,
+  accounts: {}, // Store multiple accounts with their data
+  closedAccounts: [], // Store closed accounts for records page
+  accountTarget: 0,
+  tillLoss: 0,
+  accountFrozen: false,
+  selectedAccount: "Real A/c",
   preferences: {
     currency: "INR", // Default currency
     darkMode: false
@@ -142,6 +148,41 @@ function loadAll(){
     state.initialBalance = 0;
     state.currentBalance = 0;
     state.accountName = "";
+  }
+  
+  // Load accounts
+  try {
+    state.accounts = JSON.parse(localStorage.getItem("accounts") || "{}");
+    console.log("Loaded accounts:", Object.keys(state.accounts));
+    
+    // If we have accounts but no selected account, select the first one
+    const accountNames = Object.keys(state.accounts);
+    if (accountNames.length > 0 && !state.accounts[state.selectedAccount]) {
+      state.selectedAccount = accountNames[0];
+      const firstAccount = state.accounts[state.selectedAccount];
+      
+      // Load the first account's data
+      state.initialBalance = firstAccount.initialBalance;
+      state.currentBalance = firstAccount.currentBalance;
+      state.accountName = firstAccount.name;
+      state.accountTarget = firstAccount.accountTarget;
+      state.tillLoss = firstAccount.tillLoss;
+      state.accountFrozen = firstAccount.frozen;
+      state.entries = firstAccount.entries || [];
+      state.liveTrades = firstAccount.liveTrades || [];
+    }
+  } catch(error) {
+    state.accounts = {};
+    console.error("Error loading accounts:", error);
+  }
+  
+  // Load closed accounts
+  try {
+    state.closedAccounts = JSON.parse(localStorage.getItem("closedAccounts") || "[]");
+    console.log("Loaded closed accounts:", state.closedAccounts.length);
+  } catch(error) {
+    state.closedAccounts = [];
+    console.error("Error loading closed accounts:", error);
   }
 
   // Apply dark mode on load
@@ -262,6 +303,41 @@ function toggleRuleSelection(rule) {
   // Keep dropdown open - don't call hideRulesDropdown()
 }
 
+function showNotification(message, isProfit = true) {
+  const container = document.getElementById('notificationContainer');
+  const messageElement = document.getElementById('notificationMessage');
+  
+  if (!container || !messageElement) {
+    console.error('Notification elements not found');
+    return;
+  }
+  
+  // Remove any existing profit/loss classes
+  messageElement.classList.remove('profit', 'loss');
+  
+  // Set the message text
+  messageElement.textContent = message;
+  
+  // Add appropriate class based on profit/loss
+  if (isProfit) {
+    messageElement.classList.add('profit');
+  } else {
+    messageElement.classList.add('loss');
+  }
+  
+  // Show the notification
+  container.classList.remove('hidden');
+  messageElement.classList.add('show');
+  
+  // Auto-dismiss after 3 seconds
+  setTimeout(() => {
+    messageElement.classList.remove('show');
+    setTimeout(() => {
+      container.classList.add('hidden');
+    }, 300); // Wait for animation to complete
+  }, 3000);
+}
+
 function saveEntries(){ 
   try{ 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.entries)); 
@@ -290,12 +366,141 @@ function saveBalance(){
     })); 
   }catch{} 
 }
+
+function saveAccounts() {
+  try {
+    localStorage.setItem("accounts", JSON.stringify(state.accounts));
+    console.log("Accounts saved:", Object.keys(state.accounts));
+  } catch(error) {
+    console.error("Error saving accounts:", error);
+  }
+}
+
+function saveClosedAccounts() {
+  try {
+    localStorage.setItem("closedAccounts", JSON.stringify(state.closedAccounts));
+    console.log("Closed accounts saved:", state.closedAccounts.length);
+  } catch(error) {
+    console.error("Error saving closed accounts:", error);
+  }
+}
+
+function checkAccountStatus() {
+  const currentAccount = getCurrentAccountData();
+  if (!currentAccount) return;
+  
+  const currentBalance = currentAccount.initialBalance + calculateTotalPnl();
+  const lossAmount = currentAccount.initialBalance - currentBalance;
+  
+  // Check if Till Loss is reached
+  if (lossAmount >= currentAccount.tillLoss) {
+    // Auto-close the account
+    closeAccount(currentAccount.name);
+    return;
+  } else {
+    currentAccount.frozen = false;
+    state.accountFrozen = false;
+  }
+  
+  // Check if Account Target is reached (no freezing, just notification)
+  if (currentBalance >= currentAccount.accountTarget) {
+    showTargetAchievedNotification();
+  }
+  
+  // Update current balance
+  currentAccount.currentBalance = currentBalance;
+  state.currentBalance = currentBalance;
+  
+  // Save current account data
+  saveCurrentAccountData();
+}
+
+function calculateTotalPnl() {
+  const rows = filteredEntries();
+  return rows.reduce((sum, entry) => sum + (entry.pnl || 0), 0);
+}
+
+function showAccountFrozenNotification() {
+  showNotification('Account Frozen - Till Loss Reached!', false);
+}
+
+function showTargetAchievedNotification() {
+  showNotification('Target Achieved! 🎉', true);
+}
+
+function closeAccount(accountName) {
+  const account = state.accounts[accountName];
+  if (!account) return;
+  
+  // Calculate final stats
+  const finalBalance = account.initialBalance + calculateTotalPnl();
+  const totalPnl = finalBalance - account.initialBalance;
+  const totalTrades = account.entries.length;
+  const winTrades = account.entries.filter(entry => (entry.pnl || 0) > 0).length;
+  const lossTrades = totalTrades - winTrades;
+  const winRate = totalTrades > 0 ? (winTrades / totalTrades) * 100 : 0;
+  
+  // Create closed account record
+  const closedAccountRecord = {
+    id: uid(),
+    name: account.name,
+    initialBalance: account.initialBalance,
+    finalBalance: finalBalance,
+    totalPnl: totalPnl,
+    totalTrades: totalTrades,
+    winTrades: winTrades,
+    lossTrades: lossTrades,
+    winRate: winRate,
+    accountTarget: account.accountTarget,
+    tillLoss: account.tillLoss,
+    closedAt: new Date().toISOString(),
+    reason: 'Till Loss Reached',
+    entries: [...account.entries], // Copy all trades
+    liveTrades: [...account.liveTrades] // Copy any remaining live trades
+  };
+  
+  // Add to closed accounts
+  state.closedAccounts.unshift(closedAccountRecord);
+  
+  // Remove from active accounts
+  delete state.accounts[accountName];
+  
+  // If this was the selected account, switch to another account or show no account
+  if (state.selectedAccount === accountName) {
+    const remainingAccounts = Object.keys(state.accounts);
+    if (remainingAccounts.length > 0) {
+      switchToAccount(remainingAccounts[0]);
+    } else {
+      state.selectedAccount = "No Account";
+      state.entries = [];
+      state.liveTrades = [];
+      state.initialBalance = 0;
+      state.currentBalance = 0;
+      state.accountName = "";
+      state.accountTarget = 0;
+      state.tillLoss = 0;
+      state.accountFrozen = false;
+    }
+  }
+  
+  // Save data
+  saveAccounts();
+  saveClosedAccounts();
+  updateAccountDropdown();
+  renderAll();
+  
+  // Show notification
+  showNotification('Account Closed - Till Loss Reached!', false);
+  
+  console.log('Account closed:', accountName, closedAccountRecord);
+}
 function saveState(){
   saveEntries();
   saveRules();
   saveUser();
   savePreferences();
   saveBalance();
+  saveCurrentAccountData(); // Save current account data
 }
 
 /* ---------- Auth ---------- */
@@ -356,6 +561,8 @@ function initOnboarding(){
   $("#startTrading").onclick = () => {
     const initialBalance = parseFloat($("#initialBalance").value);
     const accountName = $("#accountName").value.trim();
+    const accountTarget = parseFloat($("#accountTarget").value);
+    const tillLoss = parseFloat($("#tillLoss").value);
     
     if (!initialBalance || initialBalance <= 0) {
       alert("Please enter a valid initial balance amount.");
@@ -367,13 +574,47 @@ function initOnboarding(){
       return;
     }
     
-    // Set the initial balance and account name in the state
+    if (!accountTarget || accountTarget <= 0) {
+      alert("Please enter a valid account target amount.");
+      return;
+    }
+    
+    if (!tillLoss || tillLoss <= 0) {
+      alert("Please enter a valid till loss amount.");
+      return;
+    }
+    
+    // Create new account data with empty trade history
+    const accountData = {
+      name: accountName,
+      initialBalance: initialBalance,
+      currentBalance: initialBalance,
+      accountTarget: accountTarget,
+      tillLoss: tillLoss,
+      frozen: false,
+      createdAt: new Date().toISOString(),
+      entries: [], // Empty trade history for new account
+      liveTrades: [] // Empty live trades for new account
+    };
+    
+    // Store account in accounts object
+    state.accounts[accountName] = accountData;
+    
+    // Set current account as selected
+    state.selectedAccount = accountName;
     state.initialBalance = initialBalance;
     state.currentBalance = initialBalance;
     state.accountName = accountName;
+    state.accountTarget = accountTarget;
+    state.tillLoss = tillLoss;
+    state.accountFrozen = false;
     
-    // Save the state with the initial balance and account name
+    // Save the state
     saveState();
+    saveAccounts();
+    
+    // Update account dropdown
+    updateAccountDropdown();
     
     // Proceed to the main app
     showApp();
@@ -444,11 +685,15 @@ function initNavigation(){
       $$(".view").forEach(el=>el.classList.add("hidden"));
       $("#view-"+v).classList.remove("hidden");
       
-      // Special handling for rules view
+      // Special handling for different views
       if (v === "rules") {
         renderRulesPage();
+      } else if (v === "records") {
+        document.body.classList.add('view-records-active');
+        renderRecords();
       } else {
-      renderAll();
+        document.body.classList.remove('view-records-active');
+        renderAll();
       }
     };
   });
@@ -1083,7 +1328,12 @@ function renderStats(){
   const totalAmount = s.grossProfit + s.grossLoss;
   const profitPercentage = totalAmount > 0 ? Math.round((s.grossProfit / totalAmount) * 100) : 50;
   
+  // Calculate current balance (initial balance + total PnL)
+  const currentAccount = getCurrentAccountData();
+  const currentBalance = currentAccount.initialBalance + s.totalPnl;
+  
   const items = [
+    {label:"Balance", value:formatCurrency(currentBalance), color: currentBalance >= state.initialBalance ? '#065f46' : '#9f1239', isNegative: currentBalance < state.initialBalance},
     {label:"Net P&L", value:formatCurrency(s.totalPnl), color: s.totalPnl >= 0 ? '#065f46' : '#9f1239', isNegative: s.totalPnl < 0},
     {
       label:"Win rate", 
@@ -1532,13 +1782,8 @@ function renderDrawdownChart() {
 }
 
 function renderNetDailyPnlChart() {
-  // Use all entries directly from localStorage to bypass any filters
-  let allEntries;
-  try {
-    allEntries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [];
-  } catch {
-    allEntries = state.entries; // Fallback to state.entries
-  }
+  // Use current account's entries
+  const allEntries = getCurrentAccountEntries();
   
   console.log('Raw entries from localStorage:', allEntries.length);
   
@@ -1958,13 +2203,8 @@ function hideExpandedNetDailyPnl() {
 }
 
 function renderExpandedNetDailyPnlChart(days = 30) {
-  // Use all entries directly from localStorage to bypass any filters
-  let allEntries;
-  try {
-    allEntries = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null") || [];
-  } catch {
-    allEntries = state.entries; // Fallback to state.entries
-  }
+  // Use current account's entries
+  const allEntries = getCurrentAccountEntries();
   
   console.log('Raw entries from localStorage (expanded):', allEntries.length);
   
@@ -3562,6 +3802,12 @@ function renderTradingHeatmap() {
 
 /* ---------- Entry CRUD ---------- */
 function openNewEntry(){
+  // Check if account is frozen
+  if (state.accountFrozen) {
+    showNotification('Account Frozen - Cannot Create New Trades!', false);
+    return;
+  }
+  
   // Show the new trade steps screen instead of the dialog
   showNewTradeSteps();
 }
@@ -6839,69 +7085,162 @@ function initAccountSelector() {
   const accountDropdown = $("#accountSelectorDropdown");
   const selectedAccountSpan = $("#selectedAccount");
   
-  // Set default selection based on currentAccount
-  const defaultOption = document.querySelector(`[data-account="${currentAccount}"]`);
-  if (defaultOption) {
-    const defaultRadio = defaultOption.querySelector('input[type="radio"]');
-    const defaultLabel = defaultOption.querySelector('label');
-    if (defaultRadio && defaultLabel) {
-      defaultRadio.checked = true;
-      selectedAccountSpan.textContent = defaultLabel.textContent;
-    }
-  }
+  // Update account dropdown with created accounts
+  updateAccountDropdown();
   
   // Toggle dropdown
   accountBtn.onclick = (e) => {
     e.stopPropagation();
-    accountDropdown.classList.toggle('hidden');
     accountBtn.classList.toggle('active');
+    accountDropdown.classList.toggle('hidden');
   };
   
   // Close dropdown when clicking outside
-  document.addEventListener('click', () => {
-    accountDropdown.classList.add('hidden');
-    accountBtn.classList.remove('active');
+  document.addEventListener('click', (e) => {
+    if (!accountBtn.contains(e.target) && !accountDropdown.contains(e.target)) {
+      accountDropdown.classList.add('hidden');
+      accountBtn.classList.remove('active');
+    }
+  });
+
+  // Handle account selection
+  accountDropdown.addEventListener('click', (e) => {
+    e.stopPropagation();
+    
+    const option = e.target.closest('.account-option');
+    if (!option) return;
+    
+    // Handle create account action
+    if (option.dataset.action === 'create') {
+      // Open the onboarding screen for creating a new account
+      showOnboarding();
+      accountDropdown.classList.add('hidden');
+      accountBtn.classList.remove('active');
+      return;
+    }
+    
+    // Handle account selection
+    const accountName = option.dataset.account;
+    if (accountName && state.accounts[accountName]) {
+      switchToAccount(accountName);
+      accountDropdown.classList.add('hidden');
+      accountBtn.classList.remove('active');
+    }
+  });
+}
+
+function updateAccountDropdown() {
+  const accountDropdown = $("#accountSelectorDropdown");
+  
+  // Clear all existing content
+  accountDropdown.innerHTML = '';
+  
+  const accountNames = Object.keys(state.accounts);
+  
+  // Add created accounts
+  accountNames.forEach(accountName => {
+    const account = state.accounts[accountName];
+    const accountOption = document.createElement('div');
+    accountOption.className = 'account-option';
+    accountOption.dataset.account = accountName;
+    
+    const frozenText = account.frozen ? ' (FROZEN)' : '';
+    accountOption.innerHTML = `
+      <input type="radio" id="account_${accountName}" name="account" ${state.selectedAccount === accountName ? 'checked' : ''}>
+      <label for="account_${accountName}">${accountName}${frozenText}</label>
+    `;
+    
+    accountDropdown.appendChild(accountOption);
   });
   
-  // Handle account selection
-  const accountOptions = document.querySelectorAll('.account-option');
-  accountOptions.forEach(option => {
-    const radio = option.querySelector('input[type="radio"]');
-    const label = option.querySelector('label');
-    
-    option.onclick = (e) => {
-      e.stopPropagation();
-      
-      // Handle create account action
-      if (option.dataset.action === 'create') {
-        // Open the onboarding screen for creating a new account
-        showOnboarding();
-        accountDropdown.classList.add('hidden');
-        accountBtn.classList.remove('active');
-        return;
-      }
-      
-      // Handle account selection
-      if (radio && label) {
-        // Uncheck all other radio buttons
-        document.querySelectorAll('input[name="account"]').forEach(r => r.checked = false);
-        
-        // Check selected radio
-        radio.checked = true;
-        
-        // Update current account
-        currentAccount = option.dataset.account;
-        selectedAccountSpan.textContent = label.textContent;
-        
-        // Close dropdown
-        accountDropdown.classList.add('hidden');
-        accountBtn.classList.remove('active');
-        
-        // TODO: Update data based on selected account
-        console.log('Selected account:', currentAccount);
-      }
-    };
-  });
+  // Add divider only if there are created accounts
+  if (accountNames.length > 0) {
+    const divider = document.createElement('div');
+    divider.className = 'account-divider';
+    accountDropdown.appendChild(divider);
+  }
+  
+  // Add create account option
+  const createAccountOption = document.createElement('div');
+  createAccountOption.className = 'account-option create-account';
+  createAccountOption.dataset.action = 'create';
+  createAccountOption.innerHTML = `
+    <span class="material-icons">add</span>
+    <span>Create A/c</span>
+  `;
+  accountDropdown.appendChild(createAccountOption);
+  
+  // Update selected account display
+  const selectedAccountSpan = $("#selectedAccount");
+  if (state.selectedAccount && state.accounts[state.selectedAccount]) {
+    const account = state.accounts[state.selectedAccount];
+    const frozenText = account.frozen ? ' (FROZEN)' : '';
+    selectedAccountSpan.textContent = state.selectedAccount + frozenText;
+  } else if (accountNames.length === 0) {
+    selectedAccountSpan.textContent = 'No Account';
+  }
+}
+
+function getCurrentAccountData() {
+  return state.accounts[state.selectedAccount] || {
+    entries: state.entries,
+    liveTrades: state.liveTrades,
+    initialBalance: state.initialBalance,
+    currentBalance: state.currentBalance,
+    accountTarget: state.accountTarget,
+    tillLoss: state.tillLoss,
+    frozen: state.accountFrozen
+  };
+}
+
+function getCurrentAccountEntries() {
+  const account = getCurrentAccountData();
+  return account.entries || state.entries;
+}
+
+function getCurrentAccountLiveTrades() {
+  const account = getCurrentAccountData();
+  return account.liveTrades || state.liveTrades;
+}
+
+function switchToAccount(accountName) {
+  if (!state.accounts[accountName]) return;
+  
+  const account = state.accounts[accountName];
+  
+  // Save current account data before switching
+  saveCurrentAccountData();
+  
+  // Switch to new account
+  state.selectedAccount = accountName;
+  state.initialBalance = account.initialBalance;
+  state.currentBalance = account.currentBalance;
+  state.accountName = account.name;
+  state.accountTarget = account.accountTarget;
+  state.tillLoss = account.tillLoss;
+  state.accountFrozen = account.frozen;
+  
+  // Load new account's trade data
+  state.entries = account.entries || [];
+  state.liveTrades = account.liveTrades || [];
+  
+  // Update UI
+  updateAccountDropdown();
+  renderAll();
+  
+  console.log('Switched to account:', accountName);
+}
+
+function saveCurrentAccountData() {
+  if (!state.selectedAccount || !state.accounts[state.selectedAccount]) return;
+  
+  const account = state.accounts[state.selectedAccount];
+  account.entries = state.entries;
+  account.liveTrades = state.liveTrades;
+  account.currentBalance = state.currentBalance;
+  account.frozen = state.accountFrozen;
+  
+  saveAccounts();
 }
 
 /* ---------- Time Range Filter ---------- */
@@ -7167,11 +7506,17 @@ function closeLiveTrade(tradeId) {
   // Save both
   saveLiveTrades();
   saveEntries();
+  saveCurrentAccountData(); // Save current account data
   
   // Update displays
   renderAll();
   
-  alert('Trade closed successfully!');
+  // Check account status (freezing, target achievement)
+  checkAccountStatus();
+  
+  // Determine if trade was profitable and show appropriate notification
+  const isProfit = completedTrade.pnl > 0;
+  showNotification('Trade is Closed', isProfit);
 }
 
 function editLiveTrade(tradeId) {
@@ -7269,14 +7614,6 @@ function renderRulesPage(){
       };
     });
     
-    // Add a test element to verify the container is working
-    const testElement = document.createElement('div');
-    testElement.style.background = 'red';
-    testElement.style.color = 'white';
-    testElement.style.padding = '10px';
-    testElement.innerHTML = 'TEST: Rules container is working!';
-    rulesContainer.appendChild(testElement);
-    console.log("Test element added");
   } else {
     console.log("No rules found, showing no rules message");
     // Recreate the no rules message if it doesn't exist
@@ -7477,12 +7814,99 @@ function renderAll(){
   renderTable();
   renderCharts();
   renderLiveTrades();
+  renderRecords();
   // Refresh trading calendar if it exists
   if (typeof renderTradingCalendar === 'function') {
     renderTradingCalendar();
   }
   
   console.log("renderAll completed");
+}
+
+function renderRecords() {
+  const container = $("#recordsGridContainer");
+  const noRecordsMessage = $("#noRecordsMessage");
+  
+  if (!container) return;
+  
+  // Clear container
+  container.innerHTML = '';
+  
+  if (state.closedAccounts.length === 0) {
+    // Show no records message
+    container.innerHTML = `
+      <div class="no-records-message">
+        <div class="no-records-icon">
+          <span class="material-icons">account_balance</span>
+        </div>
+        <h3>No Closed Accounts Yet</h3>
+        <p>Accounts that reach their Till Loss limit will appear here.</p>
+      </div>
+    `;
+    return;
+  }
+  
+  // Hide no records message
+  if (noRecordsMessage) {
+    noRecordsMessage.style.display = 'none';
+  }
+  
+  // Render account records
+  state.closedAccounts.forEach(record => {
+    const recordCard = document.createElement('div');
+    recordCard.className = 'account-record-card';
+    
+    const closedDate = new Date(record.closedAt);
+    const formattedDate = closedDate.toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'short', 
+      day: 'numeric' 
+    });
+    
+    const pnlClass = record.totalPnl >= 0 ? 'positive' : 'negative';
+    const pnlSign = record.totalPnl >= 0 ? '+' : '';
+    
+    recordCard.innerHTML = `
+      <div class="account-record-header">
+        <div class="account-record-name">${record.name}</div>
+        <div class="account-record-status">CLOSED</div>
+      </div>
+      
+      <div class="account-record-stats">
+        <div class="account-stat-item">
+          <div class="account-stat-label">Initial Balance</div>
+          <div class="account-stat-value">${formatCurrency(record.initialBalance)}</div>
+        </div>
+        <div class="account-stat-item">
+          <div class="account-stat-label">Final Balance</div>
+          <div class="account-stat-value">${formatCurrency(record.finalBalance)}</div>
+        </div>
+        <div class="account-stat-item">
+          <div class="account-stat-label">Total P&L</div>
+          <div class="account-stat-value ${pnlClass}">${pnlSign}${formatCurrency(record.totalPnl)}</div>
+        </div>
+        <div class="account-stat-item">
+          <div class="account-stat-label">Win Rate</div>
+          <div class="account-stat-value">${record.winRate.toFixed(1)}%</div>
+        </div>
+        <div class="account-stat-item">
+          <div class="account-stat-label">Total Trades</div>
+          <div class="account-stat-value">${record.totalTrades}</div>
+        </div>
+        <div class="account-stat-item">
+          <div class="account-stat-label">Wins / Losses</div>
+          <div class="account-stat-value">${record.winTrades} / ${record.lossTrades}</div>
+        </div>
+      </div>
+      
+      <div class="account-record-summary">
+        <div class="account-record-date">Closed: ${formattedDate}</div>
+        <div class="account-record-reason">${record.reason}</div>
+      </div>
+    `;
+    
+    container.appendChild(recordCard);
+  });
 }
 
 // Real-time clock update

@@ -1276,6 +1276,25 @@
             </div>
           </div>
         </section>
+
+        <!-- Records -->
+        <section id="view-records" class="view hidden">
+          <div class="records-page-header">
+            <h2 class="records-page-title">Closed Accounts</h2>
+            <p class="records-page-subtitle">Accounts that reached their Till Loss limit</p>
+          </div>
+          
+          <div class="records-grid-container" id="recordsGridContainer">
+            <!-- Account records will be populated by JavaScript -->
+            <div class="no-records-message" id="noRecordsMessage">
+              <div class="no-records-icon">
+                <span class="material-icons">account_balance</span>
+              </div>
+              <h3>No Closed Accounts Yet</h3>
+              <p>Accounts that reach their Till Loss limit will appear here.</p>
+            </div>
+          </div>
+        </section>
       </main>
     </div>
   </div>
@@ -1516,6 +1535,11 @@
         <button class="timezone-apply-btn" id="timezoneApply" disabled>Apply</button>
       </div>
     </div>
+  </div>
+
+  <!-- Custom Notification Container -->
+  <div id="notificationContainer" class="notification-container hidden">
+    <div id="notificationMessage" class="notification-message"></div>
   </div>
 
     <!-- Include timezone utilities -->
